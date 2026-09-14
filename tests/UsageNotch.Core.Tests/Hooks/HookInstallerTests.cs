@@ -147,4 +147,97 @@ public class HookInstallerTests
         installer.Uninstall().Should().Contain("rien");
         installer.IsInstalled().Should().BeFalse();
     }
+
+    [Fact]
+    public void A_third_party_hook_that_mentions_our_name_is_kept()
+    {
+        using var dir = new TempDir();
+        var (installer, settingsPath, _) = Build(dir);
+        Directory.CreateDirectory(Path.GetDirectoryName(settingsPath)!);
+        File.WriteAllText(settingsPath, """
+        { "hooks": { "Stop": [ { "hooks": [ { "type": "command", "command": "echo UsageNotch.Hook is great" } ] } ] } }
+        """);
+
+        installer.Install();
+
+        var stopAfterInstall = (JsonArray)Load(settingsPath)["hooks"]!["Stop"]!;
+        stopAfterInstall.Should().HaveCount(2);
+
+        var message = installer.Uninstall();
+
+        message.Should().Contain("7");
+        var stopAfterUninstall = (JsonArray)Load(settingsPath)["hooks"]!["Stop"]!;
+        stopAfterUninstall.Should().HaveCount(1);
+        ((JsonObject)((JsonArray)((JsonObject)stopAfterUninstall[0]!)["hooks"]!)[0]!)["command"]!.GetValue<string>()
+            .Should().Be("echo UsageNotch.Hook is great");
+    }
+
+    [Fact]
+    public void Our_entries_from_an_older_install_folder_are_replaced()
+    {
+        using var dir = new TempDir();
+        var (installer, settingsPath, hookExe) = Build(dir);
+        Directory.CreateDirectory(Path.GetDirectoryName(settingsPath)!);
+        File.WriteAllText(settingsPath, """
+        { "hooks": { "Stop": [ { "hooks": [ { "type": "command", "command": "\"C:\\Old\\UsageNotch.Hook.exe\" done" } ] } ] } }
+        """);
+
+        installer.Install();
+
+        var stop = (JsonArray)Load(settingsPath)["hooks"]!["Stop"]!;
+        stop.Should().HaveCount(1);
+        ((JsonObject)((JsonArray)((JsonObject)stop[0]!)["hooks"]!)[0]!)["command"]!.GetValue<string>()
+            .Should().Be($"\"{hookExe}\" done");
+    }
+
+    [Fact]
+    public void Uninstall_preserves_other_top_level_settings()
+    {
+        using var dir = new TempDir();
+        var (installer, settingsPath, _) = Build(dir);
+        Directory.CreateDirectory(Path.GetDirectoryName(settingsPath)!);
+        File.WriteAllText(settingsPath, """
+        { "model": "opus", "theme": "dark" }
+        """);
+
+        installer.Install();
+        installer.Uninstall();
+
+        var root = Load(settingsPath);
+        root["model"]!.GetValue<string>().Should().Be("opus");
+        root["theme"]!.GetValue<string>().Should().Be("dark");
+    }
+
+    [Fact]
+    public void Two_installs_in_the_same_second_keep_both_backups()
+    {
+        using var dir = new TempDir();
+        var (installer, settingsPath, _) = Build(dir);
+        Directory.CreateDirectory(Path.GetDirectoryName(settingsPath)!);
+        const string original = "{ \"model\": \"opus\" }";
+        File.WriteAllText(settingsPath, original);
+
+        installer.Install();
+        installer.Install();
+
+        var settingsDir = Path.GetDirectoryName(settingsPath)!;
+        var backups = Directory.GetFiles(settingsDir, "settings.json.usagenotch-bak-*");
+        backups.Should().HaveCount(2);
+        var firstBackup = Path.Combine(settingsDir, $"settings.json.usagenotch-bak-{Now.ToUnixTimeSeconds()}");
+        File.Exists(firstBackup).Should().BeTrue();
+        File.ReadAllText(firstBackup).Should().Be(original);
+    }
+
+    [Theory]
+    [InlineData("\"C:\\x\\UsageNotch.Hook.exe\" done", true)]
+    [InlineData("C:\\x\\UsageNotch.Hook.exe running", true)]
+    [InlineData("\"C:\\x\\usagenotch.hook.EXE\" done", true)]
+    [InlineData("echo UsageNotch.Hook.exe", false)]
+    [InlineData("\"C:\\x\\UsageNotch.Hook.exe.bak\" done", false)]
+    [InlineData("\"C:\\x\\UsageNotch.Hook.exe", false)]
+    [InlineData("", false)]
+    public void IsOurCommand_recognises_only_our_executable(string command, bool expected)
+    {
+        HookInstaller.IsOurCommand(command).Should().Be(expected);
+    }
 }
