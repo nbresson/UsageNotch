@@ -58,7 +58,7 @@ public static class DoctorCommand
             Directory.CreateDirectory(paths.LogsDirectory);
             File.WriteAllText(Path.Combine(paths.LogsDirectory, "doctor.txt"), text, utf8);
         }
-        catch (IOException)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
             // Le rapport s'affiche quand même sur la console.
         }
