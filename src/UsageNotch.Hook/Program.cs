@@ -7,14 +7,16 @@ namespace UsageNotch.Hook;
 
 /// <summary>
 /// Appelé par les hooks de Claude Code : relaie l'événement (argument) et le JSON (stdin) à l'app.
-/// Règle absolue : ne jamais bloquer Claude Code — budget ~2 s, toute erreur sort en 0 sans bruit.
+/// Règle absolue : ne jamais bloquer Claude Code — délai global (<see cref="Budget"/>) de 2 s pour
+/// l'ensemble de la tentative (lecture, connexion, réessais), toute erreur sort en 0 sans bruit.
 /// </summary>
 internal static class Program
 {
     private const int MaxStdinBytes = 256 * 1024;
-    private const int ConnectTimeoutMs = 300;
     private const int IoTimeoutMs = 700;
     private const string AppExeName = "UsageNotch.App.exe";
+    private static readonly TimeSpan Budget = TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan ConnectTimeout = TimeSpan.FromMilliseconds(300);
 
     private static int Main(string[] args)
     {
@@ -31,21 +33,31 @@ internal static class Program
 
     private static void Run(string[] args)
     {
+        var sw = Stopwatch.StartNew();
         var kind = args.Length > 0 ? args[0] : "ping";
         var body = ReadStdin();
         var port = PortReader.Read(ReadSettings());
         var ppid = ParentProcess.Id();
 
-        if (Send(port, kind, ppid, body)) return;
+        var remaining = Budget - sw.Elapsed;
+        if (remaining <= TimeSpan.Zero) return;
 
-        // L'app ne répond pas : la lancer détachée puis réessayer brièvement.
+        if (Send(port, kind, ppid, body, Min(ConnectTimeout, remaining))) return;
+
+        // L'app ne répond pas : la lancer détachée puis réessayer jusqu'à épuisement du budget.
         LaunchApp();
-        for (var i = 0; i < 20; i++)
+        while (true)
         {
+            remaining = Budget - sw.Elapsed;
+            if (remaining <= TimeSpan.FromMilliseconds(100)) break;
             Thread.Sleep(100);
-            if (Send(port, kind, ppid, body)) return;
+            remaining = Budget - sw.Elapsed;
+            if (remaining <= TimeSpan.Zero) break;
+            if (Send(port, kind, ppid, body, Min(ConnectTimeout, remaining))) return;
         }
     }
+
+    private static TimeSpan Min(TimeSpan a, TimeSpan b) => a < b ? a : b;
 
     private static string ReadStdin()
     {
@@ -75,13 +87,13 @@ internal static class Program
         }
     }
 
-    private static bool Send(int port, string kind, int ppid, string body)
+    private static bool Send(int port, string kind, int ppid, string body, TimeSpan connectTimeout)
     {
         try
         {
             using var client = new TcpClient();
             var connect = client.ConnectAsync(IPAddress.Loopback, port);
-            if (!connect.Wait(ConnectTimeoutMs) || !client.Connected) return false;
+            if (!connect.Wait(connectTimeout) || !client.Connected) return false;
             client.SendTimeout = IoTimeoutMs;
             client.ReceiveTimeout = IoTimeoutMs;
 
