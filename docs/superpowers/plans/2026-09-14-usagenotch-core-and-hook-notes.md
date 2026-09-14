@@ -19,8 +19,14 @@ de toute la branche. Résultat : 216 tests, compilation sans avertissement.
 - `HookListener.IsListening` indique si le port est bien lié, pour la page Claude Code et `doctor`.
 - `HookInstaller.Install` lève `InvalidDataException` avec un message en français quand le `settings.json` de
   Claude Code est illisible. La page de réglages doit afficher ce message.
-- La publication Native AOT du hook exige la charge de travail Visual Studio « Développement Desktop en C++ ».
-  Elle n'a pas pu être vérifiée sur la machine de développement ; le hook a été vérifié en publication dépendante du framework.
+- La publication Native AOT du hook fonctionne avec `dotnet publish src\UsageNotch.Hook -c Release -r win-x64`
+  (vérifiée le 2026-09-14 sur .NET 10 avec Visual Studio Community 2026 et sa charge de travail C++).
+  .NET 9 ne reconnaissait pas Visual Studio 2026, d'où le passage à .NET 10.
+  Si la variable d'environnement `NoDefaultCurrentDirectoryInExePath` est définie dans le terminal, la détection de
+  Visual Studio échoue avec « 'vswhere.exe' n'est pas reconnu » : la retirer le temps de la publication.
+- Depuis .NET 10, `BackgroundService.StartAsync` exécute `ExecuteAsync` entièrement en arrière-plan.
+  `HookListener` lie donc son port dans une surcharge de `StartAsync`, et `UsagePoller` charge `usage.json`
+  juste après le démarrage plutôt que pendant : les abonnés doivent s'abonner avant `StartAsync` et relire `Current`.
 
 ## Arbitrages pris pendant l'exécution
 
@@ -29,7 +35,7 @@ Chaque ligne : décision, raison, coût si elle est fausse.
 1. Le balayage des sessions remet l'horloge à zéro lors du passage Running → Idle. Sinon la même passe retirerait la session. Coût : une session obsolète reste 10 minutes de plus.
 2. `Theme.Clamp` arrondit le seuil critique minimal, car 0,9 + 0,05 ne vaut pas exactement 0,95 en double. Coût : aucun visible.
 3. Les lignes d'attribution des commits ont été normalisées en une passe sur toute la branche, contenu inchangé. Coût : cosmétique.
-4. La cible reste .NET 9 comme dans la spec. Coût : un changement d'une ligne pour passer à .NET 10.
+4. La cible est passée de .NET 9 à .NET 10 à la demande de l'utilisateur (LTS, Native AOT compatible avec Visual Studio 2026). Coût : aucun identifié ; la suite passe à l'identique.
 5. Travail sur une branche plutôt qu'un worktree séparé. Coût : aucun.
 6. Les avertissements d'analyseurs se corrigent par le plus petit changement, jamais en désactivant TreatWarningsAsErrors. Coût : légère dérive par rapport au texte du plan.
 7. Le libellé d'une fenêtre de limite inconnue reste l'identifiant mis en forme, conforme à la spec. Coût : un libellé d'apparence anglaise pour un futur type.
