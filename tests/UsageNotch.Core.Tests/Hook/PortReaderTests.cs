@@ -34,4 +34,22 @@ public class PortReaderTests
     {
         PortReader.DefaultSettingsPath.Should().EndWith(Path.Combine("UsageNotch", "settings.json"));
     }
+
+    [Theory]
+    [InlineData("""{ "port": 5000 }""", true)]
+    [InlineData("""{ "autoLaunch": false }""", false)]
+    [InlineData("""{"port":5000,"autoLaunch":false}""", false)]
+    [InlineData("""{ "autoLaunch": true }""", true)]
+    [InlineData("""{ "autoLaunchX": false }""", true)]
+    [InlineData("""{ "autoLaunch": falsey }""", true)]
+    [InlineData("not json at all", true)]
+    public void Reads_the_auto_launch_flag(string json, bool expected) =>
+        PortReader.ReadAutoLaunch(json).Should().Be(expected);
+
+    [Fact]
+    public void Auto_launch_defaults_to_true_without_settings()
+    {
+        PortReader.ReadAutoLaunch(null).Should().BeTrue();
+        PortReader.ReadAutoLaunch("").Should().BeTrue();
+    }
 }

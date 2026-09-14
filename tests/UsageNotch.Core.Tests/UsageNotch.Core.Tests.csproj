@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <Compile Include="..\..\src\UsageNotch.Hook\PortReader.cs" Link="Hook\PortReader.cs" Condition="Exists('..\..\src\UsageNotch.Hook\PortReader.cs')" />
+    <Compile Include="..\..\src\UsageNotch.Hook\AncestorPicker.cs" Link="Hook\AncestorPicker.cs" Condition="Exists('..\..\src\UsageNotch.Hook\AncestorPicker.cs')" />
   </ItemGroup>
 
 </Project>

@@ -37,13 +37,19 @@ internal static class Program
         var sw = Stopwatch.StartNew();
         var kind = args.Length > 0 ? args[0] : "ping";
         var body = ReadStdin();
-        var port = PortReader.Read(ReadSettings());
-        var ppid = ParentProcess.Id();
+        var settings = ReadSettings();
+        var port = PortReader.Read(settings);
+        var autoLaunch = PortReader.ReadAutoLaunch(settings);
+        var ppid = AncestorPicker.Pick(ParentProcess.Ancestors());
+        if (ppid == 0) ppid = ParentProcess.Id();
 
         var remaining = Budget - sw.Elapsed;
         if (remaining <= TimeSpan.Zero) return;
 
         if (Send(port, kind, ppid, body, Min(ConnectTimeout, remaining), sw)) return;
+
+        // L'utilisateur a quitté l'app (autoLaunch = false) : ni lancement ni réessai.
+        if (!autoLaunch) return;
 
         // L'app ne répond pas : la lancer détachée puis réessayer jusqu'à épuisement du budget.
         LaunchApp();
@@ -156,10 +162,13 @@ internal static class Program
         {
             var exe = Path.Combine(AppContext.BaseDirectory, AppExeName);
             if (!File.Exists(exe)) return;
+            // UseShellExecute = true : ShellExecuteEx ne transmet pas les handles hérités, donc l'app ne garde
+            // pas les pipes stdio que Claude Code a donnés au hook (sinon Claude Code attendrait la fin de l'app).
+            // --from-hook : une seconde instance lancée ainsi se ferme sans rien demander à la première.
             var start = new ProcessStartInfo(exe)
             {
-                UseShellExecute = false,
-                CreateNoWindow = true,
+                UseShellExecute = true,
+                Arguments = "--from-hook",
                 WorkingDirectory = AppContext.BaseDirectory,
             };
             Process.Start(start);
