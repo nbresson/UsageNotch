@@ -1,0 +1,60 @@
+# UsageNotch Plan 1 — Notes d'exécution
+
+Exécuté le 2026-09-14 sur la branche `feat/core-and-hook`, par sous-agents avec relecture par tâche et relecture finale
+de toute la branche. Résultat : 216 tests, compilation sans avertissement.
+
+## Contrats dont le Plan 2 (application WPF) dépend
+
+- L'exécutable de l'application s'appelle `UsageNotch.App.exe` et se trouve dans le même dossier que `UsageNotch.Hook.exe`.
+- Le hook lance l'application avec l'argument `--from-hook`. Une seconde instance lancée avec cet argument doit quitter
+  sans rien afficher, au lieu de demander l'ouverture des réglages à la première.
+- `Settings.AutoLaunch` (clé `autoLaunch`) : le hook ne relance pas l'application quand elle vaut `false`.
+  « Quitter » doit la passer à `false`, et un démarrage manuel la remettre à `true`.
+- `HookEvent.ParentPid` est le premier ancêtre du hook qui n'est pas un shell (cmd, bash, sh, powershell, pwsh, conhost).
+  Il peut désigner un PID réutilisé : le retour au terminal doit valider la fenêtre trouvée.
+- `UsageStore.Changed`, `SessionStore.Changed` et `HookListener.OpenSettingsRequested` sont levés sur un thread
+  d'arrière-plan et peuvent arriver dans le désordre. Les abonnés relisent `Current` ou `Snapshot()` sur le thread UI.
+- `UsagePoller` appelle lui-même `UsageStore.Load()` au démarrage. L'application ne doit pas l'appeler une seconde fois.
+- `ClaudeUsageProvider.Timeout` (15 s) doit être affecté à `HttpClient.Timeout` à l'enregistrement.
+- `HookListener.IsListening` indique si le port est bien lié, pour la page Claude Code et `doctor`.
+- `HookInstaller.Install` lève `InvalidDataException` avec un message en français quand le `settings.json` de
+  Claude Code est illisible. La page de réglages doit afficher ce message.
+- La publication Native AOT du hook exige la charge de travail Visual Studio « Développement Desktop en C++ ».
+  Elle n'a pas pu être vérifiée sur la machine de développement ; le hook a été vérifié en publication dépendante du framework.
+
+## Arbitrages pris pendant l'exécution
+
+Chaque ligne : décision, raison, coût si elle est fausse.
+
+1. Le balayage des sessions remet l'horloge à zéro lors du passage Running → Idle. Sinon la même passe retirerait la session. Coût : une session obsolète reste 10 minutes de plus.
+2. `Theme.Clamp` arrondit le seuil critique minimal, car 0,9 + 0,05 ne vaut pas exactement 0,95 en double. Coût : aucun visible.
+3. Les lignes d'attribution des commits ont été normalisées en une passe sur toute la branche, contenu inchangé. Coût : cosmétique.
+4. La cible reste .NET 9 comme dans la spec. Coût : un changement d'une ligne pour passer à .NET 10.
+5. Travail sur une branche plutôt qu'un worktree séparé. Coût : aucun.
+6. Les avertissements d'analyseurs se corrigent par le plus petit changement, jamais en désactivant TreatWarningsAsErrors. Coût : légère dérive par rapport au texte du plan.
+7. Le libellé d'une fenêtre de limite inconnue reste l'identifiant mis en forme, conforme à la spec. Coût : un libellé d'apparence anglaise pour un futur type.
+8. Les messages d'exception .NET, en anglais, ne deviennent jamais des notes affichées : notes françaises dédiées, exception journalisée. Coût : moins de détail dans la carte, conservé dans les journaux.
+9. `RequestRefresh` du planificateur a été rendu sûr entre threads (verrou, `CancelAsync`), contrairement au code du plan. Coût : dérive par rapport au plan.
+10. Les corps de hook de plus de 256 Ko sont lus par un lecteur JSON progressif qui garde les champs lus avant la coupure, et le flux est vidé avant la réponse. Coût : une charge qui placerait `session_id` après un énorme champ irait sur la session « unknown ».
+11. L'installeur reconnaît ses hooks au nom exact de l'exécutable, pas à une sous-chaîne, et ne remplace jamais une sauvegarde existante. Coût : dérive par rapport au plan.
+12. Un littéral de chaîne brute invalide dans un test du plan a été reformaté, JSON et assertions inchangés. Coût : aucun.
+13. Les réglages tolèrent les valeurs nulles de référence (`customTheme`, sons). Coût : aucun.
+14. Le hook est borné par une échéance de 2 s, car une connexion refusée sur la boucle locale n'échoue pas vite sous Windows (8,7 s mesurés avec le plan d'origine). Coût : une application qui démarre en plus de ~1,7 s rate le premier événement d'une session.
+15. L'entrée standard du hook est attendue au plus 1 s, et les délais socket sont bornés par le temps restant. Coût : un événement dont l'entrée arrive après 1 s part avec un corps partiel.
+16. Le hook lance l'application via le shell pour ne pas lui transmettre les canaux de Claude Code (mesuré : fermeture à 20,5 s avant, 2,1 s après). Coût : aucun.
+17. Un `settings.json` UsageNotch illisible est copié en `settings.json.corrupt-<horodatage>` avant l'écriture des valeurs par défaut. Coût : un fichier de plus sur disque.
+18. L'installeur refuse un `settings.json` de Claude Code illisible au lieu de le remplacer. Coût : l'utilisateur doit réparer le fichier avant d'installer les hooks.
+19. Une réponse 200 sans aucune fenêtre de limite devient un échec visible au lieu d'un « Ok » vide. Coût : aucun.
+20. Le récepteur refuse les méthodes autres que POST (405) et les types d'événement inconnus (400). Coût : aucun.
+21. Les sessions en Attention sont retirées après 24 h comme les Done. Coût : une session réellement en attente disparaît au bout d'un jour.
+22. `session_start` sur une session existante la remet en Idle, comportement conservé et documenté par un test. Coût : un badge Terminé disparaît à la reprise.
+
+## Points mineurs laissés en l'état
+
+- Un thème personnalisé partiel sans seuils prend 0 avant bornage, au lieu des valeurs par défaut.
+- `Retry-After` au format date HTTP est ignoré ; le backoff exponentiel s'applique quand même.
+- Le chemin du hook dans la commande utilise des barres obliques inverses.
+- Deux fenêtres de course théoriques dans les tests du planificateur (attendre `Calls >= 2`, et lire le statut après `Apply`).
+- Après un échec de la copie « corrupt », un `Save` ultérieur écrase le fichier illisible sans copie.
+- Le compteur de backoff pourrait déborder après 2³¹ échecs consécutifs.
+- `StopAsync` du récepteur n'attend pas les requêtes en cours de traitement.
