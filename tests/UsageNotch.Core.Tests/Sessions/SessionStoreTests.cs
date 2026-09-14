@@ -210,4 +210,75 @@ public class SessionStoreTests
         store.Apply(Ev(HookEvent.Running, id: "unknown", cwd: ""));
         store.Snapshot().Single().Title.Should().Be("claude · unkn");
     }
+
+    [Fact]
+    public void An_unknown_kind_creates_no_session()
+    {
+        var (store, _) = Build();
+        var raised = 0;
+        store.Changed += () => raised++;
+
+        store.Apply(Ev("ping")).Should().BeFalse();
+
+        store.Snapshot().Should().BeEmpty();
+        raised.Should().Be(0);
+    }
+
+    [Fact]
+    public void A_title_only_change_raises_changed()
+    {
+        var (store, _) = Build();
+        store.Apply(Ev(HookEvent.Running, cwd: ""));
+        var raised = 0;
+        store.Changed += () => raised++;
+
+        store.Apply(Ev(HookEvent.Running, cwd: @"D:\work\api")).Should().BeTrue();
+
+        raised.Should().Be(1);
+        store.Snapshot().Single().Title.Should().Be("api · abcd");
+    }
+
+    [Fact]
+    public void Sweep_drops_attention_after_24_hours()
+    {
+        var (store, time) = Build();
+        store.Apply(Ev(HookEvent.Attention, message: "Autoriser ?"));
+
+        time.Advance(TimeSpan.FromHours(23));
+        store.Sweep().Should().BeFalse();
+        store.Snapshot().Should().ContainSingle();
+
+        time.Advance(TimeSpan.FromHours(2));
+        store.Sweep().Should().BeTrue();
+        store.Snapshot().Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Truncation_never_splits_a_surrogate_pair()
+    {
+        var (store, _) = Build();
+        var prompt = new string('a', 119) + "😀" + "tail";
+
+        store.Apply(Ev(HookEvent.Running, prompt: prompt));
+
+        var kept = store.Snapshot().Single().Prompt;
+        kept.Should().Be(new string('a', 119) + "…");
+        for (var i = 0; i < kept.Length; i++)
+        {
+            if (char.IsHighSurrogate(kept[i])) (i + 1 < kept.Length && char.IsLowSurrogate(kept[i + 1])).Should().BeTrue();
+            if (char.IsLowSurrogate(kept[i])) (i > 0 && char.IsHighSurrogate(kept[i - 1])).Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public void Session_start_on_a_done_session_resets_it_to_idle()
+    {
+        var (store, _) = Build();
+        store.Apply(Ev(HookEvent.Running));
+        store.Apply(Ev(HookEvent.Done));
+
+        store.Apply(Ev(HookEvent.SessionStart)).Should().BeTrue();
+
+        store.Snapshot().Single().State.Should().Be(SessionState.Idle);
+    }
 }

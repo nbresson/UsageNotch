@@ -19,6 +19,10 @@ public sealed class SessionStore(TimeProvider time) : ISessionActivity
     private readonly object _gate = new();
     private readonly Dictionary<string, Session> _sessions = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// Levé sur un thread d'arrière-plan (récepteur de hooks ou balayage), éventuellement dans le désordre :
+    /// l'abonné doit relire <see cref="Snapshot"/> sur le thread UI.
+    /// </summary>
     public event Action? Changed;
 
     public bool HasActiveSession
@@ -88,7 +92,7 @@ public sealed class SessionStore(TimeProvider time) : ISessionActivity
             foreach (var (id, s) in _sessions.ToList())
             {
                 var drop = (s.State == SessionState.Idle && now - s.LastEvent > IdleDrop)
-                        || (s.State == SessionState.Done && now - s.LastEvent > DoneStale);
+                        || (s.State is (SessionState.Done or SessionState.Attention) && now - s.LastEvent > DoneStale);
                 if (drop) _sessions.Remove(id);
             }
             changed |= _sessions.Count != before;
@@ -99,6 +103,8 @@ public sealed class SessionStore(TimeProvider time) : ISessionActivity
 
     private bool ApplyLocked(HookEvent ev)
     {
+        if (!HookEvent.IsKnownKind(ev.Kind)) return false;
+
         var now = time.GetUtcNow();
         if (ev.Kind == HookEvent.SessionEnd)
         {
@@ -109,7 +115,7 @@ public sealed class SessionStore(TimeProvider time) : ISessionActivity
         s ??= new Session(ev.SessionId, TitleOf(ev.Cwd, ev.SessionId), SessionState.Idle, now, TimeSpan.Zero,
             "", "", "", "", 0, ev.Cwd, now);
 
-        var before = (s.State, s.LastAction, s.AttentionMessage, s.Prompt, s.Model);
+        var before = (s.State, s.LastAction, s.AttentionMessage, s.Prompt, s.Model, s.Title);
 
         s = s with { LastEvent = now };
         if (ev.ParentPid != 0) s = s with { ParentPid = ev.ParentPid };
@@ -148,7 +154,7 @@ public sealed class SessionStore(TimeProvider time) : ISessionActivity
         }
 
         _sessions[ev.SessionId] = s;
-        return isNew || before != (s.State, s.LastAction, s.AttentionMessage, s.Prompt, s.Model);
+        return isNew || before != (s.State, s.LastAction, s.AttentionMessage, s.Prompt, s.Model, s.Title);
     }
 
     internal static string TitleOf(string cwd, string id)
@@ -158,6 +164,11 @@ public sealed class SessionStore(TimeProvider time) : ISessionActivity
         return $"{last} · {shortId}";
     }
 
-    internal static string Truncate(string s, int max) =>
-        s.Length <= max ? s : s[..max] + "…";
+    /// <summary>Coupe à <paramref name="max"/> caractères sans séparer une paire de substitution (émoji).</summary>
+    internal static string Truncate(string s, int max)
+    {
+        if (s.Length <= max) return s;
+        var cut = char.IsHighSurrogate(s[max - 1]) ? max - 1 : max;
+        return s[..cut] + "…";
+    }
 }

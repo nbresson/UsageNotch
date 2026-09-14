@@ -19,6 +19,13 @@ public sealed class HookListener(int port, SessionStore sessions, ILogger<HookLi
 
     public int Port { get; } = port;
 
+    /// <summary>Vrai une fois le port lié avec succès ; faux avant, après l'arrêt ou si le port était indisponible.</summary>
+    public bool IsListening { get; private set; }
+
+    /// <summary>
+    /// Levé sur un thread d'arrière-plan (celui de la requête), éventuellement dans le désordre : l'abonné doit
+    /// basculer sur le thread UI avant d'agir.
+    /// </summary>
     public event Action? OpenSettingsRequested;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -30,10 +37,24 @@ public sealed class HookListener(int port, SessionStore sessions, ILogger<HookLi
         }
         catch (HttpListenerException e)
         {
+            IsListening = false;
             logger.LogError(e, "Port {Port} indisponible — une autre instance tourne peut-être", Port);
             return;
         }
 
+        IsListening = true;
+        try
+        {
+            await ListenAsync(stoppingToken);
+        }
+        finally
+        {
+            IsListening = false;
+        }
+    }
+
+    private async Task ListenAsync(CancellationToken stoppingToken)
+    {
         using var stop = stoppingToken.Register(() => _listener.Stop());
         logger.LogInformation("Récepteur de hooks à l'écoute sur 127.0.0.1:{Port}", Port);
 
@@ -81,6 +102,12 @@ public sealed class HookListener(int port, SessionStore sessions, ILogger<HookLi
             return;
         }
 
+        if (!string.Equals(request.HttpMethod, "POST", StringComparison.Ordinal))
+        {
+            await RespondAsync(context.Response, 405, "method not allowed");
+            return;
+        }
+
         var headers = request.Headers.AllKeys
             .Where(k => k is not null)
             .SelectMany(k => (request.Headers.GetValues(k!) ?? []).Select(v => new KeyValuePair<string, string>(k!, v)));
@@ -99,6 +126,12 @@ public sealed class HookListener(int port, SessionStore sessions, ILogger<HookLi
         }
 
         var kind = request.QueryString["e"] ?? "";
+        if (!HookEvent.IsKnownKind(kind))
+        {
+            await RespondAsync(context.Response, 400, "unknown event");
+            return;
+        }
+
         var ppid = int.TryParse(request.QueryString["ppid"], out var parsed) ? parsed : 0;
         var body = await ReadBodyAsync(request);
         var ev = HookEventParser.Parse(kind, ppid, body);
@@ -139,6 +172,7 @@ public sealed class HookListener(int port, SessionStore sessions, ILogger<HookLi
 
     public override void Dispose()
     {
+        IsListening = false;
         _listener.Close();
         base.Dispose();
     }

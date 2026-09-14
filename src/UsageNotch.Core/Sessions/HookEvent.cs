@@ -17,4 +17,8 @@ public sealed record HookEvent(
     public const string Attention = "attention";
     public const string Done = "done";
     public const string SessionEnd = "session_end";
+
+    /// <summary>Vrai pour l'un des cinq types d'événement connus (comparaison ordinale exacte).</summary>
+    public static bool IsKnownKind(string kind) =>
+        kind is SessionStart or Running or Attention or Done or SessionEnd;
 }
