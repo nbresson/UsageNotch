@@ -17,6 +17,7 @@ internal static class Program
     private const string AppExeName = "UsageNotch.App.exe";
     private static readonly TimeSpan Budget = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan ConnectTimeout = TimeSpan.FromMilliseconds(300);
+    private static readonly TimeSpan StdinWait = TimeSpan.FromSeconds(1);
 
     private static int Main(string[] args)
     {
@@ -42,7 +43,7 @@ internal static class Program
         var remaining = Budget - sw.Elapsed;
         if (remaining <= TimeSpan.Zero) return;
 
-        if (Send(port, kind, ppid, body, Min(ConnectTimeout, remaining))) return;
+        if (Send(port, kind, ppid, body, Min(ConnectTimeout, remaining), sw)) return;
 
         // L'app ne répond pas : la lancer détachée puis réessayer jusqu'à épuisement du budget.
         LaunchApp();
@@ -53,7 +54,7 @@ internal static class Program
             Thread.Sleep(100);
             remaining = Budget - sw.Elapsed;
             if (remaining <= TimeSpan.Zero) break;
-            if (Send(port, kind, ppid, body, Min(ConnectTimeout, remaining))) return;
+            if (Send(port, kind, ppid, body, Min(ConnectTimeout, remaining), sw)) return;
         }
     }
 
@@ -62,16 +63,43 @@ internal static class Program
     private static string ReadStdin()
     {
         if (!Console.IsInputRedirected) return "";
-        using var input = Console.OpenStandardInput();
-        using var buffer = new MemoryStream();
-        var chunk = new byte[16 * 1024];
-        int read;
-        while ((read = input.Read(chunk, 0, chunk.Length)) > 0)
+
+        // Lu sur un thread d'arrière-plan avec un délai borné : si l'appelant garde stdin ouvert sans
+        // EOF, on ne doit pas bloquer indéfiniment. Un thread d'arrière-plan encore coincé dans Read
+        // ne retient pas le processus vivant une fois Main revenu.
+        var buffer = new MemoryStream();
+        var thread = new Thread(() =>
         {
-            buffer.Write(chunk, 0, read);
-            if (buffer.Length >= MaxStdinBytes) break;
+            try
+            {
+                using var input = Console.OpenStandardInput();
+                var chunk = new byte[16 * 1024];
+                int read;
+                while ((read = input.Read(chunk, 0, chunk.Length)) > 0)
+                {
+                    bool full;
+                    lock (buffer)
+                    {
+                        buffer.Write(chunk, 0, read);
+                        full = buffer.Length >= MaxStdinBytes;
+                    }
+                    if (full) break;
+                }
+            }
+            catch
+            {
+                // Ignoré : on utilisera ce qui a déjà été lu.
+            }
+        })
+        { IsBackground = true };
+        thread.Start();
+        thread.Join(StdinWait);
+
+        lock (buffer)
+        {
+            var length = (int)Math.Min(buffer.Length, MaxStdinBytes);
+            return Encoding.UTF8.GetString(buffer.GetBuffer(), 0, length);
         }
-        return Encoding.UTF8.GetString(buffer.GetBuffer(), 0, (int)Math.Min(buffer.Length, MaxStdinBytes));
     }
 
     private static string? ReadSettings()
@@ -87,15 +115,21 @@ internal static class Program
         }
     }
 
-    private static bool Send(int port, string kind, int ppid, string body, TimeSpan connectTimeout)
+    private static bool Send(int port, string kind, int ppid, string body, TimeSpan connectTimeout, Stopwatch sw)
     {
         try
         {
             using var client = new TcpClient();
             var connect = client.ConnectAsync(IPAddress.Loopback, port);
             if (!connect.Wait(connectTimeout) || !client.Connected) return false;
-            client.SendTimeout = IoTimeoutMs;
-            client.ReceiveTimeout = IoTimeoutMs;
+
+            // Le budget total peut être presque épuisé après la connexion : borner l'IO par ce qu'il
+            // en reste, avec un plancher de 1 ms (0 signifierait "infini" pour ces propriétés).
+            var remainingMs = (Budget - sw.Elapsed).TotalMilliseconds;
+            if (remainingMs <= 0) return false;
+            var ioTimeout = Math.Max(1, (int)Math.Min(IoTimeoutMs, remainingMs));
+            client.SendTimeout = ioTimeout;
+            client.ReceiveTimeout = ioTimeout;
 
             using var stream = client.GetStream();
             var bodyBytes = Encoding.UTF8.GetBytes(body);
