@@ -15,15 +15,16 @@ public sealed class UsagePoller(
     public static readonly TimeSpan IdleInterval = TimeSpan.FromMinutes(5);
 
     private readonly BackoffPolicy _backoff = new();
+    private readonly object _wakeGate = new();
     private volatile bool _forced;
-    private volatile CancellationTokenSource? _wake;
+    private CancellationTokenSource? _wake;
 
     /// <summary>« Rafraîchir maintenant » : efface le backoff et interrompt l'attente en cours.</summary>
     public void RequestRefresh()
     {
         _forced = true;
         store.ClearBackoff();
-        _wake?.Cancel();
+        lock (_wakeGate) { _ = _wake?.CancelAsync(); }
     }
 
     public TimeSpan NextInterval() => activity.HasActiveSession ? ActiveInterval : IdleInterval;
@@ -83,7 +84,11 @@ public sealed class UsagePoller(
 
         using var wake = new CancellationTokenSource();
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, wake.Token);
-        _wake = wake;
+        lock (_wakeGate)
+        {
+            if (_forced) return; // un rafraîchissement arrivé après la première vérification ne doit pas être perdu
+            _wake = wake;
+        }
         try
         {
             await Task.Delay(delay, time, linked.Token);
@@ -94,7 +99,7 @@ public sealed class UsagePoller(
         }
         finally
         {
-            _wake = null;
+            lock (_wakeGate) { _wake = null; }
         }
     }
 }

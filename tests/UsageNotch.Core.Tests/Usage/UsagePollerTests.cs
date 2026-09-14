@@ -14,12 +14,17 @@ public class UsagePollerTests
     {
         public Queue<FetchResult> Results { get; } = new();
         public int Calls { get; private set; }
+        public bool ThrowOnFirstCall { get; set; }
         public string Id => "claude";
         public string DisplayName => "Claude";
         public string HeadlineWindowId => "session";
         public Task<FetchResult> FetchAsync(CancellationToken ct)
         {
             Calls++;
+            if (ThrowOnFirstCall && Calls == 1)
+            {
+                throw new InvalidOperationException("échec simulé du premier appel");
+            }
             return Task.FromResult(Results.Count > 0 ? Results.Dequeue() : new FetchResult.Success([Session]));
         }
     }
@@ -125,5 +130,62 @@ public class UsagePollerTests
         poller.NextInterval().Should().Be(TimeSpan.FromSeconds(60));
         activity.HasActiveSession = false;
         poller.NextInterval().Should().Be(TimeSpan.FromMinutes(5));
+    }
+
+    [Fact]
+    public async Task RequestRefresh_wakes_a_waiting_loop_immediately()
+    {
+        using var dir = new TempDir();
+        var (poller, provider, _, _, _) = Build(dir);
+
+        await poller.StartAsync(CancellationToken.None);
+        try
+        {
+            await WaitUntil(() => provider.Calls == 1);
+
+            poller.RequestRefresh();
+
+            await WaitUntil(() => provider.Calls == 2);
+        }
+        finally
+        {
+            await poller.StopAsync(CancellationToken.None);
+        }
+    }
+
+    [Fact]
+    public async Task An_exception_in_a_tick_does_not_stop_the_loop()
+    {
+        using var dir = new TempDir();
+        var (poller, provider, store, _, time) = Build(dir);
+        provider.ThrowOnFirstCall = true;
+
+        await poller.StartAsync(CancellationToken.None);
+        try
+        {
+            await WaitUntil(() => provider.Calls == 1);
+
+            time.Advance(UsagePoller.IdleInterval);
+
+            await WaitUntil(() => provider.Calls == 2);
+            store.Current.Status.Should().Be(SnapshotStatus.Ok);
+        }
+        finally
+        {
+            await poller.StopAsync(CancellationToken.None);
+        }
+    }
+
+    private static async Task WaitUntil(Func<bool> condition)
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (!condition())
+        {
+            if (DateTime.UtcNow > deadline)
+            {
+                throw new TimeoutException("Condition non atteinte dans le délai imparti (5 s).");
+            }
+            await Task.Delay(10);
+        }
     }
 }
