@@ -28,21 +28,45 @@ public sealed class HookListener(int port, SessionStore sessions, ILogger<HookLi
     /// </summary>
     public event Action? OpenSettingsRequested;
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    /// <summary>
+    /// Lie le port avant de rendre la main : depuis .NET 10, <see cref="BackgroundService.StartAsync"/> exécute
+    /// <see cref="ExecuteAsync"/> entièrement en arrière-plan, donc un bind fait là serait encore en cours au retour.
+    /// </summary>
+    public override Task StartAsync(CancellationToken cancellationToken)
     {
         _listener.Prefixes.Add($"http://127.0.0.1:{Port}/");
         try
         {
             _listener.Start();
+            IsListening = true;
         }
         catch (HttpListenerException e)
         {
             IsListening = false;
             logger.LogError(e, "Port {Port} indisponible — une autre instance tourne peut-être", Port);
-            return;
         }
+        return base.StartAsync(cancellationToken);
+    }
 
-        IsListening = true;
+    /// <summary>Arrête aussi le port quand l'arrêt survient avant que <see cref="ExecuteAsync"/> n'ait démarré.</summary>
+    public override async Task StopAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await base.StopAsync(cancellationToken);
+        }
+        finally
+        {
+            IsListening = false;
+            try { if (_listener.IsListening) _listener.Stop(); }
+            catch (ObjectDisposedException) { }
+        }
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        if (!IsListening) return;
+
         try
         {
             await ListenAsync(stoppingToken);
@@ -55,7 +79,11 @@ public sealed class HookListener(int port, SessionStore sessions, ILogger<HookLi
 
     private async Task ListenAsync(CancellationToken stoppingToken)
     {
-        using var stop = stoppingToken.Register(() => _listener.Stop());
+        using var stop = stoppingToken.Register(() =>
+        {
+            try { _listener.Stop(); }
+            catch (ObjectDisposedException) { }
+        });
         logger.LogInformation("Récepteur de hooks à l'écoute sur 127.0.0.1:{Port}", Port);
 
         while (!stoppingToken.IsCancellationRequested)
@@ -173,7 +201,8 @@ public sealed class HookListener(int port, SessionStore sessions, ILogger<HookLi
     public override void Dispose()
     {
         IsListening = false;
-        _listener.Close();
+        // D'abord annuler le jeton (son rappel arrête un listener encore vivant), ensuite seulement le fermer.
         base.Dispose();
+        _listener.Close();
     }
 }

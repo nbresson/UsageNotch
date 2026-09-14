@@ -7,7 +7,7 @@ Statut : validé en brainstorming, en attente de relecture avant plan d'impléme
 
 ## 1. En une phrase
 
-Une application Windows en C# / .NET 9 / WPF qui soude un petit « notch » à un bord d'écran
+Une application Windows en C# / .NET 10 / WPF qui soude un petit « notch » à un bord d'écran
 et répond à deux questions d'un coup d'œil : **combien de mon quota Claude Code ai-je consommé**,
 et **est-ce que Claude travaille encore, a fini, ou attend une réponse de ma part**.
 
@@ -48,8 +48,8 @@ mise à jour automatique, interface multilingue, tests FlaUI de bout en bout.
 ```
 UsageNotch.sln
 ├── src/
-│   ├── UsageNotch.Core/        bibliothèque .NET 9, aucune dépendance UI
-│   ├── UsageNotch.App/         WPF, net9.0-windows, PerMonitorV2
+│   ├── UsageNotch.Core/        bibliothèque .NET 10, aucune dépendance UI
+│   ├── UsageNotch.App/         WPF, net10.0-windows, PerMonitorV2
 │   └── UsageNotch.Hook/        console, Native AOT, aucune dépendance
 ├── tests/
 │   └── UsageNotch.Core.Tests/  xUnit
