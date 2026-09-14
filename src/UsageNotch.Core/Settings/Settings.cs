@@ -63,7 +63,10 @@ public sealed record Settings
         PositionBottom = Math.Clamp(PositionBottom, 0.0, 1.0),
         Scale = Math.Clamp(Scale, ScaleMin, ScaleMax),
         FoldedThicknessPx = Math.Clamp(FoldedThicknessPx, FoldedThicknessMin, FoldedThicknessMax),
-        CustomTheme = CustomTheme.Clamp(),
+        // Un JSON édité à la main peut porter une valeur "null" explicite malgré le type non-nullable.
+        CustomTheme = (CustomTheme ?? Theme.Codenotch).Clamp(),
+        DoneSound = string.IsNullOrWhiteSpace(DoneSound) ? "Asterisk" : DoneSound,
+        AttentionSound = string.IsNullOrWhiteSpace(AttentionSound) ? "Exclamation" : AttentionSound,
         // Sans pilule ni icône, l'app serait injoignable.
         TrayIconVisible = Visibility == VisibilityMode.Hidden || TrayIconVisible,
     };

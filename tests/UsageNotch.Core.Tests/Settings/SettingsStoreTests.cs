@@ -119,6 +119,32 @@ public class SettingsStoreTests
         Directory.GetFiles(dir.Path).Should().ContainSingle().Which.Should().EndWith("settings.json");
     }
 
+    [Fact]
+    public void Null_values_in_a_hand_edited_file_fall_back_to_defaults()
+    {
+        using var dir = new TempDir();
+        File.WriteAllText(dir.File("settings.json"),
+            """{ "customTheme": null, "doneSound": null, "attentionSound": null, "edge": null, "scale": "big" }""");
+
+        var s = Build(dir).Load();
+
+        s.CustomTheme.Should().Be(Theme.Codenotch);
+        s.DoneSound.Should().Be("Asterisk");
+        s.AttentionSound.Should().Be("Exclamation");
+    }
+
+    [Fact]
+    public void A_null_custom_theme_alone_keeps_the_other_keys()
+    {
+        using var dir = new TempDir();
+        File.WriteAllText(dir.File("settings.json"), """{ "customTheme": null, "scale": 0.8 }""");
+
+        var s = Build(dir).Load();
+
+        s.CustomTheme.Should().Be(Theme.Codenotch);
+        s.Scale.Should().Be(0.8);
+    }
+
     [Theory]
     [InlineData(0.10, "#28E07B")]
     [InlineData(0.49, "#28E07B")]
