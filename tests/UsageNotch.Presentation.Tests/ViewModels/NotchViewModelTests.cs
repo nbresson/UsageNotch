@@ -136,7 +136,8 @@ public sealed class NotchViewModelTests : IDisposable
     {
         _sessions.Apply(Ev(HookEvent.Running));
         _sessions.Apply(Ev(HookEvent.Done));
-        _time.Advance(HoverController.PeekDuration + HoverController.CloseDelay);
+        _time.Advance(HoverController.PeekDuration);
+        _time.Advance(HoverController.CloseDelay);
         _vm.CardVisible.Should().BeFalse();
     }
 
