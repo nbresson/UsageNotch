@@ -4,11 +4,12 @@ using Microsoft.Extensions.Logging;
 
 namespace UsageNotch.Core.Usage;
 
-/// <summary>Appelle l'endpoint d'usage OAuth d'Anthropic avec le jeton de Claude Code. Le délai de 15 s est réglé sur le HttpClient injecté.</summary>
+/// <summary>Appelle l'endpoint d'usage OAuth d'Anthropic avec le jeton de Claude Code. Le délai est celui du HttpClient injecté (voir <see cref="Timeout"/>).</summary>
 public sealed class ClaudeUsageProvider(HttpClient http, ClaudeCredentialReader credentials, ILogger<ClaudeUsageProvider> logger) : IUsageProvider
 {
     public const string Endpoint = "https://api.anthropic.com/api/oauth/usage";
     public const string BetaHeader = "oauth-2025-04-20";
+    /// <summary>Délai prévu pour l'appel : le Plan 2 doit l'affecter à <see cref="HttpClient.Timeout"/> lors de l'enregistrement du HttpClient.</summary>
     public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(15);
 
     public string Id => "claude";
@@ -61,7 +62,13 @@ public sealed class ClaudeUsageProvider(HttpClient http, ClaudeCredentialReader 
             {
                 case 200:
                     var json = await response.Content.ReadAsStringAsync(ct);
-                    return new FetchResult.Success(ClaudeUsageParser.Parse(json));
+                    var windows = ClaudeUsageParser.Parse(json);
+                    if (windows.Count == 0)
+                    {
+                        logger.LogWarning("Usage Claude : réponse 200 sans fenêtre de limite reconnue");
+                        return new FetchResult.Failed("Réponse sans fenêtre de limite");
+                    }
+                    return new FetchResult.Success(windows);
                 case 401:
                 case 403:
                     return new FetchResult.NeedsAuth("");
@@ -76,7 +83,7 @@ public sealed class ClaudeUsageProvider(HttpClient http, ClaudeCredentialReader 
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
-            return new FetchResult.Failed("Délai dépassé (15 s)");
+            return new FetchResult.Failed($"Délai dépassé ({(int)http.Timeout.TotalSeconds} s)");
         }
         catch (HttpRequestException e)
         {

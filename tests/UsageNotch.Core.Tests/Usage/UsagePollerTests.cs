@@ -165,9 +165,8 @@ public class UsagePollerTests
         {
             await WaitUntil(() => provider.Calls == 1);
 
-            time.Advance(UsagePoller.IdleInterval);
-
-            await WaitUntil(() => provider.Calls == 2);
+            // Avancer à chaque tour d'attente : un seul Advance peut tomber avant que la boucle n'arme son Task.Delay.
+            await WaitUntil(() => provider.Calls == 2, () => time.Advance(UsagePoller.IdleInterval));
             store.Current.Status.Should().Be(SnapshotStatus.Ok);
         }
         finally
@@ -176,7 +175,9 @@ public class UsagePollerTests
         }
     }
 
-    private static async Task WaitUntil(Func<bool> condition)
+    private static Task WaitUntil(Func<bool> condition) => WaitUntil(condition, static () => { });
+
+    private static async Task WaitUntil(Func<bool> condition, Action onEachPoll)
     {
         var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
         while (!condition())
@@ -185,6 +186,7 @@ public class UsagePollerTests
             {
                 throw new TimeoutException("Condition non atteinte dans le délai imparti (5 s).");
             }
+            onEachPoll();
             await Task.Delay(10);
         }
     }

@@ -20,6 +20,10 @@ public sealed class UsageStore(string filePath, TimeProvider time, ILogger<Usage
 
     public UsageSnapshot Current { get; private set; } = UsageSnapshot.Empty;
 
+    /// <summary>
+    /// Levé sur un thread d'arrière-plan (celui du poller), éventuellement dans le désordre : l'abonné doit relire
+    /// <see cref="Current"/> sur le thread UI plutôt que se fier à l'argument reçu.
+    /// </summary>
     public event Action<UsageSnapshot>? Changed;
 
     public bool IsInBackoff => Current.BackoffUntil is { } until && until > time.GetUtcNow();

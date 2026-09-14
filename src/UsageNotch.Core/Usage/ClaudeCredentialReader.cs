@@ -1,8 +1,17 @@
+using System.Text;
 using System.Text.Json;
 
 namespace UsageNotch.Core.Usage;
 
-public sealed record ClaudeCredential(string AccessToken, bool IsExpired);
+/// <summary>Jeton OAuth lu dans les identifiants de Claude Code. <see cref="object.ToString"/> masque le jeton.</summary>
+public sealed record ClaudeCredential(string AccessToken, bool IsExpired)
+{
+    private bool PrintMembers(StringBuilder builder)
+    {
+        builder.Append("AccessToken = ***, IsExpired = ").Append(IsExpired);
+        return true;
+    }
+}
 
 /// <summary>Lit le jeton OAuth que Claude Code conserve dans <c>~/.claude/.credentials.json</c>. Lecture seule, jamais de rafraîchissement.</summary>
 public sealed class ClaudeCredentialReader(string claudeDirectory, TimeProvider time)

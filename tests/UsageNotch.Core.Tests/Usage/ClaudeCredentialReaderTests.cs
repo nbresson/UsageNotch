@@ -81,4 +81,15 @@ public class ClaudeCredentialReaderTests
     {
         ClaudeCredentialReader.DefaultDirectory.Should().EndWith(".claude");
     }
+
+    [Fact]
+    public void ToString_redacts_the_access_token()
+    {
+        var cred = new ClaudeCredential("sk-ant-secret-token", IsExpired: false);
+
+        var text = cred.ToString();
+
+        text.Should().NotContain("sk-ant-secret-token");
+        text.Should().Contain("AccessToken = ***");
+    }
 }

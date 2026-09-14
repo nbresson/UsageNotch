@@ -187,4 +187,39 @@ public class ClaudeUsageProviderTests
 
         result.Should().BeOfType<FetchResult.Failed>().Which.Note.Should().Be("Erreur réseau : connexion impossible");
     }
+
+    [Fact]
+    public async Task Returns_Failed_when_the_response_has_no_limit_window()
+    {
+        using var dir = new TempDir();
+        WriteToken(dir, "t");
+        var (provider, _) = Build(dir, _ => Json(HttpStatusCode.OK, "{}"));
+
+        var result = await provider.FetchAsync(CancellationToken.None);
+
+        result.Should().BeOfType<FetchResult.Failed>().Which.Note.Should().Be("Réponse sans fenêtre de limite");
+    }
+
+    [Fact]
+    public async Task The_timeout_note_reports_the_client_timeout()
+    {
+        using var dir = new TempDir();
+        WriteToken(dir, "t");
+        var reader = new ClaudeCredentialReader(dir.Path, new FakeTimeProvider(new DateTimeOffset(2026, 9, 14, 12, 0, 0, TimeSpan.Zero)));
+        var http = new HttpClient(new HangingHandler()) { Timeout = TimeSpan.FromSeconds(1) };
+        var provider = new ClaudeUsageProvider(http, reader, NullLogger<ClaudeUsageProvider>.Instance);
+
+        var result = await provider.FetchAsync(CancellationToken.None);
+
+        result.Should().BeOfType<FetchResult.Failed>().Which.Note.Should().Be("Délai dépassé (1 s)");
+    }
+
+    private sealed class HangingHandler : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, cancellationToken);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+    }
 }
