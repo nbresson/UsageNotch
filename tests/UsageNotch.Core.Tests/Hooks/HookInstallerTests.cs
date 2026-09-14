@@ -94,17 +94,77 @@ public class HookInstallerTests
     }
 
     [Fact]
-    public void A_corrupt_settings_file_is_backed_up_and_replaced()
+    public void A_corrupt_settings_file_is_refused_and_left_untouched()
     {
         using var dir = new TempDir();
         var (installer, settingsPath, _) = Build(dir);
         Directory.CreateDirectory(Path.GetDirectoryName(settingsPath)!);
         File.WriteAllText(settingsPath, "{ corrupt");
 
+        var act = () => installer.Install();
+
+        act.Should().Throw<InvalidDataException>()
+            .WithMessage("settings.json de Claude Code illisible — corrigez ou supprimez le fichier, puis réessayez.");
+        File.ReadAllText(settingsPath).Should().Be("{ corrupt");
+        Directory.GetFiles(Path.GetDirectoryName(settingsPath)!, "settings.json.usagenotch-bak-*").Should().BeEmpty();
+        installer.IsInstalled().Should().BeFalse();
+    }
+
+    [Fact]
+    public void A_non_object_settings_file_is_refused()
+    {
+        using var dir = new TempDir();
+        var (installer, settingsPath, _) = Build(dir);
+        Directory.CreateDirectory(Path.GetDirectoryName(settingsPath)!);
+        File.WriteAllText(settingsPath, "[1,2]");
+
+        var act = () => installer.Install();
+
+        act.Should().Throw<InvalidDataException>();
+        File.ReadAllText(settingsPath).Should().Be("[1,2]");
+        Directory.GetFiles(Path.GetDirectoryName(settingsPath)!, "settings.json.usagenotch-bak-*").Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData("{ corrupt")]
+    [InlineData("[1,2]")]
+    public void Uninstall_on_an_unreadable_file_returns_a_message_and_writes_nothing(string content)
+    {
+        using var dir = new TempDir();
+        var (installer, settingsPath, _) = Build(dir);
+        Directory.CreateDirectory(Path.GetDirectoryName(settingsPath)!);
+        File.WriteAllText(settingsPath, content);
+
+        installer.Uninstall().Should().Contain("rien");
+
+        File.ReadAllText(settingsPath).Should().Be(content);
+        Directory.GetFiles(Path.GetDirectoryName(settingsPath)!).Should().ContainSingle();
+    }
+
+    [Fact]
+    public void Trailing_commas_and_comments_are_tolerated_and_non_ascii_paths_stay_readable()
+    {
+        using var dir = new TempDir();
+        var hookDir = Path.Combine(dir.Path, "Émile");
+        Directory.CreateDirectory(hookDir);
+        var hookExe = Path.Combine(hookDir, "UsageNotch.Hook.exe");
+        File.WriteAllText(hookExe, "stub");
+        var settingsPath = Path.Combine(dir.Path, ".claude", "settings.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(settingsPath)!);
+        File.WriteAllText(settingsPath, """
+        {
+          // préférences
+          "model": "opus",
+        }
+        """);
+        var installer = new HookInstaller(settingsPath, hookExe, new FakeTimeProvider(Now));
+
         installer.Install();
 
-        Load(settingsPath)["hooks"].Should().NotBeNull();
-        Directory.GetFiles(Path.GetDirectoryName(settingsPath)!, "settings.json.usagenotch-bak-*").Should().ContainSingle();
+        var text = File.ReadAllText(settingsPath);
+        text.Should().Contain("Émile");
+        Load(settingsPath)["model"]!.GetValue<string>().Should().Be("opus");
+        installer.IsInstalled().Should().BeTrue();
     }
 
     [Fact]

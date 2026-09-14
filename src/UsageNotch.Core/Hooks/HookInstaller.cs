@@ -1,3 +1,4 @@
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -31,7 +32,21 @@ public sealed class HookInstaller(string settingsPath, string hookExePath, TimeP
         ("SessionEnd", false, "session_end"),
     ];
 
-    private static readonly JsonSerializerOptions WriteOptions = new() { WriteIndented = true };
+    public const string UnreadableSettingsMessage =
+        "settings.json de Claude Code illisible — corrigez ou supprimez le fichier, puis réessayez.";
+
+    private static readonly JsonSerializerOptions WriteOptions = new()
+    {
+        WriteIndented = true,
+        // Garde lisibles les chemins non ASCII (dossier Émile) au lieu de les échapper.
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
+
+    private static readonly JsonDocumentOptions ReadOptions = new()
+    {
+        AllowTrailingCommas = true,
+        CommentHandling = JsonCommentHandling.Skip,
+    };
 
     public static string DefaultSettingsPath =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".claude", "settings.json");
@@ -44,15 +59,18 @@ public sealed class HookInstaller(string settingsPath, string hookExePath, TimeP
         try
         {
             var root = LoadObject();
-            return root["hooks"] is JsonObject hooks
+            return root is not null
+                && root["hooks"] is JsonObject hooks
                 && hooks.Any(kv => kv.Value is JsonArray array && array.Any(entry => entry is not null && IsOurs(entry)));
         }
-        catch (IOException)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
             return false;
         }
     }
 
+    /// <exception cref="FileNotFoundException">L'exécutable du hook est absent.</exception>
+    /// <exception cref="InvalidDataException">settings.json existe mais n'est pas un objet JSON lisible : rien n'est écrit.</exception>
     public string Install()
     {
         if (!File.Exists(HookExePath))
@@ -60,7 +78,7 @@ public sealed class HookInstaller(string settingsPath, string hookExePath, TimeP
             throw new FileNotFoundException("Exécutable hook introuvable", HookExePath);
         }
 
-        var root = LoadObject();
+        var root = LoadObject() ?? throw new InvalidDataException(UnreadableSettingsMessage);
         if (root["hooks"] is not JsonObject hooks)
         {
             hooks = new JsonObject();
@@ -102,6 +120,7 @@ public sealed class HookInstaller(string settingsPath, string hookExePath, TimeP
         if (!File.Exists(SettingsPath)) return "settings.json absent, rien à retirer";
 
         var root = LoadObject();
+        if (root is null) return "settings.json de Claude Code illisible, rien à retirer";
         if (root["hooks"] is not JsonObject hooks) return "aucun hook configuré, rien à retirer";
 
         var removed = 0;
@@ -165,16 +184,17 @@ public sealed class HookInstaller(string settingsPath, string hookExePath, TimeP
         }
     }
 
-    private JsonObject LoadObject()
+    /// <summary>Objet racine du fichier ; objet vide si le fichier est absent ; null s'il existe sans être un objet JSON lisible.</summary>
+    private JsonObject? LoadObject()
     {
+        if (!File.Exists(SettingsPath)) return new JsonObject();
         try
         {
-            if (!File.Exists(SettingsPath)) return new JsonObject();
-            return JsonNode.Parse(File.ReadAllText(SettingsPath)) as JsonObject ?? new JsonObject();
+            return JsonNode.Parse(File.ReadAllText(SettingsPath), documentOptions: ReadOptions) as JsonObject;
         }
         catch (JsonException)
         {
-            return new JsonObject();
+            return null;
         }
     }
 
