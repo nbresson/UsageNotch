@@ -32,6 +32,8 @@ public sealed record Settings
     public string AttentionSound { get; init; } = "Exclamation";
     public bool TrayIconVisible { get; init; } = true;
     public bool DebugLogging { get; init; }
+    /// <summary>false = le hook ne relance pas l'application (mis à false par Quitter, remis à true au démarrage manuel).</summary>
+    public bool AutoLaunch { get; init; } = true;
 
     public double PositionFor(ScreenEdge edge) => edge switch
     {

@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 using UsageNotch.Core.Settings;
 
 namespace UsageNotch.Core.Tests.Settings;
@@ -48,6 +49,7 @@ public class SettingsStoreTests
             AttentionSound = "Question",
             TrayIconVisible = false,
             DebugLogging = true,
+            AutoLaunch = false,
         }.WithPosition(ScreenEdge.Top, 0.25).WithPosition(ScreenEdge.Right, 0.9);
 
         store.Save(s);
@@ -123,14 +125,79 @@ public class SettingsStoreTests
     public void Null_values_in_a_hand_edited_file_fall_back_to_defaults()
     {
         using var dir = new TempDir();
-        File.WriteAllText(dir.File("settings.json"),
-            """{ "customTheme": null, "doneSound": null, "attentionSound": null, "edge": null, "scale": "big" }""");
+        const string original = """{ "customTheme": null, "doneSound": null, "attentionSound": null, "edge": null, "scale": "big" }""";
+        File.WriteAllText(dir.File("settings.json"), original);
 
         var s = Build(dir).Load();
 
         s.CustomTheme.Should().Be(Theme.Codenotch);
         s.DoneSound.Should().Be("Asterisk");
         s.AttentionSound.Should().Be("Exclamation");
+        var copy = Directory.GetFiles(dir.Path, "settings.json.corrupt-*").Should().ContainSingle().Which;
+        File.ReadAllText(copy).Should().Be(original);
+    }
+
+    [Fact]
+    public void A_malformed_file_is_preserved_before_defaults_are_written()
+    {
+        using var dir = new TempDir();
+        const string original = """{ "edge": "Diagonal", "port": 50000 }""";
+        File.WriteAllText(dir.File("settings.json"), original);
+        var time = new FakeTimeProvider(DateTimeOffset.FromUnixTimeSeconds(1_700_000_000));
+
+        var s = new SettingsStore(dir.File("settings.json"), NullLogger<SettingsStore>.Instance, time).Load();
+
+        s.Should().Be(new UsageNotch.Core.Settings.Settings());
+        File.ReadAllText(dir.File("settings.json.corrupt-1700000000")).Should().Be(original);
+    }
+
+    [Fact]
+    public void An_existing_corrupt_copy_is_never_overwritten()
+    {
+        using var dir = new TempDir();
+        var time = new FakeTimeProvider(DateTimeOffset.FromUnixTimeSeconds(1_700_000_000));
+        File.WriteAllText(dir.File("settings.json.corrupt-1700000000"), "older");
+        File.WriteAllText(dir.File("settings.json.corrupt-1700000000-1"), "older too");
+        File.WriteAllText(dir.File("settings.json"), "{ corrupt");
+
+        new SettingsStore(dir.File("settings.json"), NullLogger<SettingsStore>.Instance, time).Load();
+
+        File.ReadAllText(dir.File("settings.json.corrupt-1700000000")).Should().Be("older");
+        File.ReadAllText(dir.File("settings.json.corrupt-1700000000-1")).Should().Be("older too");
+        File.ReadAllText(dir.File("settings.json.corrupt-1700000000-2")).Should().Be("{ corrupt");
+    }
+
+    [Fact]
+    public void A_valid_file_leaves_no_corrupt_copy()
+    {
+        using var dir = new TempDir();
+        File.WriteAllText(dir.File("settings.json"), """{ "scale": 0.8, "edge": "Left" }""");
+
+        Build(dir).Load();
+
+        Directory.GetFiles(dir.Path, "*corrupt*").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void A_number_written_as_a_string_is_read()
+    {
+        using var dir = new TempDir();
+        File.WriteAllText(dir.File("settings.json"), """{ "scale": "0.8", "port": "50000" }""");
+
+        var s = Build(dir).Load();
+
+        s.Scale.Should().Be(0.8);
+        s.Port.Should().Be(50000);
+    }
+
+    [Fact]
+    public void Auto_launch_defaults_to_true_and_is_written_camel_case()
+    {
+        using var dir = new TempDir();
+
+        Build(dir).Load().AutoLaunch.Should().BeTrue();
+
+        File.ReadAllText(dir.File("settings.json")).Should().Contain("\"autoLaunch\": true");
     }
 
     [Fact]
