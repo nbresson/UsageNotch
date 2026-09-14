@@ -25,7 +25,7 @@
 - Port par défaut du récepteur de hooks : `48666`.
 - Commits fréquents, un par tâche au minimum, messages en anglais au format `type: description`, terminés par les lignes d'attribution :
   ```
-  Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+  Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
   Claude-Session: https://claude.ai/code/session_01DhmM4QvqWKwELXSCEZcweW
   ```
   Pour un message multi-lignes, écrire le message dans un fichier et utiliser `git commit -F <fichier>`.
@@ -2223,7 +2223,8 @@ public sealed class SessionStore(TimeProvider time) : ISessionActivity
             {
                 if (s.State == SessionState.Running && now - s.LastEvent > RunningStale)
                 {
-                    _sessions[id] = s with { State = SessionState.Idle };
+                    // L'horloge d'Idle part de la bascule : sinon la session serait retirée dans le même balayage.
+                    _sessions[id] = s with { State = SessionState.Idle, LastEvent = now };
                     changed = true;
                 }
             }
@@ -3519,7 +3520,8 @@ public sealed record Theme(
     public Theme Clamp()
     {
         var watch = Math.Clamp(ThresholdWatch, 0.05, 0.95);
-        var critical = Math.Clamp(ThresholdCritical, watch + 0.05, 1.0);
+        // Arrondi : 0.9 + 0.05 vaut 0.9500000000000001 en double.
+        var critical = Math.Clamp(ThresholdCritical, Math.Round(watch + 0.05, 6), 1.0);
         var d = Codenotch;
         return this with
         {
