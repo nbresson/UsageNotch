@@ -115,9 +115,14 @@ public sealed class HookListener(int port, SessionStore sessions, ILogger<HookLi
         int read;
         while ((read = await request.InputStream.ReadAsync(chunk)) > 0)
         {
+            // On draine le flux jusqu'à sa fin même après avoir atteint MaxBodyBytes, pour ne répondre
+            // qu'une fois la requête entièrement consommée ; seuls les octets jusqu'à la limite sont conservés.
+            if (total < MaxBodyBytes)
+            {
+                var toKeep = (int)Math.Min(read, MaxBodyBytes - total);
+                buffer.Write(chunk, 0, toKeep);
+            }
             total += read;
-            if (total > MaxBodyBytes) break;
-            buffer.Write(chunk, 0, read);
         }
         return Encoding.UTF8.GetString(buffer.ToArray());
     }

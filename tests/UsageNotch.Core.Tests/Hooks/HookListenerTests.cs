@@ -104,4 +104,19 @@ public class HookListenerTests : IAsyncLifetime
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         _sessions.Snapshot().Single().Id.Should().Be("unknown");
     }
+
+    [Fact]
+    public async Task An_oversized_body_keeps_its_session_and_gets_a_response()
+    {
+        var body = "{\"session_id\":\"s-big\",\"cwd\":\"C:\\\\big\",\"tool_name\":\"Write\",\"tool_input\":{\"content\":\""
+            + new string('a', 300_000) + "\"}}";
+
+        var response = await _client.PostAsync("event?e=running&ppid=1", Json(body));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await response.Content.ReadAsStringAsync()).Should().Be("ok");
+        var s = _sessions.Snapshot().Single();
+        s.Id.Should().Be("s-big");
+        s.State.Should().Be(SessionState.Running);
+    }
 }

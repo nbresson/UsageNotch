@@ -47,4 +47,25 @@ public class HookEventParserTests
         ev.ToolName.Should().Be("Read");
         ev.ToolCommand.Should().BeEmpty();
     }
+
+    [Fact]
+    public void A_truncated_body_keeps_the_fields_read_before_the_cut()
+    {
+        var body = "{\"session_id\":\"s-9\",\"cwd\":\"C:\\\\p\",\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"x\",\"content\":\""
+            + new string('a', 1000);
+
+        var ev = HookEventParser.Parse(HookEvent.Running, 0, body);
+
+        ev.SessionId.Should().Be("s-9");
+        ev.Cwd.Should().Be(@"C:\p");
+        ev.ToolName.Should().Be("Write");
+    }
+
+    [Fact]
+    public void A_body_cut_inside_the_session_id_string_gives_unknown()
+    {
+        var ev = HookEventParser.Parse(HookEvent.Running, 0, """{"session_id":"s-""");
+
+        ev.SessionId.Should().Be("unknown");
+    }
 }
