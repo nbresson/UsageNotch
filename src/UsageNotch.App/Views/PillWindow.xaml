@@ -1,0 +1,84 @@
+<Window x:Class="UsageNotch.App.Views.PillWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:UsageNotch.App.Controls"
+        xmlns:conv="clr-namespace:UsageNotch.App.Converters"
+        Title="UsageNotch — pilule"
+        WindowStyle="None" AllowsTransparency="True" Background="{x:Null}"
+        Topmost="True" ShowInTaskbar="False" ShowActivated="False" ResizeMode="NoResize"
+        Width="64" Height="136" UseLayoutRounding="True" SnapsToDevicePixels="True">
+  <Window.Resources>
+    <conv:HexBrushConverter x:Key="Hex" />
+    <conv:ActivityVisibilityConverter x:Key="Activity" />
+    <BooleanToVisibilityConverter x:Key="BoolVis" />
+    <Storyboard x:Key="Spin" RepeatBehavior="Forever">
+      <DoubleAnimation Storyboard.TargetName="SpinRotate" Storyboard.TargetProperty="Angle" From="0" To="360" Duration="0:0:1.2" />
+    </Storyboard>
+    <Storyboard x:Key="Pulse" RepeatBehavior="Forever" AutoReverse="True">
+      <DoubleAnimation Storyboard.TargetName="AttentionRing" Storyboard.TargetProperty="Opacity" From="0.4" To="1" Duration="0:0:1" />
+    </Storyboard>
+  </Window.Resources>
+
+  <Window.ContextMenu>
+    <ContextMenu>
+      <MenuItem Header="Rafraîchir maintenant" Command="{Binding RefreshCommand}" />
+      <MenuItem Header="Garder la carte ouverte" IsChecked="{Binding Locked, Mode=OneWay}" Command="{Binding ToggleLockCommand}" />
+      <Separator />
+      <MenuItem Header="Réglages…" Click="OnSettingsClick" />
+      <MenuItem Header="Quitter" Click="OnQuitClick" />
+    </ContextMenu>
+  </Window.ContextMenu>
+
+  <Canvas x:Name="Root">
+    <Path x:Name="BandPath" Visibility="Collapsed"
+          Fill="{Binding Cell.BandColor, Converter={StaticResource Hex}}" />
+
+    <Canvas x:Name="PillLayer">
+      <Canvas.RenderTransform>
+        <TranslateTransform x:Name="Slide" />
+      </Canvas.RenderTransform>
+
+      <Path x:Name="PillPath" StrokeThickness="1"
+            Fill="{Binding Theme.PillBackground, Converter={StaticResource Hex}}"
+            Stroke="{Binding Theme.PillBorder, Converter={StaticResource Hex}}" />
+
+      <Grid x:Name="Body">
+        <StackPanel x:Name="BodyStack" HorizontalAlignment="Center" VerticalAlignment="Center">
+          <StackPanel.LayoutTransform>
+            <ScaleTransform x:Name="BodyScale" ScaleX="1" ScaleY="1" />
+          </StackPanel.LayoutTransform>
+
+          <Grid x:Name="RingHost" Width="44" Height="44" Margin="0,0,0,4"
+                Visibility="{Binding Cell.ShowRing, Converter={StaticResource BoolVis}}">
+            <controls:ProgressRing RingThickness="5"
+                                   TargetFraction="{Binding Cell.RingFraction}"
+                                   RingBrush="{Binding Cell.RingColor, Converter={StaticResource Hex}}"
+                                   TrackBrush="{Binding Cell.TrackColor, Converter={StaticResource Hex}}" />
+            <Path x:Name="RunningArc" Width="44" Height="44" Stretch="None"
+                  Data="M 22,8 A 14,14 0 0 1 36,22"
+                  StrokeThickness="2.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                  RenderTransformOrigin="0.5,0.5"
+                  Stroke="{Binding Cell.ActivityColor, Converter={StaticResource Hex}}"
+                  Visibility="{Binding Cell.Activity, Converter={StaticResource Activity}, ConverterParameter=Running}">
+              <Path.RenderTransform>
+                <RotateTransform x:Name="SpinRotate" />
+              </Path.RenderTransform>
+            </Path>
+            <Ellipse x:Name="AttentionRing" Width="28" Height="28" StrokeThickness="2.5"
+                     Stroke="{Binding Cell.ActivityColor, Converter={StaticResource Hex}}"
+                     Visibility="{Binding Cell.Activity, Converter={StaticResource Activity}, ConverterParameter=Attention}" />
+            <Ellipse Width="8" Height="8"
+                     Fill="{Binding Cell.ActivityColor, Converter={StaticResource Hex}}"
+                     Visibility="{Binding Cell.Activity, Converter={StaticResource Activity}, ConverterParameter=Done}" />
+          </Grid>
+
+          <TextBlock x:Name="PercentText" FontFamily="Segoe UI" FontSize="14" FontWeight="SemiBold"
+                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                     Text="{Binding Cell.PercentText}"
+                     Foreground="{Binding Cell.TextColor, Converter={StaticResource Hex}}"
+                     Visibility="{Binding Cell.ShowPercent, Converter={StaticResource BoolVis}}" />
+        </StackPanel>
+      </Grid>
+    </Canvas>
+  </Canvas>
+</Window>

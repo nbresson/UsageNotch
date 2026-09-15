@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using UsageNotch.App.Interop;
+using UsageNotch.App.Views;
 using UsageNotch.Core.Hooks;
 using UsageNotch.Core.Logging;
 using UsageNotch.Core.Sessions;
@@ -59,6 +60,7 @@ public static class AppHost
         s.AddSingleton(sp => new HookInstaller(paths.ClaudeSettingsFile, paths.HookExe, sp.GetRequiredService<TimeProvider>()));
 
         s.AddSingleton<MonitorService>();
+        s.AddSingleton<NotchPlacer>();
         s.AddSingleton<HoverController>();
         s.AddSingleton<IUiDispatcher>(_ => new WpfDispatcher(Application.Current.Dispatcher));
         s.AddSingleton<ISessionFocus, TerminalFocus>();
