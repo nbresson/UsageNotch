@@ -13,12 +13,21 @@
       <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="PreferencesStyles.xaml" />
       </ResourceDictionary.MergedDictionaries>
-      <!-- Une page par type de ViewModel ; les Tasks 10 et 11 ajoutent les autres modèles ici. -->
+      <!-- Une page par type de ViewModel. -->
       <DataTemplate DataType="{x:Type pref:AppearancePageViewModel}">
         <views:AppearancePage />
       </DataTemplate>
       <DataTemplate DataType="{x:Type pref:PositionPageViewModel}">
         <views:PositionPage />
+      </DataTemplate>
+      <DataTemplate DataType="{x:Type pref:BehaviorPageViewModel}">
+        <views:BehaviorPage />
+      </DataTemplate>
+      <DataTemplate DataType="{x:Type pref:ClaudeCodePageViewModel}">
+        <views:ClaudeCodePage />
+      </DataTemplate>
+      <DataTemplate DataType="{x:Type pref:AboutPageViewModel}">
+        <views:AboutPage />
       </DataTemplate>
     </ResourceDictionary>
   </Window.Resources>

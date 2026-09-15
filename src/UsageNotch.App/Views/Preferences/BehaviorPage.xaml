@@ -1,0 +1,53 @@
+<UserControl x:Class="UsageNotch.App.Views.Preferences.BehaviorPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <UserControl.Resources>
+    <ResourceDictionary Source="PreferencesStyles.xaml" />
+  </UserControl.Resources>
+
+  <StackPanel>
+    <TextBlock Text="Comportement" Style="{StaticResource PageTitle}" />
+
+    <TextBlock Text="Carte de détail" Style="{StaticResource SectionTitle}" />
+    <CheckBox Content="Ouvrir la carte 5 s quand une session se termine ou attend une réponse"
+              IsChecked="{Binding AutoOpenCard}" AutomationProperties.AutomationId="AutoOpenCard" />
+
+    <TextBlock Text="Sons" Style="{StaticResource SectionTitle}" />
+    <CheckBox Content="Jouer un son lors de ces transitions" IsChecked="{Binding SoundEnabled}"
+              AutomationProperties.AutomationId="SoundEnabled" />
+    <Grid Margin="0,6,0,0">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="200" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="38" />
+        <RowDefinition Height="38" />
+      </Grid.RowDefinitions>
+
+      <TextBlock Text="Session terminée" Style="{StaticResource FieldLabel}" />
+      <ComboBox Grid.Column="1" VerticalAlignment="Center" AutomationProperties.AutomationId="DoneSound" AutomationProperties.Name="Son de session terminée"
+                ItemsSource="{Binding Sounds}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding DoneSound}" />
+      <Button Grid.Column="2" Content="Écouter" Margin="10,0,0,0" VerticalAlignment="Center"
+              Command="{Binding PlayDoneSoundCommand}" AutomationProperties.AutomationId="PlayDoneSound" />
+
+      <TextBlock Grid.Row="1" Text="Session en attente" Style="{StaticResource FieldLabel}" />
+      <ComboBox Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" AutomationProperties.AutomationId="AttentionSound" AutomationProperties.Name="Son de session en attente"
+                ItemsSource="{Binding Sounds}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding AttentionSound}" />
+      <Button Grid.Row="1" Grid.Column="2" Content="Écouter" Margin="10,0,0,0" VerticalAlignment="Center"
+              Command="{Binding PlayAttentionSoundCommand}" AutomationProperties.AutomationId="PlayAttentionSound" />
+    </Grid>
+
+    <TextBlock Text="Démarrage" Style="{StaticResource SectionTitle}" />
+    <CheckBox Content="Démarrer avec Windows" IsChecked="{Binding AutoStartEnabled}" IsEnabled="{Binding AutoStartAvailable}"
+              AutomationProperties.AutomationId="AutoStart" />
+    <TextBlock Text="{Binding AutoStartNote}" Style="{StaticResource NoteText}" />
+    <TextBlock Text="{Binding AutoStartError}" Style="{StaticResource ErrorText}" />
+
+    <TextBlock Text="Icône de notification" Style="{StaticResource SectionTitle}" />
+    <CheckBox Content="Afficher l'icône dans la zone de notification" IsChecked="{Binding TrayIconVisible}"
+              IsEnabled="{Binding TrayIconEditable}" AutomationProperties.AutomationId="TrayIconVisible" />
+    <TextBlock Text="{Binding TrayIconNote}" Style="{StaticResource NoteText}" />
+  </StackPanel>
+</UserControl>
