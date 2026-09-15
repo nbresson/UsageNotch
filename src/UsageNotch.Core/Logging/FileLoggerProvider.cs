@@ -18,6 +18,7 @@ public sealed class FileLoggerProvider : ILoggerProvider
     private readonly TimeProvider _time;
     private readonly Func<LogLevel> _minimumLevel;
     private readonly object _gate = new();
+    private DateTime _purgedDay;
 
     public FileLoggerProvider(string directory, TimeProvider time, Func<LogLevel> minimumLevel)
     {
@@ -27,6 +28,7 @@ public sealed class FileLoggerProvider : ILoggerProvider
         try
         {
             Directory.CreateDirectory(directory);
+            _purgedDay = time.GetUtcNow().UtcDateTime.Date;
             Purge();
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
@@ -60,6 +62,12 @@ public sealed class FileLoggerProvider : ILoggerProvider
         {
             lock (_gate)
             {
+                // L'application peut tourner plusieurs jours : la rétention s'applique aussi au changement de jour.
+                if (now.UtcDateTime.Date != _purgedDay)
+                {
+                    _purgedDay = now.UtcDateTime.Date;
+                    Purge();
+                }
                 File.AppendAllText(Path.Combine(_directory, FileNameFor(now)), line.ToString(), Utf8NoBom);
             }
         }

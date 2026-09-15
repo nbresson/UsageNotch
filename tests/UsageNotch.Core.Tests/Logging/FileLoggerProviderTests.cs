@@ -49,6 +49,25 @@ public class FileLoggerProviderTests
     }
 
     [Fact]
+    public void Old_files_are_also_purged_when_the_day_changes_while_running()
+    {
+        using var dir = new TempDir();
+        File.WriteAllText(Path.Combine(dir.Path, "usagenotch-20260908.log"), "6 jours au démarrage");
+        var time = new FakeTimeProvider(Now);
+        using var provider = new FileLoggerProvider(dir.Path, time, () => LogLevel.Information);
+        var logger = provider.CreateLogger("UsageNotch.Test");
+
+        logger.LogInformation("jour 1");
+        File.Exists(Path.Combine(dir.Path, "usagenotch-20260908.log")).Should().BeTrue();
+
+        time.Advance(TimeSpan.FromDays(2));
+        logger.LogInformation("jour 3");
+
+        File.Exists(Path.Combine(dir.Path, "usagenotch-20260908.log")).Should().BeFalse();
+        File.Exists(Path.Combine(dir.Path, "usagenotch-20260916.log")).Should().BeTrue();
+    }
+
+    [Fact]
     public void Old_log_files_are_purged_and_other_files_kept()
     {
         using var dir = new TempDir();
