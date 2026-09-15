@@ -17,6 +17,9 @@
       <DataTemplate DataType="{x:Type pref:AppearancePageViewModel}">
         <views:AppearancePage />
       </DataTemplate>
+      <DataTemplate DataType="{x:Type pref:PositionPageViewModel}">
+        <views:PositionPage />
+      </DataTemplate>
     </ResourceDictionary>
   </Window.Resources>
 

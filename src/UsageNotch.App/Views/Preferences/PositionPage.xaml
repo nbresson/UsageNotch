@@ -1,0 +1,75 @@
+<UserControl x:Class="UsageNotch.App.Views.Preferences.PositionPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:UsageNotch.App.Controls"
+             xmlns:pref="clr-namespace:UsageNotch.Presentation.Preferences;assembly=UsageNotch.Presentation">
+  <UserControl.Resources>
+    <ResourceDictionary Source="PreferencesStyles.xaml" />
+  </UserControl.Resources>
+
+  <StackPanel>
+    <TextBlock Text="Position" Style="{StaticResource PageTitle}" />
+
+    <TextBlock Text="Écran d'ancrage" Style="{StaticResource SectionTitle}" />
+    <Border HorizontalAlignment="Left" Padding="4" CornerRadius="6" BorderBrush="#D6D6D6" BorderThickness="1" Background="#FAFAFA">
+      <controls:MonitorMapView AutomationProperties.AutomationId="MonitorMap" AutomationProperties.Name="Miniature des écrans"
+                               Model="{Binding Map}" SelectCommand="{Binding SelectMonitorCommand}" />
+    </Border>
+    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+      <ComboBox MinWidth="400" AutomationProperties.AutomationId="Monitor" AutomationProperties.Name="Écran d'ancrage"
+                ItemsSource="{Binding Monitors}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                SelectedValue="{Binding MonitorKey}" />
+      <Button Content="Actualiser" Margin="10,0,0,0" Command="{Binding RefreshMonitorsCommand}"
+              AutomationProperties.AutomationId="RefreshMonitors" />
+    </StackPanel>
+
+    <TextBlock Text="Bord et position" Style="{StaticResource SectionTitle}" />
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="200" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="38" />
+        <RowDefinition Height="38" />
+      </Grid.RowDefinitions>
+
+      <TextBlock Text="Bord" Style="{StaticResource FieldLabel}" />
+      <ComboBox Grid.Column="1" VerticalAlignment="Center" AutomationProperties.AutomationId="Edge" AutomationProperties.Name="Bord"
+                ItemsSource="{Binding Edges}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding Edge}" />
+
+      <TextBlock Grid.Row="1" Text="Position le long du bord" Style="{StaticResource FieldLabel}" />
+      <Slider Grid.Row="1" Grid.Column="1" AutomationProperties.AutomationId="Position" AutomationProperties.Name="Position le long du bord"
+              Minimum="0" Maximum="1" TickFrequency="0.01" Value="{Binding Position}" />
+      <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+        <TextBlock Text="{Binding PositionText}" Width="48" Margin="12,0,0,0" VerticalAlignment="Center" />
+        <Button Content="Recentrer" Command="{Binding RecenterCommand}" AutomationProperties.AutomationId="Recenter" />
+      </StackPanel>
+    </Grid>
+    <TextBlock Text="{x:Static pref:PositionPageViewModel.DragHint}" Style="{StaticResource NoteText}" />
+
+    <TextBlock Text="Visibilité" Style="{StaticResource SectionTitle}" />
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="200" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="38" />
+        <RowDefinition Height="38" />
+      </Grid.RowDefinitions>
+
+      <TextBlock Text="Mode" Style="{StaticResource FieldLabel}" />
+      <ComboBox Grid.Column="1" VerticalAlignment="Center" AutomationProperties.AutomationId="Visibility" AutomationProperties.Name="Mode de visibilité"
+                ItemsSource="{Binding Visibilities}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding Visibility}" />
+
+      <TextBlock Grid.Row="1" Text="Épaisseur de la bande repliée" Style="{StaticResource FieldLabel}" />
+      <Slider Grid.Row="1" Grid.Column="1" AutomationProperties.AutomationId="FoldedThickness" AutomationProperties.Name="Épaisseur de la bande repliée"
+              Minimum="2" Maximum="12" TickFrequency="1" Value="{Binding FoldedThickness}" IsEnabled="{Binding FoldedThicknessEnabled}" />
+      <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding FoldedThicknessText}" Margin="12,0,0,0" VerticalAlignment="Center" />
+    </Grid>
+    <TextBlock Text="{Binding VisibilityHint}" Style="{StaticResource NoteText}" />
+  </StackPanel>
+</UserControl>
