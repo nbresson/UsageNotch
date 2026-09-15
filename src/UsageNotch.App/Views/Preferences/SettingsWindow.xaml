@@ -71,7 +71,7 @@
         </Grid>
       </Border>
 
-      <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,4,20,20" Focusable="False">
+      <ScrollViewer x:Name="PageScroller" Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,4,20,20" Focusable="False">
         <ContentControl Content="{Binding SelectedPage.ViewModel}" Focusable="False" />
       </ScrollViewer>
     </Grid>

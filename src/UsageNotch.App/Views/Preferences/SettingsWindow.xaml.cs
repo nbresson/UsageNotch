@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -21,6 +22,7 @@ public partial class SettingsWindow : Window
         _picker = picker;
         InitializeComponent();
         DataContext = vm;
+        _vm.PropertyChanged += OnViewModelChanged;
 
         SourceInitialized += (_, _) =>
         {
@@ -29,8 +31,18 @@ public partial class SettingsWindow : Window
         };
         Activated += (_, _) => _vm.Position.RefreshMonitorsCommand.Execute(null);
         Deactivated += (_, _) => _vm.Flush();
-        Closed += (_, _) => _picker.Owner = 0;
+        Closed += (_, _) =>
+        {
+            _vm.PropertyChanged -= OnViewModelChanged;
+            _picker.Owner = 0;
+        };
         PreviewKeyDown += OnPreviewKeyDown;
+    }
+
+    /// <summary>Chaque page s'ouvre en haut : le défilement partagé ne garde pas la position de la page précédente.</summary>
+    private void OnViewModelChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SettingsViewModel.SelectedPage)) PageScroller.ScrollToTop();
     }
 
     private const double WorkAreaMargin = 24;
