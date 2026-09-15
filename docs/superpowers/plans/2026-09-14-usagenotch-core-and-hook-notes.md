@@ -1,4 +1,8 @@
-# UsageNotch Plan 1 — Notes d'exécution
+# UsageNotch — journal de bord (Plans 1 à 3 et chantiers suivants)
+
+Pour reprendre le projet, commencer par `docs/REPRISE.md`.
+
+## Plan 1 — Notes d'exécution
 
 Exécuté le 2026-09-14 sur la branche `feat/core-and-hook`, par sous-agents avec relecture par tâche et relecture finale
 de toute la branche. Résultat : 216 tests, compilation sans avertissement.
@@ -85,7 +89,9 @@ Chaque ligne : décision, raison, coût si elle est fausse.
 - Une modification manuelle illisible de `settings.json` est ignorée et journalisée plutôt que de réinitialiser les réglages.
 - L'icône de la zone de notification est posée via `TaskbarIcon.Icon` plutôt que `IconSource`, qui n'accepte pas un bitmap en mémoire dans H.NotifyIcon 2.4.1.
 
-### Reste à faire (Plan 3)
+### Reste à faire (Plan 3) — réalisé
+
+Livré par le Plan 3 (voir « Plan 3 — fenêtre de réglages ») ; les notes ci-dessous sont gardées pour l'historique.
 
 - Fenêtre de réglages en cinq pages avec aperçu en direct (spec §7).
 - Branchement prévu par la revue finale : enregistrer depuis le thread UI via `SettingsStore.Save` (anti-rebond pour les curseurs), aperçu construit avec `PillPresenter`, `Theme.ForPreset`, `PillShapeBuilder` et `ProgressRing` sur un brouillon de réglages, fenêtre unique appartenant à `NotchShell` ouverte par le menu, `HookListener.OpenSettingsRequested` et le clic gauche sur l'icône. Un changement de port demande un redémarrage ou un `HookListener.Rebind`. Exposer la dernière erreur de relecture du watcher.

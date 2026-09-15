@@ -98,7 +98,7 @@ Organisation :
 | `src/UsageNotch.App` | Application WPF : fenêtres, interop Win32, icône de notification |
 | `tests/` | Tests xUnit de Core et Presentation |
 
-La conception et les plans d'implémentation sont dans [`docs/superpowers`](docs/superpowers) (en français).
+La conception et les plans d'implémentation sont dans [`docs/superpowers`](docs/superpowers) (en français). Pour reprendre le développement : [`docs/REPRISE.md`](docs/REPRISE.md) (état, pièges connus, backlog).
 
 ## Licence
 
