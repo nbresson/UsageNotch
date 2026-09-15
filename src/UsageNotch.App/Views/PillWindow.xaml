@@ -17,6 +17,9 @@
     <Storyboard x:Key="Pulse" RepeatBehavior="Forever" AutoReverse="True">
       <DoubleAnimation Storyboard.TargetName="AttentionRing" Storyboard.TargetProperty="Opacity" From="0.4" To="1" Duration="0:0:1" />
     </Storyboard>
+    <Storyboard x:Key="BandPulse" RepeatBehavior="Forever" AutoReverse="True">
+      <DoubleAnimation Storyboard.TargetName="BandPath" Storyboard.TargetProperty="Opacity" From="0.4" To="1" Duration="0:0:1" />
+    </Storyboard>
   </Window.Resources>
 
   <Window.ContextMenu>

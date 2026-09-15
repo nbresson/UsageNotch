@@ -28,6 +28,9 @@ public partial class PillWindow : Window
     private bool _closed;
     private bool _dragging;
     private bool _reapplyPending;
+    private bool _spinRunning;
+    private bool _pulseRunning;
+    private bool _bandPulseRunning;
     private double _dragFraction;
     private double _thicknessDip = PillMetrics.Thickness;
 
@@ -43,11 +46,8 @@ public partial class PillWindow : Window
         DataContext = vm;
 
         SourceInitialized += OnSourceInitialized;
-        Loaded += (_, _) =>
-        {
-            ((Storyboard)Resources["Spin"]).Begin(this, isControllable: true);
-            ((Storyboard)Resources["Pulse"]).Begin(this, isControllable: true);
-        };
+        Loaded += (_, _) => UpdateAnimations();
+        IsVisibleChanged += (_, _) => UpdateAnimations();
         MouseEnter += (_, _) => { if (!_dragging) _vm.PointerEnteredPill(); };
         MouseLeave += (_, _) => { if (!_dragging) _vm.PointerLeftPill(); };
         PreviewMouseLeftButtonDown += OnLeftButtonDown;
@@ -115,6 +115,7 @@ public partial class PillWindow : Window
                 break;
             case nameof(NotchViewModel.Cell):
                 BodyStack.Opacity = _vm.Cell.Dimmed ? 0.5 : 1.0;
+                UpdateAnimations();
                 break;
         }
     }
@@ -163,6 +164,7 @@ public partial class PillWindow : Window
         WindowStyles.MoveResize(Handle, placement.PillRect);
         UpdateFold(animated: false);
         PlacementChanged?.Invoke();
+        UpdateAnimations();
     }
 
     private void UpdateFold(bool animated)
@@ -180,10 +182,15 @@ public partial class PillWindow : Window
             Slide.X = target.X;
             Slide.Y = target.Y;
             PillLayer.Visibility = folded ? Visibility.Hidden : Visibility.Visible;
+            UpdateAnimations();
             return;
         }
 
-        if (!folded) PillLayer.Visibility = Visibility.Visible;
+        if (!folded)
+        {
+            PillLayer.Visibility = Visibility.Visible;
+        }
+        UpdateAnimations();
         var ease = new CubicEase { EasingMode = EasingMode.EaseInOut };
         var x = new DoubleAnimation(target.X, FoldAnimation) { EasingFunction = ease };
         var y = new DoubleAnimation(target.Y, FoldAnimation) { EasingFunction = ease };
@@ -192,10 +199,34 @@ public partial class PillWindow : Window
             x.Completed += (_, _) =>
             {
                 if (_vm.Settings.Visibility == VisibilityMode.Folded && !_vm.Unfolded) PillLayer.Visibility = Visibility.Hidden;
+                UpdateAnimations();
             };
         }
         Slide.BeginAnimation(TranslateTransform.XProperty, x);
         Slide.BeginAnimation(TranslateTransform.YProperty, y);
+    }
+
+    /// <summary>
+    /// Démarre ou arrête les animations en boucle selon ce qui est réellement affiché : une animation Forever sur une
+    /// cible masquée consomme du processeur en permanence. Un storyboard déjà lancé n'est jamais relancé.
+    /// </summary>
+    private void UpdateAnimations()
+    {
+        var activity = _vm.Cell.Activity;
+        var shown = IsVisible && PillLayer.Visibility == Visibility.Visible;
+        SetStoryboard("Spin", ref _spinRunning, shown && activity == ActivityKind.Running);
+        SetStoryboard("Pulse", ref _pulseRunning, shown && activity == ActivityKind.Attention);
+        SetStoryboard("BandPulse", ref _bandPulseRunning,
+            IsVisible && BandPath.Visibility == Visibility.Visible && activity == ActivityKind.Attention);
+    }
+
+    private void SetStoryboard(string key, ref bool running, bool desired)
+    {
+        if (running == desired) return;
+        var storyboard = (Storyboard)Resources[key];
+        if (desired) storyboard.Begin(this, isControllable: true);
+        else storyboard.Stop(this);
+        running = desired;
     }
 
     private void OnLeftButtonDown(object sender, MouseButtonEventArgs e)
