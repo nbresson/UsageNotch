@@ -2,6 +2,10 @@
 
 Une petite « encoche » collée au bord de l'écran Windows qui affiche l'usage de vos quotas Claude et l'état de vos sessions Claude Code, sans ouvrir de fenêtre.
 
+<p align="center">
+  <img src="docs/images/usagenotch-card.png" alt="La pilule au bord gauche de l'écran et sa carte de détail : usage de la session et des fenêtres hebdomadaires, sessions Claude Code en cours et en attente" width="412">
+</p>
+
 Inspiré de [codenotch](https://github.com/vinzdg/codenotch) (MIT), réécrit en C# / .NET 10 / WPF pour corriger ce qui gênait sous Windows : animations lentes, zone invisible qui bloquait les clics, peu de personnalisation, pas de mode discret, pas de choix de l'écran.
 
 ## Fonctionnalités
@@ -19,6 +23,10 @@ Inspiré de [codenotch](https://github.com/vinzdg/codenotch) (MIT), réécrit en
 - **Démarrer avec Windows**, diagnostic intégré, journaux quotidiens conservés 7 jours.
 
 Interface en français.
+
+<p align="center">
+  <img src="docs/images/usagenotch-settings.png" alt="La fenêtre de réglages, page Apparence, avec l'aperçu des trois niveaux d'usage et les couleurs du thème" width="800">
+</p>
 
 ## Prérequis
 
