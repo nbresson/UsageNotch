@@ -110,6 +110,19 @@ public sealed class PositionPageViewModel : ObservableObject, IDisposable
 
     public bool FoldedThicknessEnabled => Visibility == VisibilityMode.Folded;
 
+    public bool HideInFullscreen
+    {
+        get => _draft.Value.HideInFullscreen;
+        set
+        {
+            if (value == HideInFullscreen) return;
+            _draft.Edit(s => s with { HideInFullscreen = value });
+        }
+    }
+
+    /// <summary>En mode Masqué, la pilule est déjà absente : la case n'a pas d'effet.</summary>
+    public bool HideInFullscreenEditable => Visibility != VisibilityMode.Hidden;
+
     public IRelayCommand RecenterCommand { get; }
 
     public IRelayCommand<string> SelectMonitorCommand { get; }

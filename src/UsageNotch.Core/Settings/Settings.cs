@@ -33,6 +33,8 @@ public sealed record Settings
     public string DoneSound { get; init; } = "Asterisk";
     public string AttentionSound { get; init; } = "Exclamation";
     public bool TrayIconVisible { get; init; } = true;
+    /// <summary>Masque la pilule et suspend carte et son quand une application est en plein écran sur l'écran de la pilule.</summary>
+    public bool HideInFullscreen { get; init; } = true;
     /// <summary>Notification Windows quand une fenêtre de limite franchit <see cref="NotifyThreshold"/>, puis 100 %.</summary>
     public bool ThresholdNotifications { get; init; } = true;
     /// <summary>Premier seuil d'alerte, de <see cref="NotifyThresholdMin"/> à <see cref="NotifyThresholdMax"/>.</summary>

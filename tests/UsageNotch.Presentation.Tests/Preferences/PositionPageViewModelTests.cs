@@ -155,6 +155,22 @@ public class PositionPageViewModelTests
     }
 
     [Fact]
+    public void Hiding_in_fullscreen_edits_the_draft_and_does_not_apply_in_hidden_mode()
+    {
+        var (f, vm, _) = Create();
+        using var _f = f;
+
+        vm.HideInFullscreen.Should().BeTrue();
+        vm.HideInFullscreenEditable.Should().BeTrue();
+
+        vm.HideInFullscreen = false;
+        f.Draft.Value.HideInFullscreen.Should().BeFalse();
+
+        vm.Visibility = VisibilityMode.Hidden;
+        vm.HideInFullscreenEditable.Should().BeFalse();
+    }
+
+    [Fact]
     public void Refreshing_monitors_rebuilds_the_list_only_when_it_changed()
     {
         var (f, vm, monitors) = Create();

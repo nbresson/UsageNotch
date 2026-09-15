@@ -46,6 +46,8 @@ public sealed class NotchViewModel : ObservableObject, IDisposable
     private bool _cardVisible;
     private bool _unfolded;
     private bool _locked;
+    private bool _foregroundFullscreen;
+    private bool _fullscreenActive;
     private string _trayText = "";
 
     public NotchViewModel(
@@ -106,11 +108,22 @@ public sealed class NotchViewModel : ObservableObject, IDisposable
     public bool Locked { get => _locked; private set => SetProperty(ref _locked, value); }
     public string TrayText { get => _trayText; private set => SetProperty(ref _trayText, value); }
 
+    /// <summary>Une application est en plein écran sur l'écran de la pilule et le réglage le permet : pilule et carte masquées, annonces suspendues.</summary>
+    public bool FullscreenActive { get => _fullscreenActive; private set => SetProperty(ref _fullscreenActive, value); }
+
     public IRelayCommand RefreshCommand { get; }
     public IRelayCommand ToggleLockCommand { get; }
     public IRelayCommand PeekCommand { get; }
     public IRelayCommand<string> DismissSessionCommand { get; }
     public IRelayCommand<string> FocusSessionCommand { get; }
+
+    /// <summary>Appelé par l'App (thread UI) quand la fenêtre au premier plan entre en plein écran sur l'écran de la pilule ou en sort.</summary>
+    public void SetForegroundFullscreen(bool fullscreen)
+    {
+        if (_disposed || fullscreen == _foregroundFullscreen) return;
+        _foregroundFullscreen = fullscreen;
+        UpdateFullscreen();
+    }
 
     public void PointerEnteredPill() => _hover.PointerEnteredPill();
     public void PointerLeftPill() => _hover.PointerLeftPill();
@@ -133,7 +146,8 @@ public sealed class NotchViewModel : ObservableObject, IDisposable
     private void OnSessionsChanged()
     {
         var transitions = _watcher.Observe(_sessions.Snapshot());
-        if (transitions.Count > 0)
+        // En plein écran, les transitions sont consommées sans annonce : elles ne seront pas rejouées ensuite.
+        if (transitions.Count > 0 && !FullscreenActive)
         {
             var s = _settingsStore.Current;
             if (s.AutoOpenCard) _hover.Peek();
@@ -153,15 +167,23 @@ public sealed class NotchViewModel : ObservableObject, IDisposable
         var snapshot = _usage.Current;
 
         Settings = settings;
+        UpdateFullscreen();
         Theme = theme;
         Cell = PillPresenter.Cell(snapshot, _provider.HeadlineWindowId, _sessions.Aggregate, theme, settings.CellContent, now);
         Card = CardPresenter.Build(snapshot, _provider.DisplayName, _sessions.Snapshot(), theme, now, _zone);
         TrayText = $"UsageNotch — {_provider.DisplayName} {Cell.PercentText}";
     }
 
+    private void UpdateFullscreen()
+    {
+        var s = _settingsStore.Current;
+        FullscreenActive = _foregroundFullscreen && s.HideInFullscreen && s.Visibility != VisibilityMode.Hidden;
+        SyncHover();
+    }
+
     private void SyncHover()
     {
-        CardVisible = _hover.CardVisible;
+        CardVisible = _hover.CardVisible && !FullscreenActive;
         Unfolded = _hover.Unfolded;
         Locked = _hover.Locked;
     }

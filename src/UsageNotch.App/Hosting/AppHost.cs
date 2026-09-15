@@ -61,6 +61,7 @@ public static class AppHost
         s.AddSingleton(sp => new HookInstaller(paths.ClaudeSettingsFile, paths.HookExe, sp.GetRequiredService<TimeProvider>()));
 
         s.AddSingleton<MonitorService>();
+        s.AddSingleton<FullscreenWatcher>();
         s.AddSingleton<NotchPlacer>();
         s.AddSingleton<HoverController>();
         s.AddSingleton<IUiDispatcher>(_ => new WpfDispatcher(Application.Current.Dispatcher));

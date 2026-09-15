@@ -1,5 +1,6 @@
 using System.Windows;
 using Microsoft.Extensions.Logging;
+using UsageNotch.App.Interop;
 using UsageNotch.App.Tray;
 using UsageNotch.App.Views;
 using UsageNotch.Core.Hooks;
@@ -20,6 +21,7 @@ public sealed class NotchShell(
     SettingsFileWatcher watcher,
     SettingsWindowHost settingsWindow,
     ThresholdNotifications thresholds,
+    FullscreenWatcher fullscreen,
     IUiDispatcher ui,
     ILogger<NotchShell> logger) : IDisposable
 {
@@ -35,6 +37,9 @@ public sealed class NotchShell(
 
         _pill = new PillWindow(viewModel, placer, settings, QuitAsync, OpenSettings);
         _card = new CardWindow(viewModel, placer, _pill);
+        // L'écran de la pilule est celui de son dernier placement ; un changement d'écran relance l'évaluation.
+        fullscreen.Start(() => _pill.Placement?.Monitor.Bounds);
+        _pill.PlacementChanged += fullscreen.Evaluate;
         if (settings.Current.Visibility != VisibilityMode.Hidden) _pill.Show();
 
         tray.Start(QuitAsync, OpenSettings);
@@ -58,6 +63,8 @@ public sealed class NotchShell(
         thresholds.Dispose();
         watcher.Dispose();
         tray.Dispose();
+        if (_pill is not null) _pill.PlacementChanged -= fullscreen.Evaluate;
+        fullscreen.Dispose();
         _card?.Close();
         _pill?.Close();
         viewModel.Dispose();

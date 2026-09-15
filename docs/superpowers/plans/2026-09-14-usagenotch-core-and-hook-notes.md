@@ -184,3 +184,13 @@ La spec plaçait les notifications système de seuil hors de la première versio
 - Réglages : page Comportement › « Alertes d'usage » (case `thresholdNotifications`, curseur du seuil).
 - La description du fichier et le nom de produit valent « UsageNotch » : c'est le nom que Windows affiche sur les notifications.
 
+## Masquage en plein écran (extension après le Plan 3)
+
+La spec plaçait le masquage automatique en plein écran hors de la première version ; il est ajouté ainsi :
+
+- Plein écran : la fenêtre au premier plan couvre tout l'écran de la pilule, barre des tâches comprise, sans barre de titre (une fenêtre agrandie n'est pas concernée) ; le bureau, la barre des tâches et les fenêtres d'UsageNotch ne comptent jamais. Un plein écran sur un autre écran ne change rien.
+- Détection par événements Windows (`SetWinEventHook` : premier plan, réduction, déplacement ou redimensionnement de la fenêtre au premier plan), réévaluée quand la pilule change d'écran ; aucun sondage.
+- Pendant le plein écran : pilule et carte masquées ; ouverture automatique de la carte et son suspendus, sans rejeu à la sortie ; icône de notification et alertes de seuil inchangées.
+- Réglage `hideInFullscreen` (activé par défaut), page Position › Visibilité ; sans effet en mode Masqué.
+- Vérifié en démo avec une fenêtre sans bordure couvrant l'écran : pilule masquée puis rétablie, carte non ouverte par une session en attente pendant le plein écran (témoin : elle s'ouvre hors plein écran), plein écran sur un autre écran sans effet.
+

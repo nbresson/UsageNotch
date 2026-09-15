@@ -132,6 +132,76 @@ public sealed class NotchViewModelTests : IDisposable
     }
 
     [Fact]
+    public void A_fullscreen_window_hides_the_notch_and_suspends_card_and_sound()
+    {
+        _sessions.Apply(Ev(HookEvent.Running));
+
+        _vm.SetForegroundFullscreen(true);
+        _sessions.Apply(Ev(HookEvent.Attention));
+
+        _vm.FullscreenActive.Should().BeTrue();
+        _vm.CardVisible.Should().BeFalse();
+        _sound.Played.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void A_transition_during_fullscreen_is_not_replayed_afterwards()
+    {
+        _sessions.Apply(Ev(HookEvent.Running));
+        _vm.SetForegroundFullscreen(true);
+        _sessions.Apply(Ev(HookEvent.Done));
+
+        _vm.SetForegroundFullscreen(false);
+
+        _vm.FullscreenActive.Should().BeFalse();
+        _vm.CardVisible.Should().BeFalse();
+        _sound.Played.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void A_locked_card_is_hidden_during_fullscreen_and_comes_back_after()
+    {
+        _vm.ToggleLockCommand.Execute(null);
+        _vm.CardVisible.Should().BeTrue();
+
+        _vm.SetForegroundFullscreen(true);
+        _vm.CardVisible.Should().BeFalse();
+
+        _vm.SetForegroundFullscreen(false);
+        _vm.CardVisible.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Fullscreen_changes_nothing_when_the_setting_is_off_or_the_notch_is_hidden()
+    {
+        _settings.Save(_settings.Current with { HideInFullscreen = false });
+        _vm.SetForegroundFullscreen(true);
+        _vm.FullscreenActive.Should().BeFalse();
+
+        _sessions.Apply(Ev(HookEvent.Running));
+        _sessions.Apply(Ev(HookEvent.Attention));
+        _sound.Played.Should().Equal("Exclamation");
+
+        _settings.Save(_settings.Current with { HideInFullscreen = true, Visibility = VisibilityMode.Hidden });
+        _vm.FullscreenActive.Should().BeFalse();
+
+        _settings.Save(_settings.Current with { Visibility = VisibilityMode.Expanded });
+        _vm.FullscreenActive.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Fullscreen_changes_raise_a_single_notification()
+    {
+        var names = new List<string?>();
+        _vm.PropertyChanged += (_, e) => names.Add(e.PropertyName);
+
+        _vm.SetForegroundFullscreen(true);
+        _vm.SetForegroundFullscreen(true);
+
+        names.Count(n => n == nameof(NotchViewModel.FullscreenActive)).Should().Be(1);
+    }
+
+    [Fact]
     public void The_peek_closes_after_five_seconds()
     {
         _sessions.Apply(Ev(HookEvent.Running));

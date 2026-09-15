@@ -259,6 +259,16 @@ public class SettingsStoreTests
     }
 
     [Fact]
+    public void Hiding_in_fullscreen_is_on_by_default_and_read_from_the_file()
+    {
+        new UsageNotch.Core.Settings.Settings().HideInFullscreen.Should().BeTrue();
+
+        using var dir = new TempDir();
+        File.WriteAllText(dir.File("settings.json"), """{ "hideInFullscreen": false }""");
+        Build(dir).Load().HideInFullscreen.Should().BeFalse();
+    }
+
+    [Fact]
     public void Threshold_notifications_default_on_at_eighty_percent()
     {
         var s = new UsageNotch.Core.Settings.Settings();

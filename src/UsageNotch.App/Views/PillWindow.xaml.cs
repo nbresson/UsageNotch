@@ -101,13 +101,18 @@ public partial class PillWindow : Window
         if (!_initialized)
         {
             // Démarré en mode Masqué : la fenêtre n'a jamais été montrée ; la montrer déclenche SourceInitialized.
-            if (e.PropertyName == nameof(NotchViewModel.Settings) && _vm.Settings.Visibility != VisibilityMode.Hidden) Show();
+            if (e.PropertyName is nameof(NotchViewModel.Settings) or nameof(NotchViewModel.FullscreenActive)
+                && _vm.Settings.Visibility != VisibilityMode.Hidden && !_vm.FullscreenActive)
+            {
+                Show();
+            }
             return;
         }
 
         switch (e.PropertyName)
         {
             case nameof(NotchViewModel.Settings):
+            case nameof(NotchViewModel.FullscreenActive):
                 ApplySettings();
                 break;
             case nameof(NotchViewModel.Unfolded):
@@ -126,7 +131,8 @@ public partial class PillWindow : Window
         if (!_initialized || _closed) return;
         var s = _vm.Settings;
 
-        if (s.Visibility == VisibilityMode.Hidden)
+        // Mode Masqué, ou application en plein écran sur l'écran de la pilule : aucune surface à l'écran.
+        if (s.Visibility == VisibilityMode.Hidden || _vm.FullscreenActive)
         {
             Hide();
             return;
