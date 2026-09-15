@@ -121,6 +121,34 @@ public class BehaviorPageViewModelTests
     }
 
     [Fact]
+    public void Refresh_rereads_the_auto_start_value()
+    {
+        var (f, vm, _, autoStart) = Create(new FakeAutoStart { Enabled = false });
+        using var _f = f;
+        var names = new List<string?>();
+        vm.PropertyChanged += (_, e) => names.Add(e.PropertyName);
+
+        autoStart.Enabled = true;
+        vm.RefreshAutoStart();
+
+        vm.AutoStartEnabled.Should().BeTrue();
+        names.Should().Contain(nameof(BehaviorPageViewModel.AutoStartEnabled));
+    }
+
+    [Fact]
+    public void Refresh_in_demo_mode_reads_nothing()
+    {
+        var autoStart = new FakeAutoStart { IsAvailable = false, Enabled = true };
+        var (f, vm, _, _) = Create(autoStart);
+        using var _f = f;
+
+        vm.RefreshAutoStart();
+
+        vm.AutoStartEnabled.Should().BeFalse();
+        autoStart.Reads.Should().Be(0);
+    }
+
+    [Fact]
     public void The_tray_icon_can_be_hidden_except_in_hidden_mode()
     {
         var (f, vm, _, _) = Create();

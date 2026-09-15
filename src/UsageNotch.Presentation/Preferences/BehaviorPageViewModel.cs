@@ -100,6 +100,13 @@ public sealed class BehaviorPageViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>Relit l'état réel (il a pu changer depuis le menu de l'icône de notification) ; aucune lecture en mode démo.</summary>
+    public void RefreshAutoStart()
+    {
+        _autoStartEnabled = _autoStart.IsAvailable && _autoStart.IsEnabled();
+        OnPropertyChanged(nameof(AutoStartEnabled));
+    }
+
     public string AutoStartError
     {
         get => _autoStartError;

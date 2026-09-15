@@ -29,7 +29,12 @@ public partial class SettingsWindow : Window
             _picker.Owner = new WindowInteropHelper(this).Handle;
             FitToWorkArea();
         };
-        Activated += (_, _) => _vm.Position.RefreshMonitorsCommand.Execute(null);
+        Activated += (_, _) =>
+        {
+            _vm.Position.RefreshMonitorsCommand.Execute(null);
+            _vm.ClaudeCode.RefreshCommand.Execute(null);
+            _vm.Behavior.RefreshAutoStart();
+        };
         Deactivated += (_, _) => _vm.Flush();
         Closed += (_, _) =>
         {
