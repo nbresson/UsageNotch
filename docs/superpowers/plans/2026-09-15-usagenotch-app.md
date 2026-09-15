@@ -45,7 +45,7 @@ La spec couvre deux sous-systèmes d'interface indépendants. Ce plan livre le n
 
 ## Procédures de vérification visuelle
 
-Les tâches 11 à 15 se vérifient à l'exécution. Ces procédures, en PowerShell, sont communes à toutes. Elles déplacent le vrai pointeur de la souris. Enregistrer les captures dans le dossier scratchpad de la session, jamais dans le dépôt, et les lire avec l'outil de lecture d'image.
+Les tâches 11 à 15 se vérifient à l'exécution. Ces procédures, en PowerShell, sont communes à toutes. Si elles sont enregistrées dans un fichier `.ps1` pour Windows PowerShell 5.1, l'enregistrer en UTF-8 **avec** BOM : sans BOM, le tiret cadratin des titres de fenêtre est mal lu. Elles déplacent le vrai pointeur de la souris. Enregistrer les captures dans le dossier scratchpad de la session, jamais dans le dépôt, et les lire avec l'outil de lecture d'image.
 
 **Préparation** (une fois par session PowerShell, avant les autres procédures) :
 ```powershell
@@ -62,7 +62,7 @@ Add-Type -Namespace Verify -Name Win -MemberDefinition @'
 [Verify.Win]::SetThreadDpiAwarenessContext([IntPtr](-4)) | Out-Null   # coordonnées physiques
 $scratch = '<dossier scratchpad de la session>'
 function Get-NotchRect([string]$title) {
-    $h = [Verify.Win]::FindWindow($null, $title)
+    $h = [Verify.Win]::FindWindow([NullString]::Value, $title)   # $null deviendrait "" en PowerShell 5.1
     $r = New-Object Verify.Win+RECT
     [Verify.Win]::GetWindowRect($h, [ref]$r) | Out-Null
     [pscustomobject]@{ Handle = $h; Left = $r.Left; Top = $r.Top; Right = $r.Right; Bottom = $r.Bottom;
