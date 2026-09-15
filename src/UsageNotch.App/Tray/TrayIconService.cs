@@ -12,6 +12,7 @@ using UsageNotch.App.Hosting;
 using UsageNotch.App.Interop;
 using UsageNotch.Core.Hooks;
 using UsageNotch.Core.Settings;
+using UsageNotch.Presentation;
 using UsageNotch.Presentation.Pill;
 using UsageNotch.Presentation.ViewModels;
 
@@ -22,6 +23,7 @@ public sealed class TrayIconService(
     HookInstaller installer,
     AppPaths paths,
     SettingsStore settings,
+    AppArguments args,
     ILogger<TrayIconService> logger) : IDisposable
 {
     private TaskbarIcon? _icon;
@@ -91,7 +93,10 @@ public sealed class TrayIconService(
 
         _hooksItem = Item("Hooks Claude Code installés", ToggleHooks);
         menu.Items.Add(_hooksItem);
-        _autoStartItem = Item("Démarrer avec Windows", ToggleAutoStart);
+        // En démo, ne jamais toucher à la vraie valeur Run de HKCU : l'élément est désactivé et son clic ne fait rien.
+        _autoStartItem = args.Demo
+            ? new MenuItem { Header = "Démarrer avec Windows (indisponible en démo)", IsEnabled = false }
+            : Item("Démarrer avec Windows", ToggleAutoStart);
         menu.Items.Add(_autoStartItem);
         menu.Items.Add(new Separator());
 
@@ -105,7 +110,7 @@ public sealed class TrayIconService(
         {
             _lockItem.IsChecked = vm.Locked;
             _hooksItem.IsChecked = SafeIsInstalled();
-            _autoStartItem.IsChecked = SafeIsAutoStartEnabled();
+            if (!args.Demo) _autoStartItem.IsChecked = SafeIsAutoStartEnabled();
         };
         return menu;
     }
