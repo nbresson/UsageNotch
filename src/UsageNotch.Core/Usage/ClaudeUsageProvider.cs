@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace UsageNotch.Core.Usage;
 
 /// <summary>Appelle l'endpoint d'usage OAuth d'Anthropic avec le jeton de Claude Code. Le délai est celui du HttpClient injecté (voir <see cref="Timeout"/>).</summary>
-public sealed class ClaudeUsageProvider(HttpClient http, ClaudeCredentialReader credentials, ILogger<ClaudeUsageProvider> logger) : IUsageProvider
+public sealed class ClaudeUsageProvider(HttpClient http, ClaudeCredentialReader credentials, ILogger<ClaudeUsageProvider> logger, TimeProvider time) : IUsageProvider
 {
     public const string Endpoint = "https://api.anthropic.com/api/oauth/usage";
     public const string BetaHeader = "oauth-2025-04-20";
@@ -73,7 +73,7 @@ public sealed class ClaudeUsageProvider(HttpClient http, ClaudeCredentialReader 
                 case 403:
                     return new FetchResult.NeedsAuth("");
                 case 429:
-                    var retryAfter = response.Headers.RetryAfter?.Delta ?? TimeSpan.Zero;
+                    var retryAfter = RetryDelay(response.Headers.RetryAfter);
                     logger.LogWarning("Usage Claude : 429, Retry-After {Seconds}s", retryAfter.TotalSeconds);
                     return new FetchResult.RateLimited(retryAfter < TimeSpan.Zero ? TimeSpan.Zero : retryAfter);
                 default:
@@ -105,4 +105,16 @@ public sealed class ClaudeUsageProvider(HttpClient http, ClaudeCredentialReader 
             HttpRequestError.SecureConnectionError => "Erreur réseau : connexion sécurisée impossible",
             _ => "Erreur réseau",
         };
+
+    /// <summary>Retry-After en secondes ou en date HTTP ; une date passée ou absente donne zéro.</summary>
+    private TimeSpan RetryDelay(RetryConditionHeaderValue? header)
+    {
+        if (header?.Delta is { } delta) return delta;
+        if (header?.Date is { } date)
+        {
+            var wait = date - time.GetUtcNow();
+            return wait > TimeSpan.Zero ? wait : TimeSpan.Zero;
+        }
+        return TimeSpan.Zero;
+    }
 }

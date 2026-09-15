@@ -28,8 +28,9 @@ public class ClaudeUsageProviderTests
     private static (ClaudeUsageProvider Provider, StubHandler Handler) Build(TempDir dir, Func<HttpRequestMessage, HttpResponseMessage> respond)
     {
         var handler = new StubHandler(respond);
-        var reader = new ClaudeCredentialReader(dir.Path, new FakeTimeProvider(new DateTimeOffset(2026, 9, 14, 12, 0, 0, TimeSpan.Zero)));
-        var provider = new ClaudeUsageProvider(new HttpClient(handler), reader, NullLogger<ClaudeUsageProvider>.Instance);
+        var time = new FakeTimeProvider(new DateTimeOffset(2026, 9, 14, 12, 0, 0, TimeSpan.Zero));
+        var reader = new ClaudeCredentialReader(dir.Path, time);
+        var provider = new ClaudeUsageProvider(new HttpClient(handler), reader, NullLogger<ClaudeUsageProvider>.Instance, time);
         return (provider, handler);
     }
 
@@ -128,6 +129,26 @@ public class ClaudeUsageProviderTests
         result.Should().BeOfType<FetchResult.RateLimited>().Which.RetryAfter.Should().Be(TimeSpan.FromSeconds(120));
     }
 
+    [Theory]
+    [InlineData(90, 90)]
+    [InlineData(-30, 0)]
+    public async Task Returns_RateLimited_with_the_delay_until_an_http_date_retry_after(int offsetSeconds, int expectedSeconds)
+    {
+        using var dir = new TempDir();
+        WriteToken(dir, "t");
+        var now = new DateTimeOffset(2026, 9, 14, 12, 0, 0, TimeSpan.Zero);
+        var (provider, _) = Build(dir, _ =>
+        {
+            var r = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+            r.Headers.RetryAfter = new RetryConditionHeaderValue(now.AddSeconds(offsetSeconds));
+            return r;
+        });
+
+        var result = await provider.FetchAsync(CancellationToken.None);
+
+        result.Should().BeOfType<FetchResult.RateLimited>().Which.RetryAfter.Should().Be(TimeSpan.FromSeconds(expectedSeconds));
+    }
+
     [Fact]
     public async Task Returns_RateLimited_zero_when_429_has_no_retry_after()
     {
@@ -207,7 +228,7 @@ public class ClaudeUsageProviderTests
         WriteToken(dir, "t");
         var reader = new ClaudeCredentialReader(dir.Path, new FakeTimeProvider(new DateTimeOffset(2026, 9, 14, 12, 0, 0, TimeSpan.Zero)));
         var http = new HttpClient(new HangingHandler()) { Timeout = TimeSpan.FromSeconds(1) };
-        var provider = new ClaudeUsageProvider(http, reader, NullLogger<ClaudeUsageProvider>.Instance);
+        var provider = new ClaudeUsageProvider(http, reader, NullLogger<ClaudeUsageProvider>.Instance, TimeProvider.System);
 
         var result = await provider.FetchAsync(CancellationToken.None);
 
