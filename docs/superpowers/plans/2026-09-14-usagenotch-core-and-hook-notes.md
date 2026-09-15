@@ -64,3 +64,28 @@ Chaque ligne : décision, raison, coût si elle est fausse.
 - Après un échec de la copie « corrupt », un `Save` ultérieur écrase le fichier illisible sans copie.
 - Le compteur de backoff pourrait déborder après 2³¹ échecs consécutifs.
 - `StopAsync` du récepteur n'attend pas les requêtes en cours de traitement.
+
+## Plan 2 — application
+
+### Utilisation
+
+- Publier : `powershell -ExecutionPolicy Bypass -File scripts\publish.ps1` (sortie dans `publish\`).
+- Lancer : `publish\UsageNotch.App.exe`. Démonstration sans toucher à la vraie configuration : `--demo`. Diagnostic : `doctor`.
+- Installer les hooks Claude Code : menu de l'icône de notification › « Hooks Claude Code installés ». Une sauvegarde horodatée de `~/.claude/settings.json` est écrite avant la modification.
+- Réglages : menu › « Réglages… » ouvre `settings.json` ; les changements s'appliquent à l'enregistrement (sauf le port, au redémarrage).
+
+### Écarts par rapport à la spec
+
+- Passage des clics par la transparence par pixel des fenêtres en couches, pas par `WM_NCHITTEST` : `HTTRANSPARENT` ne transmet le clic qu'aux fenêtres du même thread.
+- Déclarations Win32 écrites à la main (`NativeMethods`) au lieu de CsWin32.
+- Une seule cellule : le clic gauche sur la pilule verrouille la carte ; « Rafraîchir maintenant » est dans le menu contextuel.
+- Clic gauche sur l'icône de notification : aperçu de la carte 5 s (fenêtre de réglages au Plan 3). Une seconde instance lancée à la main fait de même.
+- Mode Replié par glissement du contenu dans une fenêtre de taille fixe.
+- Retour au terminal : la fenêtre retenue est l'ancêtre le plus proche, pas le plus lointain.
+- Mode démo isolé de la vraie application : mutex `Local\UsageNotch-demo` et port 48667.
+- Une modification manuelle illisible de `settings.json` est ignorée et journalisée plutôt que de réinitialiser les réglages.
+- L'icône de la zone de notification est posée via `TaskbarIcon.Icon` plutôt que `IconSource`, qui n'accepte pas un bitmap en mémoire dans H.NotifyIcon 2.4.1.
+
+### Reste à faire (Plan 3)
+
+- Fenêtre de réglages en cinq pages avec aperçu en direct (spec §7).

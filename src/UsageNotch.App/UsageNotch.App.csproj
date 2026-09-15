@@ -15,7 +15,10 @@
     <ProjectReference Include="..\UsageNotch.Core\UsageNotch.Core.csproj" />
     <ProjectReference Include="..\UsageNotch.Presentation\UsageNotch.Presentation.csproj" />
     <!-- Garantit que le hook est construit avant l'app ; ses fichiers sont copiés à côté de l'exe ci-dessous. -->
-    <ProjectReference Include="..\UsageNotch.Hook\UsageNotch.Hook.csproj" ReferenceOutputAssembly="false" Private="false" />
+    <!-- SkipGetTargetFrameworkProperties évite NETSDK1151 : sans lui, la publication non autonome de l'app
+         propage SelfContained=false au hook référencé, qui entre en conflit avec son propre PublishAot=true. -->
+    <ProjectReference Include="..\UsageNotch.Hook\UsageNotch.Hook.csproj" ReferenceOutputAssembly="false" Private="false"
+                       SkipGetTargetFrameworkProperties="true" />
   </ItemGroup>
   <Target Name="CopyHookNextToApp" AfterTargets="Build">
     <ItemGroup>
