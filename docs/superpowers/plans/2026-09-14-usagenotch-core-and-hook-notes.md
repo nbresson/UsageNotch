@@ -72,7 +72,7 @@ Chaque ligne : décision, raison, coût si elle est fausse.
 - Publier : `powershell -ExecutionPolicy Bypass -File scripts\publish.ps1` (sortie dans `publish\`).
 - Lancer : `publish\UsageNotch.App.exe`. Démonstration sans toucher à la vraie configuration : `--demo`. Diagnostic : `doctor`.
 - Installer les hooks Claude Code : menu de l'icône de notification › « Hooks Claude Code installés ». Une sauvegarde horodatée de `~/.claude/settings.json` est écrite avant la modification.
-- Réglages : menu › « Réglages… » ouvre `settings.json` ; les changements s'appliquent à l'enregistrement (sauf le port, au redémarrage).
+- Réglages : voir « Plan 3 — fenêtre de réglages ».
 
 ### Écarts par rapport à la spec
 
@@ -109,3 +109,30 @@ Chaque ligne : décision, raison, coût si elle est fausse.
 - Spin et Pulse tournent encore quand l'anneau est masqué (contenu « pourcentage seul ») ; environ 1 % d'un cœur en mode Masqué, source inconnue.
 - Non vérifié : écrans à mise à l'échelle différente (DPI mixte), clics focus et ✕ sur les lignes de session, son d'ouverture automatique.
 - Mineurs : lecture du fichier de réglages sur le thread UI sans gestionnaire `Error`, purge du journal seulement au démarrage, saut du glissement à la réouverture de la carte, allocation du stylo de `ProgressRing`, longueur du jeton affichée par `doctor`, chemin de copie du Hook codé en dur, `AttachConsole` du diagnostic, minuteries de survol non remises à null, pid recyclé possible pour le retour au terminal.
+
+## Plan 3 — fenêtre de réglages
+
+### Utilisation
+
+- Ouvrir les réglages de trois façons :
+  - clic gauche sur l'icône de notification ;
+  - « Réglages… » dans le menu de la pilule ou de l'icône ;
+  - relancer `UsageNotch.App.exe` pendant qu'il tourne.
+- Il n'y a pas de bouton « Appliquer ». La pilule suit en 250 ms au plus, et fermer la fenêtre ou la quitter enregistre tout.
+- Le port se change dans la page Claude Code et s'applique au prochain démarrage.
+- `settings.json` reste modifiable à la main : la fenêtre ouverte suit ces modifications et ne les écrase pas.
+
+### Écarts par rapport à la spec
+
+- Aperçu commun aux cinq pages, en haut de la fenêtre : trois pilules d'exemple (modéré, vigilance, critique) et leur bande en mode Replié. Il est statique, sans animation en boucle.
+- `PillOpacity` s'applique à la forme de la pilule seulement ; la carte reste opaque.
+- Modifier une couleur, l'opacité ou un seuil passe au thème Personnalisé, initialisé depuis le thème affiché.
+- Sélecteur de couleur : champ `#RRGGBB` et boîte « Couleurs » de Windows.
+- Changement de port appliqué au redémarrage.
+- Clic gauche sur l'icône : réglages (spec §6) au lieu de l'aperçu de carte 5 s du Plan 2.
+- Diagnostic depuis l'icône et la page À propos : `logs\doctor.txt` ouvert dans le Bloc-notes, sans console.
+
+### Reste à faire
+
+- Vérifier la pilule, la carte et la miniature des écrans sur un écran à une autre mise à l'échelle (DPI mixte).
+- Tests d'interface automatisés (FlaUI, spec §9) : la vérification reste manuelle, par UI Automation en démo.
