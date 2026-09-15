@@ -19,6 +19,11 @@ public sealed class HoverController(TimeProvider time) : IDisposable
     private ITimer? _foldTimer;
     private ITimer? _peekTimer;
 
+    // Un rappel de minuterie déjà en file au moment où la minuterie est libérée peut encore s'exécuter : chaque rappel
+    // vérifie la génération capturée à sa création et ne fait rien si elle a changé depuis.
+    private long _generation;
+    private long _peekGeneration;
+
     private bool _cardVisible;
     private bool _unfolded;
     private bool _locked;
@@ -46,8 +51,10 @@ public sealed class HoverController(TimeProvider time) : IDisposable
         _peeking = true;
         OpenLocked();
         _peekTimer?.Dispose();
+        var generation = ++_peekGeneration;
         _peekTimer = time.CreateTimer(_ => Mutate(() =>
         {
+            if (_peekGeneration != generation) return;
             _peeking = false;
             ScheduleCloseLocked();
         }), null, PeekDuration, Timeout.InfiniteTimeSpan);
@@ -67,6 +74,7 @@ public sealed class HoverController(TimeProvider time) : IDisposable
     private void OpenLocked()
     {
         DisposeTimersLocked();
+        _generation++;
         _cardVisible = true;
         _unfolded = true;
     }
@@ -76,14 +84,15 @@ public sealed class HoverController(TimeProvider time) : IDisposable
         if (_onPill || _onCard || _locked || _peeking) return;
         // Déjà programmé : une sortie répétée (filet de sécurité de l'App) ne doit pas repousser la fermeture.
         if (_closeTimer is not null || _foldTimer is not null) return;
+        var generation = ++_generation;
         _closeTimer = time.CreateTimer(_ => Mutate(() =>
         {
-            if (!IsIdleLocked()) return;
+            if (_generation != generation || !IsIdleLocked()) return;
             _cardVisible = false;
         }), null, CloseDelay, Timeout.InfiniteTimeSpan);
         _foldTimer = time.CreateTimer(_ => Mutate(() =>
         {
-            if (!IsIdleLocked()) return;
+            if (_generation != generation || !IsIdleLocked()) return;
             _cardVisible = false;
             _unfolded = false;
         }), null, FoldDelay, Timeout.InfiniteTimeSpan);
