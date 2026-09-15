@@ -89,3 +89,23 @@ Chaque ligne : décision, raison, coût si elle est fausse.
 ### Reste à faire (Plan 3)
 
 - Fenêtre de réglages en cinq pages avec aperçu en direct (spec §7).
+- Branchement prévu par la revue finale : enregistrer depuis le thread UI via `SettingsStore.Save` (anti-rebond pour les curseurs), aperçu construit avec `PillPresenter`, `Theme.ForPreset`, `PillShapeBuilder` et `ProgressRing` sur un brouillon de réglages, fenêtre unique appartenant à `NotchShell` ouverte par le menu, `HookListener.OpenSettingsRequested` et le clic gauche sur l'icône. Un changement de port demande un redémarrage ou un `HookListener.Rebind`. Exposer la dernière erreur de relecture du watcher.
+
+### Arbitrages pris pendant l'exécution du Plan 2
+
+- Mode démo isolé (mutex et port 48667) ; l'élément « Démarrer avec Windows » y est désactivé. Origine : lors d'une vérification, un sous-agent a activé puis retiré la vraie valeur Run ; son absence a été vérifiée.
+- Échec entre la construction de l'hôte et son démarrage : journalisé, nettoyage, `Shutdown(1)` pour libérer le mutex.
+- Relecture de `settings.json` via `SettingsStore.TryParse` : une modification illisible est ignorée et journalisée.
+- Glisser Alt : fin sur `LostMouseCapture`, réapplication des réglages regroupée, garde après fermeture.
+- `UpdateLayout()` avant le placement : Haut et Bas affichaient des tailles périmées après l'échange largeur/hauteur.
+- `SkipGetTargetFrameworkProperties` sur la référence au Hook (NETSDK1151 à la publication).
+- Animations Spin, Pulse et BandPulse lancées seulement quand elles sont visibles et que l'activité correspond (environ 7,5 % d'un cœur au repos avant correction).
+- Trois exceptions du thread UI en 10 s : message en français puis fermeture ; une exception isolée reste journalisée et ignorée.
+- Minuteries de survol et d'aperçu protégées par un compteur de génération.
+
+### Points laissés en l'état après le Plan 2
+
+- Environ 5 % d'un cœur tant qu'une pulsation est visible (rendu logiciel à 60 i/s d'une fenêtre en couches). Piste : `Timeline.DesiredFrameRate` à 20 sur Pulse et BandPulse, 30 sur Spin, à mesurer.
+- Spin et Pulse tournent encore quand l'anneau est masqué (contenu « pourcentage seul ») ; environ 1 % d'un cœur en mode Masqué, source inconnue.
+- Non vérifié : écrans à mise à l'échelle différente (DPI mixte), clics focus et ✕ sur les lignes de session, son d'ouverture automatique.
+- Mineurs : lecture du fichier de réglages sur le thread UI sans gestionnaire `Error`, purge du journal seulement au démarrage, saut du glissement à la réouverture de la carte, allocation du stylo de `ProgressRing`, longueur du jeton affichée par `doctor`, chemin de copie du Hook codé en dur, `AttachConsole` du diagnostic, minuteries de survol non remises à null, pid recyclé possible pour le retour au terminal.
