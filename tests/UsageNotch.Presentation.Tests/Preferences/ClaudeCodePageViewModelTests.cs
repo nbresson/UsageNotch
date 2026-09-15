@@ -167,6 +167,19 @@ public class ClaudeCodePageViewModelTests
     }
 
     [Fact]
+    public void An_outside_change_keeps_an_invalid_port_entry()
+    {
+        var (f, vm, _, _) = Create();
+        using var _f = f;
+
+        vm.PortText = "abc";
+        f.Store.Save(f.Store.Current with { Scale = 1.2 });
+
+        vm.PortText.Should().Be("abc");
+        vm.PortError.Should().Be(ClaudeCodePageViewModel.PortRangeError);
+    }
+
+    [Fact]
     public void Demo_mode_says_hooks_go_to_a_test_file()
     {
         var (f, vm, _, _) = Create(env: Env(demo: true));
