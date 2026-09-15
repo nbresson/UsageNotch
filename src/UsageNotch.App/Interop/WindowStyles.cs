@@ -26,4 +26,16 @@ public static class WindowStyles
         NativeMethods.GetCursorPos(out var p) ? (p.X, p.Y) : (int.MinValue, int.MinValue);
 
     public static bool IsAltDown() => NativeMethods.GetKeyState(NativeMethods.VK_MENU) < 0;
+
+    /// <summary>
+    /// À appeler pour chaque message d'une fenêtre non activable. Quand elle passe sur un écran d'une autre mise à
+    /// l'échelle, WPF la repositionne lui-même sans SWP_NOACTIVATE et Windows l'active : elle volerait alors le premier
+    /// plan et le focus (par exemple à la fenêtre de réglages). L'activation est aussitôt rendue à la fenêtre qui l'avait.
+    /// </summary>
+    public static void ReturnActivation(int msg, nint wParam, nint lParam, System.Windows.Threading.Dispatcher dispatcher)
+    {
+        if (msg != NativeMethods.WM_ACTIVATE || (wParam.ToInt64() & 0xFFFF) == NativeMethods.WA_INACTIVE || lParam == 0) return;
+        var previous = lParam;
+        dispatcher.BeginInvoke(new Action(() => NativeMethods.SetForegroundWindow(previous)));
+    }
 }

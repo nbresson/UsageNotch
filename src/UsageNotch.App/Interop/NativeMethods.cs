@@ -18,6 +18,8 @@ internal static class NativeMethods
     public const long WS_EX_TOOLWINDOW = 0x00000080;
     public const long WS_EX_NOACTIVATE = 0x08000000;
 
+    public const int WM_ACTIVATE = 0x0006;
+    public const int WA_INACTIVE = 0;
     public const int WM_MOUSEACTIVATE = 0x0021;
     public const int WM_DISPLAYCHANGE = 0x007E;
     public const int WM_SETTINGCHANGE = 0x001A;

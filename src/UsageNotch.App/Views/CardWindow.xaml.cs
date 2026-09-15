@@ -48,8 +48,9 @@ public partial class CardWindow : Window
         ApplySettings();
     }
 
-    private static nint WndProc(nint hwnd, int msg, nint wParam, nint lParam, ref bool handled)
+    private nint WndProc(nint hwnd, int msg, nint wParam, nint lParam, ref bool handled)
     {
+        WindowStyles.ReturnActivation(msg, wParam, lParam, Dispatcher);
         if (msg != NativeMethods.WM_MOUSEACTIVATE) return 0;
         handled = true;
         return NativeMethods.MA_NOACTIVATE;
@@ -111,17 +112,23 @@ public partial class CardWindow : Window
 
     private void OpenCard()
     {
-        if (!IsVisible)
+        var alreadyShown = IsVisible;
+        if (!alreadyShown)
         {
             Opacity = 0;
             Show();
         }
         Reposition();
 
-        var from = SlideFrom(_vm.Settings.Edge);
-        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
-        Slide.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(from.X, 0, OpenDuration) { EasingFunction = ease });
-        Slide.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(from.Y, 0, OpenDuration) { EasingFunction = ease });
+        // Rouverte pendant son fondu de fermeture, la carte est déjà en place : on inverse seulement le fondu, sinon le
+        // glissement repartirait de 8 DIP et la carte sauterait.
+        if (!alreadyShown)
+        {
+            var from = SlideFrom(_vm.Settings.Edge);
+            var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+            Slide.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(from.X, 0, OpenDuration) { EasingFunction = ease });
+            Slide.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(from.Y, 0, OpenDuration) { EasingFunction = ease });
+        }
         BeginAnimation(OpacityProperty, new DoubleAnimation(1, OpenDuration));
         _safety.Start();
     }

@@ -74,6 +74,7 @@ public partial class PillWindow : Window
 
     private nint WndProc(nint hwnd, int msg, nint wParam, nint lParam, ref bool handled)
     {
+        WindowStyles.ReturnActivation(msg, wParam, lParam, Dispatcher);
         switch (msg)
         {
             case NativeMethods.WM_MOUSEACTIVATE:
