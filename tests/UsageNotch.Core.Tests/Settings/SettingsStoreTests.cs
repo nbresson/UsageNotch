@@ -212,6 +212,32 @@ public class SettingsStoreTests
         s.Scale.Should().Be(0.8);
     }
 
+    [Fact]
+    public void TryParse_accepts_a_valid_document_and_clamps_it()
+    {
+        var ok = SettingsStore.TryParse("""{ "scale": 9, "edge": "Left" }""", out var settings);
+
+        ok.Should().BeTrue();
+        settings.Scale.Should().Be(1.5);
+        settings.Edge.Should().Be(ScreenEdge.Left);
+    }
+
+    [Fact]
+    public void TryParse_rejects_malformed_json()
+    {
+        var ok = SettingsStore.TryParse("""{ "edge": """, out _);
+
+        ok.Should().BeFalse();
+    }
+
+    [Fact]
+    public void TryParse_rejects_a_wrong_enum_value()
+    {
+        var ok = SettingsStore.TryParse("""{ "edge": "Diagonal" }""", out _);
+
+        ok.Should().BeFalse();
+    }
+
     [Theory]
     [InlineData(0.10, "#28E07B")]
     [InlineData(0.49, "#28E07B")]

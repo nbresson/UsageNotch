@@ -14,6 +14,7 @@ public sealed class SettingsFileWatcher(SettingsStore store, AppPaths paths, IUi
     private Timer? _debounce;
     private string? _lastText;
     private Action<Settings>? _onSaved;
+    private bool _disposed;
 
     public void Start()
     {
@@ -28,25 +29,46 @@ public sealed class SettingsFileWatcher(SettingsStore store, AppPaths paths, IUi
         _watcher.Changed += OnFileEvent;
         _watcher.Created += OnFileEvent;
         _watcher.Renamed += OnFileEvent;
-        _watcher.EnableRaisingEvents = true;
         _debounce = new Timer(_ => ui.Post(Reload), null, Timeout.Infinite, Timeout.Infinite);
+        _watcher.EnableRaisingEvents = true;
     }
 
-    private void OnFileEvent(object sender, FileSystemEventArgs e) =>
-        _debounce?.Change(Debounce, Timeout.InfiniteTimeSpan);
+    private void OnFileEvent(object sender, FileSystemEventArgs e)
+    {
+        if (_disposed) return;
+        try
+        {
+            _debounce?.Change(Debounce, Timeout.InfiniteTimeSpan);
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+    }
 
+    /// <summary>
+    /// N'écrase jamais settings.json avec des valeurs par défaut : un texte illisible (JSON malformé, énumération
+    /// inconnue) est ignoré et journalisé, le fichier reste tel quel pour que l'utilisateur puisse le corriger.
+    /// </summary>
     private void Reload()
     {
+        if (_disposed) return;
+
         var text = ReadText();
         if (text is null || text == _lastText) return;
 
-        var previousPort = store.Current.Port;
-        var loaded = store.Load();
-        store.Save(loaded);
-        logger.LogInformation("Réglages relus depuis {Path}", paths.SettingsFile);
-        if (loaded.Port != previousPort)
+        if (!SettingsStore.TryParse(text, out var parsed))
         {
-            logger.LogWarning("Le port passe de {Old} à {New} : redémarrez UsageNotch pour l'appliquer", previousPort, loaded.Port);
+            logger.LogWarning("settings.json illisible, modification ignorée : {Path}", paths.SettingsFile);
+            _lastText = text;
+            return;
+        }
+
+        var previousPort = store.Current.Port;
+        store.Save(parsed);
+        logger.LogInformation("Réglages relus depuis {Path}", paths.SettingsFile);
+        if (parsed.Port != previousPort)
+        {
+            logger.LogWarning("Le port passe de {Old} à {New} : redémarrez UsageNotch pour l'appliquer", previousPort, parsed.Port);
         }
     }
 
@@ -69,6 +91,7 @@ public sealed class SettingsFileWatcher(SettingsStore store, AppPaths paths, IUi
 
     public void Dispose()
     {
+        _disposed = true;
         if (_onSaved is not null) store.Changed -= _onSaved;
         _watcher?.Dispose();
         _debounce?.Dispose();

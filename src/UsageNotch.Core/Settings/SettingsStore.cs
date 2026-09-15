@@ -27,6 +27,31 @@ public sealed class SettingsStore(string filePath, ILogger<SettingsStore> logger
     public event Action<Settings>? Changed;
 
     /// <summary>
+    /// Analyse un texte de réglages déjà en mémoire, sans toucher au disque ni notifier personne : vrai avec la
+    /// valeur normalisée (<see cref="Settings.Clamp"/>) si le texte est un JSON de réglages lisible, faux sinon.
+    /// Utilisé par la relecture à chaud pour ignorer une modification illisible sans écraser le fichier.
+    /// </summary>
+    public static bool TryParse(string text, out Settings settings)
+    {
+        try
+        {
+            var parsed = JsonSerializer.Deserialize<Settings>(text, JsonOptions);
+            if (parsed is null)
+            {
+                settings = new Settings();
+                return false;
+            }
+            settings = parsed.Clamp();
+            return true;
+        }
+        catch (JsonException)
+        {
+            settings = new Settings();
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Lit le fichier (tolérant : clés absentes → défauts, clés inconnues ignorées, fichier corrompu → défauts) et le réécrit
     /// normalisé pour que le hook y trouve toujours le port. Un fichier indésérialisable est d'abord copié en
     /// <c>settings.json.corrupt-&lt;secondes unix&gt;</c> ; sans copie possible, il n'est pas écrasé.

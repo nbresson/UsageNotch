@@ -105,7 +105,7 @@ public sealed class TrayIconService(
         {
             _lockItem.IsChecked = vm.Locked;
             _hooksItem.IsChecked = SafeIsInstalled();
-            _autoStartItem.IsChecked = AutoStart.IsEnabled();
+            _autoStartItem.IsChecked = SafeIsAutoStartEnabled();
         };
         return menu;
     }
@@ -123,6 +123,12 @@ public sealed class TrayIconService(
         catch (Exception e) when (e is IOException or UnauthorizedAccessException) { return false; }
     }
 
+    private static bool SafeIsAutoStartEnabled()
+    {
+        try { return AutoStart.IsEnabled(); }
+        catch (Exception e) when (e is System.Security.SecurityException or UnauthorizedAccessException or IOException) { return false; }
+    }
+
     private void ToggleHooks()
     {
         try
@@ -132,11 +138,11 @@ public sealed class TrayIconService(
         }
         catch (FileNotFoundException)
         {
-            Warn($"Exécutable hook introuvable : {paths.HookExe}");
+            Warn($"Impossible de modifier les hooks Claude Code : exécutable hook introuvable : {paths.HookExe}");
         }
-        catch (Exception e) when (e is InvalidDataException or IOException or UnauthorizedAccessException)
+        catch (Exception e) when (e is InvalidDataException or IOException or UnauthorizedAccessException or ArgumentException)
         {
-            Warn(e.Message);
+            Warn("Impossible de modifier les hooks Claude Code : " + e.Message);
         }
     }
 
@@ -156,7 +162,15 @@ public sealed class TrayIconService(
 
     private void OpenDiagnostic()
     {
-        DoctorCommand.Run(paths, settings);
+        try
+        {
+            DoctorCommand.Run(paths, settings);
+        }
+        catch (Exception e)
+        {
+            Warn("Diagnostic impossible : " + e.Message);
+            return;
+        }
         StartProcess("notepad.exe", $"\"{Path.Combine(paths.LogsDirectory, "doctor.txt")}\"");
     }
 
