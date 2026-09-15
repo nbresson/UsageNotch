@@ -40,11 +40,17 @@ public static class DemoMode
         sessions.Apply(Ev(HookEvent.Attention, "demo-web-0002", @"C:\src\web", message: "Autoriser Bash : npm install ?"));
         sessions.Apply(Ev(HookEvent.SessionStart, "demo-doc-0003", @"C:\src\docs"));
         sessions.Apply(Ev(HookEvent.Running, "demo-doc-0003", @"C:\src\docs"));
-        sessions.Apply(Ev(HookEvent.Done, "demo-doc-0003", @"C:\src\docs"));
 
+        // La session docs se termine au premier cycle (un Done au même instant que Running afficherait « Terminé en 0 s »).
         var running = true;
+        var docsDone = false;
         return time.CreateTimer(_ =>
         {
+            if (!docsDone)
+            {
+                docsDone = true;
+                sessions.Apply(Ev(HookEvent.Done, "demo-doc-0003", @"C:\src\docs"));
+            }
             running = !running;
             sessions.Apply(Ev(running ? HookEvent.Running : HookEvent.Done, "demo-api-0001", @"C:\src\api", tool: "Bash", cmd: "dotnet test"));
         }, null, CycleInterval, CycleInterval);
