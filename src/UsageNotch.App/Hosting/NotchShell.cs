@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Windows;
 using Microsoft.Extensions.Logging;
 using UsageNotch.App.Tray;
@@ -16,9 +15,9 @@ public sealed class NotchShell(
     HookListener listener,
     NotchPlacer placer,
     SettingsStore settings,
-    AppPaths paths,
     TrayIconService tray,
     SettingsFileWatcher watcher,
+    SettingsWindowHost settingsWindow,
     IUiDispatcher ui,
     ILogger<NotchShell> logger) : IDisposable
 {
@@ -28,14 +27,15 @@ public sealed class NotchShell(
 
     public void Start()
     {
-        _onOpenSettings = () => ui.Post(() => viewModel.PeekCommand.Execute(null));
+        // Seconde instance lancée à la main (spec §8) : l'événement arrive sur un thread du récepteur.
+        _onOpenSettings = () => ui.Post(OpenSettings);
         listener.OpenSettingsRequested += _onOpenSettings;
 
-        _pill = new PillWindow(viewModel, placer, settings, QuitAsync, OpenSettingsFile);
+        _pill = new PillWindow(viewModel, placer, settings, QuitAsync, OpenSettings);
         _card = new CardWindow(viewModel, placer, _pill);
         if (settings.Current.Visibility != VisibilityMode.Hidden) _pill.Show();
 
-        tray.Start(QuitAsync, OpenSettingsFile);
+        tray.Start(QuitAsync, OpenSettings);
         watcher.Start();
 
         logger.LogInformation("Coquille démarrée");
@@ -43,22 +43,14 @@ public sealed class NotchShell(
 
     private static Task QuitAsync() => ((App)Application.Current).QuitAsync(userInitiated: true);
 
-    /// <summary>Plan 2 : les réglages s'éditent dans settings.json ; le Plan 3 remplacera ceci par la fenêtre de réglages.</summary>
-    private void OpenSettingsFile()
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo("notepad.exe", $"\"{paths.SettingsFile}\"") { UseShellExecute = false });
-        }
-        catch (System.ComponentModel.Win32Exception e)
-        {
-            logger.LogWarning(e, "Impossible d'ouvrir {Path}", paths.SettingsFile);
-        }
-    }
+    private void OpenSettings() => settingsWindow.Show();
 
     public void Dispose()
     {
         if (_onOpenSettings is not null) listener.OpenSettingsRequested -= _onOpenSettings;
+        // D'abord la fenêtre de réglages : sa fermeture enregistre ses modifications par-dessus l'état courant
+        // (dont AutoLaunch = false posé par Quitter).
+        settingsWindow.Dispose();
         watcher.Dispose();
         tray.Dispose();
         _card?.Close();

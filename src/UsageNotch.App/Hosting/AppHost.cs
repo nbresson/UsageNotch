@@ -90,6 +90,7 @@ public static class AppHost
 
         s.AddSingleton<TrayIconService>();
         s.AddSingleton<SettingsFileWatcher>();
+        s.AddSingleton<SettingsWindowHost>();
         s.AddSingleton<NotchShell>();
         return builder.Build();
     }
