@@ -20,6 +20,7 @@ internal static class NativeMethods
     public const uint SWP_SHOWWINDOW = 0x0040;
 
     public const uint MONITORINFOF_PRIMARY = 0x00000001;
+    public const uint MONITOR_DEFAULTTONEAREST = 0x00000002;
     public const int MDT_EFFECTIVE_DPI = 0;
 
     public const uint TH32CS_SNAPPROCESS = 0x00000002;
@@ -114,6 +115,9 @@ internal static class NativeMethods
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool EnumDisplayMonitors(nint hdc, nint lprcClip, MonitorEnumProc lpfnEnum, nint dwData);
+
+    [DllImport("user32.dll")]
+    public static extern nint MonitorFromWindow(nint hwnd, uint dwFlags);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "GetMonitorInfoW")]
     [return: MarshalAs(UnmanagedType.Bool)]
