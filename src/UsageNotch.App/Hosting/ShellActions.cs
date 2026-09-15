@@ -34,7 +34,7 @@ public sealed class ShellActions(AppPaths paths, SettingsStore settings, ILogger
     {
         try
         {
-            Process.Start(new ProcessStartInfo(file, arguments) { UseShellExecute = false });
+            Process.Start(new ProcessStartInfo(file, arguments) { UseShellExecute = false })?.Dispose();
         }
         catch (Win32Exception e)
         {
