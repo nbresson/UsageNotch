@@ -7,7 +7,12 @@
     <RootNamespace>UsageNotch.App</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Version>0.3.0</Version>
+    <ApplicationIcon>Assets\UsageNotch.ico</ApplicationIcon>
   </PropertyGroup>
+  <ItemGroup>
+    <!-- Icône générée par scripts\generate-icon.ps1 : icône de l'exécutable et de la fenêtre de réglages. -->
+    <Resource Include="Assets\UsageNotch.ico" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="H.NotifyIcon.Wpf" Version="2.4.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.12" />

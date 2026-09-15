@@ -145,9 +145,10 @@ Chaque ligne : décision, raison, coût si elle est fausse.
 - À chaque activation de la fenêtre, l'état des hooks, de « Démarrer avec Windows » et la liste des écrans sont relus (changement possible depuis l'icône de notification).
 - Vérifications faites alors que l'instance réelle de l'utilisateur tournait : fenêtres de la démo retrouvées par identifiant de processus, pilule de démo au quart du bord droit, publication de contrôle hors de `publish\`.
 
+- Icône de l'application (exécutable et fenêtre de réglages) : `src/UsageNotch.App/Assets/UsageNotch.ico`, générée par `scripts/generate-icon.ps1` (carré arrondi noir, anneau vert aux trois quarts ; bitmaps jusqu'à 48 px, PNG en 256 px). Le hook n'en a pas.
+
 ### Points laissés en l'état après le Plan 3
 
-- Pas d'icône propre à la fenêtre de réglages (icône WPF générique).
 - Miniature des écrans : focus clavier perdu après le choix d'une tuile, repère de la pilule minuscule avec beaucoup d'écrans, infobulle avec le nom technique `\\.\DISPLAYn`.
 - Diagnostic, état des hooks et installation lus ou écrits de façon synchrone sur le thread UI (fraction de seconde).
 - Mineurs : miniature recalculée à chaque lecture, repli de `KeyFor` sur l'identifiant brut, repli d'« Ouvrir le dossier » sur le chemin du fichier, pas de plancher sous 48 DIP dans l'ajustement de la fenêtre, « Quitter » pendant la boîte « Couleurs » non testé.

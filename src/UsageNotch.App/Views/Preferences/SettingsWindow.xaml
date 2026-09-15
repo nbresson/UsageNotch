@@ -5,6 +5,7 @@
         xmlns:views="clr-namespace:UsageNotch.App.Views.Preferences"
         xmlns:pref="clr-namespace:UsageNotch.Presentation.Preferences;assembly=UsageNotch.Presentation"
         Title="UsageNotch — réglages"
+        Icon="/Assets/UsageNotch.ico"
         Width="940" Height="760" MinWidth="780" MinHeight="580"
         WindowStartupLocation="CenterScreen" ShowInTaskbar="True"
         FontFamily="Segoe UI" FontSize="13" Background="#F3F3F3">
