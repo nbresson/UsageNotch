@@ -1,4 +1,5 @@
 using System.Net.Http;
+using UsageNotch.App.Interop;
 
 namespace UsageNotch.App.Hosting;
 
@@ -18,6 +19,9 @@ public sealed class SingleInstance : IDisposable
     /// <summary>Demande à l'instance existante de se montrer. Échec silencieux : l'autre instance peut être en train de démarrer.</summary>
     public static async Task SignalExistingAsync(int port)
     {
+        // Windows n'autorise un processus d'arrière-plan à passer au premier plan que si le processus au premier plan
+        // (celui-ci, lancé par l'utilisateur) le lui permet : la fenêtre de réglages s'ouvre ainsi devant les autres.
+        NativeMethods.AllowSetForegroundWindow(NativeMethods.ASFW_ANY);
         try
         {
             using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };

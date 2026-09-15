@@ -32,6 +32,10 @@ internal static class NativeMethods
     public const int VK_MENU = 0x12;
     public const int ATTACH_PARENT_PROCESS = -1;
 
+    public const int ASFW_ANY = -1;
+    public const uint CC_RGBINIT = 0x00000001;
+    public const uint CC_FULLOPEN = 0x00000002;
+
     [StructLayout(LayoutKind.Sequential)]
     public struct RECT
     {
@@ -173,4 +177,26 @@ internal static class NativeMethods
     [DllImport("kernel32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool AttachConsole(int dwProcessId);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CHOOSECOLOR
+    {
+        public int lStructSize;
+        public nint hwndOwner;
+        public nint hInstance;
+        public uint rgbResult;
+        public nint lpCustColors;
+        public uint Flags;
+        public nint lCustData;
+        public nint lpfnHook;
+        public nint lpTemplateName;
+    }
+
+    [DllImport("comdlg32.dll", EntryPoint = "ChooseColorW")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool ChooseColor(ref CHOOSECOLOR lpcc);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool AllowSetForegroundWindow(int dwProcessId);
 }

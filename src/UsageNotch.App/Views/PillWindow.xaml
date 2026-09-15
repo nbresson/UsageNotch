@@ -43,7 +43,8 @@
 
       <Path x:Name="PillPath" StrokeThickness="1"
             Fill="{Binding Theme.PillBackground, Converter={StaticResource Hex}}"
-            Stroke="{Binding Theme.PillBorder, Converter={StaticResource Hex}}" />
+            Stroke="{Binding Theme.PillBorder, Converter={StaticResource Hex}}"
+            Opacity="{Binding Theme.PillOpacity}" />
 
       <Grid x:Name="Body">
         <StackPanel x:Name="BodyStack" HorizontalAlignment="Center" VerticalAlignment="Center">

@@ -67,6 +67,12 @@ public static class AppHost
         s.AddSingleton<ISessionFocus, TerminalFocus>();
         s.AddSingleton<ISoundPlayer, SystemSoundPlayer>();
         s.AddSingleton<IAccentColorSource, SystemAccentColor>();
+        s.AddSingleton<IMonitorSource>(sp => sp.GetRequiredService<MonitorService>());
+        s.AddSingleton<NativeColorPicker>();
+        s.AddSingleton<IColorPicker>(sp => sp.GetRequiredService<NativeColorPicker>());
+        s.AddSingleton<IAutoStart, AutoStartService>();
+        s.AddSingleton<IHookSetup, HookSetupService>();
+        s.AddSingleton<IShellActions, ShellActions>();
 
         s.AddSingleton(sp => new NotchViewModel(
             sp.GetRequiredService<UsageStore>(),

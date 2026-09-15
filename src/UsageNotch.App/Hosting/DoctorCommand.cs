@@ -11,9 +11,25 @@ using UsageNotch.Presentation.Diagnostics;
 
 namespace UsageNotch.App.Hosting;
 
+/// <summary><paramref name="FilePath"/> : chemin de doctor.txt, ou null si l'écriture a échoué.</summary>
+public sealed record DoctorOutput(string Text, string? FilePath);
+
 public static class DoctorCommand
 {
+    private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
+
+    /// <summary><c>UsageNotch.App.exe doctor</c> : écrit le rapport puis l'affiche sur la console qui a lancé l'application.</summary>
     public static string Run(AppPaths paths, SettingsStore settings)
+    {
+        var output = WriteReport(paths, settings);
+        NativeMethods.AttachConsole(NativeMethods.ATTACH_PARENT_PROCESS);
+        using var stdout = new StreamWriter(Console.OpenStandardOutput(), Utf8) { AutoFlush = true };
+        stdout.Write(output.Text);
+        return output.Text;
+    }
+
+    /// <summary>Construit le rapport et l'écrit dans logs\doctor.txt, sans console : utilisable depuis l'interface.</summary>
+    public static DoctorOutput WriteReport(AppPaths paths, SettingsStore settings)
     {
         var time = TimeProvider.System;
         var credentials = new ClaudeCredentialReader(ClaudeCredentialReader.DefaultDirectory, time);
@@ -52,20 +68,17 @@ public static class DoctorCommand
             Now: time.GetUtcNow(),
             Zone: TimeZoneInfo.Local));
 
-        var utf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+        var file = Path.Combine(paths.LogsDirectory, "doctor.txt");
         try
         {
             Directory.CreateDirectory(paths.LogsDirectory);
-            File.WriteAllText(Path.Combine(paths.LogsDirectory, "doctor.txt"), text, utf8);
+            File.WriteAllText(file, text, Utf8);
+            return new DoctorOutput(text, file);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            // Le rapport s'affiche quand même sur la console.
+            // Le rapport reste affichable sur la console.
+            return new DoctorOutput(text, null);
         }
-
-        NativeMethods.AttachConsole(NativeMethods.ATTACH_PARENT_PROCESS);
-        using var stdout = new StreamWriter(Console.OpenStandardOutput(), utf8) { AutoFlush = true };
-        stdout.Write(text);
-        return text;
     }
 }

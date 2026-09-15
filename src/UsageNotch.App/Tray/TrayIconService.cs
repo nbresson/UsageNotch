@@ -1,6 +1,4 @@
 using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -9,21 +7,20 @@ using H.NotifyIcon;
 using Microsoft.Extensions.Logging;
 using UsageNotch.App.Converters;
 using UsageNotch.App.Hosting;
-using UsageNotch.App.Interop;
-using UsageNotch.Core.Hooks;
 using UsageNotch.Core.Settings;
-using UsageNotch.Presentation;
 using UsageNotch.Presentation.Pill;
+using UsageNotch.Presentation.Services;
 using UsageNotch.Presentation.ViewModels;
 
 namespace UsageNotch.App.Tray;
 
+/// <summary>Icône de zone de notification (spec §6) : menu identique à celui de la pilule, clic gauche → réglages.</summary>
 public sealed class TrayIconService(
     NotchViewModel vm,
-    HookInstaller installer,
+    IHookSetup hooks,
+    IShellActions shell,
+    IAutoStart autoStart,
     AppPaths paths,
-    SettingsStore settings,
-    AppArguments args,
     ILogger<TrayIconService> logger) : IDisposable
 {
     private TaskbarIcon? _icon;
@@ -40,7 +37,7 @@ public sealed class TrayIconService(
             ContextMenu = BuildMenu(quit, openSettings),
         };
         SetIcon(RenderIcon(vm.Cell));
-        _icon.TrayLeftMouseUp += (_, _) => vm.PeekCommand.Execute(null);
+        _icon.TrayLeftMouseUp += (_, _) => openSettings();
         _icon.ForceCreate(enablesEfficiencyMode: false);
         ApplyVisibility();
         vm.PropertyChanged += OnViewModelChanged;
@@ -94,23 +91,23 @@ public sealed class TrayIconService(
         _hooksItem = Item("Hooks Claude Code installés", ToggleHooks);
         menu.Items.Add(_hooksItem);
         // En démo, ne jamais toucher à la vraie valeur Run de HKCU : l'élément est désactivé et son clic ne fait rien.
-        _autoStartItem = args.Demo
-            ? new MenuItem { Header = "Démarrer avec Windows (indisponible en démo)", IsEnabled = false }
-            : Item("Démarrer avec Windows", ToggleAutoStart);
+        _autoStartItem = autoStart.IsAvailable
+            ? Item("Démarrer avec Windows", ToggleAutoStart)
+            : new MenuItem { Header = "Démarrer avec Windows (indisponible en démo)", IsEnabled = false };
         menu.Items.Add(_autoStartItem);
         menu.Items.Add(new Separator());
 
         menu.Items.Add(Item("Réglages…", openSettings));
-        menu.Items.Add(Item("Ouvrir le dossier de données", OpenDataDirectory));
-        menu.Items.Add(Item("Diagnostic", OpenDiagnostic));
+        menu.Items.Add(Item("Ouvrir le dossier de données", () => shell.OpenFolder(paths.DataDirectory)));
+        menu.Items.Add(Item("Diagnostic", RunDoctor));
         menu.Items.Add(new Separator());
         menu.Items.Add(Item("Quitter", () => _ = quit()));
 
         menu.Opened += (_, _) =>
         {
             _lockItem.IsChecked = vm.Locked;
-            _hooksItem.IsChecked = SafeIsInstalled();
-            if (!args.Demo) _autoStartItem.IsChecked = SafeIsAutoStartEnabled();
+            _hooksItem.IsChecked = hooks.IsInstalled();
+            if (autoStart.IsAvailable) _autoStartItem.IsChecked = autoStart.IsEnabled();
         };
         return menu;
     }
@@ -122,73 +119,22 @@ public sealed class TrayIconService(
         return item;
     }
 
-    private bool SafeIsInstalled()
-    {
-        try { return installer.IsInstalled(); }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { return false; }
-    }
-
-    private static bool SafeIsAutoStartEnabled()
-    {
-        try { return AutoStart.IsEnabled(); }
-        catch (Exception e) when (e is System.Security.SecurityException or UnauthorizedAccessException or IOException) { return false; }
-    }
-
     private void ToggleHooks()
     {
-        try
-        {
-            var message = SafeIsInstalled() ? installer.Uninstall() : installer.Install();
-            logger.LogInformation("Hooks Claude Code : {Message}", message);
-        }
-        catch (FileNotFoundException)
-        {
-            Warn($"Impossible de modifier les hooks Claude Code : exécutable hook introuvable : {paths.HookExe}");
-        }
-        catch (Exception e) when (e is InvalidDataException or IOException or UnauthorizedAccessException or ArgumentException)
-        {
-            Warn("Impossible de modifier les hooks Claude Code : " + e.Message);
-        }
+        var result = hooks.IsInstalled() ? hooks.Uninstall() : hooks.Install();
+        if (!result.Succeeded) Warn(result.Message);
     }
 
     private void ToggleAutoStart()
     {
-        try
-        {
-            AutoStart.Set(!AutoStart.IsEnabled(), Environment.ProcessPath ?? Path.Combine(AppContext.BaseDirectory, "UsageNotch.App.exe"));
-        }
-        catch (Exception e) when (e is UnauthorizedAccessException or System.Security.SecurityException or IOException)
-        {
-            Warn("Impossible de modifier le démarrage avec Windows : " + e.Message);
-        }
+        var error = autoStart.TrySet(!autoStart.IsEnabled());
+        if (error is not null) Warn(error);
     }
 
-    private void OpenDataDirectory() => StartProcess("explorer.exe", $"\"{paths.DataDirectory}\"");
-
-    private void OpenDiagnostic()
+    private void RunDoctor()
     {
-        try
-        {
-            DoctorCommand.Run(paths, settings);
-        }
-        catch (Exception e)
-        {
-            Warn("Diagnostic impossible : " + e.Message);
-            return;
-        }
-        StartProcess("notepad.exe", $"\"{Path.Combine(paths.LogsDirectory, "doctor.txt")}\"");
-    }
-
-    private void StartProcess(string file, string arguments)
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo(file, arguments) { UseShellExecute = false });
-        }
-        catch (Win32Exception e)
-        {
-            logger.LogWarning(e, "Impossible de lancer {File}", file);
-        }
+        var error = shell.RunDoctor();
+        if (error is not null) Warn(error);
     }
 
     private void Warn(string message)
@@ -221,7 +167,7 @@ public sealed class TrayIconService(
                 // Nom complet : System.Windows.Controls est aussi importé.
                 else dc.DrawGeometry(null, pen, UsageNotch.App.Controls.ProgressRing.ArcGeometry(center, 11, f));
             }
-            if (cell.Activity == UsageNotch.Presentation.Pill.ActivityKind.Attention)
+            if (cell.Activity == ActivityKind.Attention)
             {
                 dc.DrawEllipse(HexBrushConverter.ToBrush(cell.ActivityColor), null, center, 4, 4);
             }

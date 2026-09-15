@@ -1,10 +1,11 @@
 using System.Runtime.InteropServices;
 using UsageNotch.Core.Placement;
+using UsageNotch.Presentation.Services;
 
 namespace UsageNotch.App.Interop;
 
 /// <summary>Énumère les écrans en pixels physiques, avec leur facteur d'échelle effectif (1,5 = 150 %).</summary>
-public sealed class MonitorService
+public sealed class MonitorService : IMonitorSource
 {
     public IReadOnlyList<MonitorInfo> GetMonitors()
     {
