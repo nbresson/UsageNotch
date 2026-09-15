@@ -259,6 +259,30 @@ public class SettingsStoreTests
     }
 
     [Fact]
+    public void Threshold_notifications_default_on_at_eighty_percent()
+    {
+        var s = new UsageNotch.Core.Settings.Settings();
+
+        s.ThresholdNotifications.Should().BeTrue();
+        s.NotifyThreshold.Should().Be(0.8);
+    }
+
+    [Theory]
+    [InlineData(0.1, 0.6)]
+    [InlineData(0.75, 0.75)]
+    [InlineData(1.2, 0.95)]
+    public void Notify_threshold_is_clamped_between_sixty_and_ninety_five_percent(double written, double expected)
+    {
+        using var dir = new TempDir();
+        File.WriteAllText(dir.File("settings.json"), $$"""{ "notifyThreshold": {{written.ToString(System.Globalization.CultureInfo.InvariantCulture)}}, "thresholdNotifications": false }""");
+
+        var s = Build(dir).Load();
+
+        s.NotifyThreshold.Should().Be(expected);
+        s.ThresholdNotifications.Should().BeFalse();
+    }
+
+    [Fact]
     public void Custom_preset_returns_the_custom_theme()
     {
         var custom = Theme.Monochrome with { Text = "#123456" };

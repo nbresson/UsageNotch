@@ -10,6 +10,7 @@ public sealed class BehaviorPageViewModel : ObservableObject, IDisposable
 {
     public const string AutoStartUnavailableNote = "Indisponible en mode démo.";
     public const string TrayLockedNote = "Toujours visible en mode Masqué : c'est alors le seul accès à UsageNotch.";
+    public const string AlertsNeedTrayIconNote = "Les alertes passent par l'icône de notification : masquée, elles ne s'affichent pas.";
 
     private readonly SettingsDraft _draft;
     private readonly IAutoStart _autoStart;
@@ -131,6 +132,36 @@ public sealed class BehaviorPageViewModel : ObservableObject, IDisposable
     public bool TrayIconEditable => _draft.Value.Visibility != VisibilityMode.Hidden;
 
     public string TrayIconNote => TrayIconEditable ? "" : TrayLockedNote;
+
+    public bool ThresholdNotifications
+    {
+        get => _draft.Value.ThresholdNotifications;
+        set
+        {
+            if (value == ThresholdNotifications) return;
+            _draft.Edit(s => s with { ThresholdNotifications = value });
+        }
+    }
+
+    public double NotifyThreshold
+    {
+        get => _draft.Value.NotifyThreshold;
+        set
+        {
+            if (Math.Abs(value - NotifyThreshold) < 1e-9) return;
+            _draft.Edit(s => s with { NotifyThreshold = value });
+        }
+    }
+
+    public string NotifyThresholdText => UsageNotch.Presentation.Formatting.FrenchText.Percent(NotifyThreshold);
+
+    public bool NotifyThresholdEditable => ThresholdNotifications;
+
+    /// <summary>Les notifications Windows sont émises par l'icône : elles ne s'affichent pas quand l'icône est masquée.</summary>
+    public string ThresholdNotificationsNote =>
+        ThresholdNotifications && !_draft.Value.TrayIconVisible && _draft.Value.Visibility != VisibilityMode.Hidden
+            ? AlertsNeedTrayIconNote
+            : "";
 
     public void Dispose() => _draft.Changed -= OnDraftChanged;
 

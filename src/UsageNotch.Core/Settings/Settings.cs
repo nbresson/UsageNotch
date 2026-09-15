@@ -9,6 +9,8 @@ public sealed record Settings
     public const int FoldedThicknessMin = 2;
     public const int FoldedThicknessMax = 12;
     public const int DefaultPort = 48666;
+    public const double NotifyThresholdMin = 0.6;
+    public const double NotifyThresholdMax = 0.95;
 
     public int Version { get; init; } = CurrentVersion;
     public int Port { get; init; } = DefaultPort;
@@ -31,6 +33,10 @@ public sealed record Settings
     public string DoneSound { get; init; } = "Asterisk";
     public string AttentionSound { get; init; } = "Exclamation";
     public bool TrayIconVisible { get; init; } = true;
+    /// <summary>Notification Windows quand une fenêtre de limite franchit <see cref="NotifyThreshold"/>, puis 100 %.</summary>
+    public bool ThresholdNotifications { get; init; } = true;
+    /// <summary>Premier seuil d'alerte, de <see cref="NotifyThresholdMin"/> à <see cref="NotifyThresholdMax"/>.</summary>
+    public double NotifyThreshold { get; init; } = 0.8;
     public bool DebugLogging { get; init; }
     /// <summary>false = le hook ne relance pas l'application (mis à false par Quitter, remis à true au démarrage manuel).</summary>
     public bool AutoLaunch { get; init; } = true;
@@ -65,6 +71,7 @@ public sealed record Settings
         PositionBottom = Math.Clamp(PositionBottom, 0.0, 1.0),
         Scale = Math.Clamp(Scale, ScaleMin, ScaleMax),
         FoldedThicknessPx = Math.Clamp(FoldedThicknessPx, FoldedThicknessMin, FoldedThicknessMax),
+        NotifyThreshold = Math.Clamp(NotifyThreshold, NotifyThresholdMin, NotifyThresholdMax),
         // Un JSON édité à la main peut porter une valeur "null" explicite malgré le type non-nullable.
         CustomTheme = (CustomTheme ?? Theme.Codenotch).Clamp(),
         DoneSound = string.IsNullOrWhiteSpace(DoneSound) ? "Asterisk" : DoneSound,

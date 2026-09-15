@@ -172,3 +172,15 @@ Processeur de la démo (build Debug, 30 s par état, en % d'un cœur) :
 - Plus aucune relecture après nos propres enregistrements (fenêtre de réglages toutes les 250 ms pendant un glisser, glisser Alt, Quitter) : un fichier identique aux réglages courants est simplement ignoré.
 - Un `settings.json` illisible n'est signalé qu'une fois tant que son contenu ne change pas ; la perte de surveillance du dossier est journalisée.
 - L'état des hooks est relu hors du thread UI à l'activation de la fenêtre de réglages et à l'ouverture du menu de l'icône ; une action lancée pendant la lecture l'emporte sur un résultat périmé.
+
+## Alertes de seuil (extension après le Plan 3)
+
+La spec plaçait les notifications système de seuil hors de la première version ; elles sont ajoutées ainsi :
+
+- Toutes les fenêtres de limite (session, hebdomadaire tous modèles, hebdomadaire Opus) sont surveillées, sur les seules lectures fraîches (`Ok`).
+- Deux niveaux par fenêtre : le seuil d'alerte réglable (`notifyThreshold`, 60 à 95 %, 80 % par défaut) puis 100 % (« limite atteinte »). Atteindre 100 % d'un coup n'annonce que la limite.
+- Une alerte par niveau et par période (jusqu'à la réinitialisation de la fenêtre, identifiée au quart d'heure près). Les alertes envoyées sont gardées dans `notifications.json` du dossier de données : un redémarrage ne les répète pas ; les entrées expirent à la réinitialisation.
+- Forme : notification Windows émise par l'icône (respecte Ne pas déranger), par exemple « Session en cours : 80 % utilisés » / « Réinitialisation dans 51 min ». Icône masquée : l'alerte est seulement journalisée, et la page Comportement le signale.
+- Réglages : page Comportement › « Alertes d'usage » (case `thresholdNotifications`, curseur du seuil).
+- La description du fichier et le nom de produit valent « UsageNotch » : c'est le nom que Windows affiche sur les notifications.
+

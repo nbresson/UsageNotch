@@ -89,6 +89,16 @@ public static class AppHost
             TimeZoneInfo.Local));
 
         s.AddSingleton<TrayIconService>();
+        s.AddSingleton<IUserNotifier>(sp => sp.GetRequiredService<TrayIconService>());
+        s.AddSingleton(sp => new ThresholdLog(paths.NotificationsFile, sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<ThresholdLog>>()));
+        s.AddSingleton(sp => new ThresholdNotifications(
+            sp.GetRequiredService<UsageStore>(),
+            settings,
+            sp.GetRequiredService<ThresholdLog>(),
+            sp.GetRequiredService<IUserNotifier>(),
+            sp.GetRequiredService<IUiDispatcher>(),
+            sp.GetRequiredService<TimeProvider>(),
+            TimeZoneInfo.Local));
         s.AddSingleton<SettingsFileWatcher>();
         s.AddSingleton<SettingsWindowHost>();
         s.AddSingleton<NotchShell>();

@@ -21,7 +21,7 @@ public sealed class TrayIconService(
     IShellActions shell,
     IAutoStart autoStart,
     AppPaths paths,
-    ILogger<TrayIconService> logger) : IDisposable
+    ILogger<TrayIconService> logger) : IUserNotifier, IDisposable
 {
     private TaskbarIcon? _icon;
     private MenuItem? _lockItem;
@@ -180,6 +180,21 @@ public sealed class TrayIconService(
 
         using var stream = bitmap.ToStream();
         return new System.Drawing.Icon(stream);
+    }
+
+    /// <summary>Notification Windows émise par l'icône (respecte le mode Ne pas déranger). Sans icône visible, elle est journalisée.</summary>
+    public void Show(string title, string message, bool critical)
+    {
+        logger.LogInformation("Alerte d'usage : {Title} — {Message}", title, message);
+        if (_icon is null || _icon.Visibility != Visibility.Visible) return;
+        try
+        {
+            _icon.ShowNotification(title, message, critical ? H.NotifyIcon.Core.NotificationIcon.Error : H.NotifyIcon.Core.NotificationIcon.Warning);
+        }
+        catch (Exception e) when (e is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            logger.LogWarning(e, "Notification impossible : {Title}", title);
+        }
     }
 
     public void Dispose()

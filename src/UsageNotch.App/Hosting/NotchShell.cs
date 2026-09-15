@@ -4,6 +4,7 @@ using UsageNotch.App.Tray;
 using UsageNotch.App.Views;
 using UsageNotch.Core.Hooks;
 using UsageNotch.Core.Settings;
+using UsageNotch.Presentation.Behavior;
 using UsageNotch.Presentation.Services;
 using UsageNotch.Presentation.ViewModels;
 
@@ -18,6 +19,7 @@ public sealed class NotchShell(
     TrayIconService tray,
     SettingsFileWatcher watcher,
     SettingsWindowHost settingsWindow,
+    ThresholdNotifications thresholds,
     IUiDispatcher ui,
     ILogger<NotchShell> logger) : IDisposable
 {
@@ -37,6 +39,8 @@ public sealed class NotchShell(
 
         tray.Start(QuitAsync, OpenSettings);
         watcher.Start();
+        // Après l'icône : les alertes de seuil sont des notifications de l'icône.
+        thresholds.Start();
 
         logger.LogInformation("Coquille démarrée");
     }
@@ -51,6 +55,7 @@ public sealed class NotchShell(
         // D'abord la fenêtre de réglages : sa fermeture enregistre ses modifications par-dessus l'état courant
         // (dont AutoLaunch = false posé par Quitter).
         settingsWindow.Dispose();
+        thresholds.Dispose();
         watcher.Dispose();
         tray.Dispose();
         _card?.Close();

@@ -149,6 +149,52 @@ public class BehaviorPageViewModelTests
     }
 
     [Fact]
+    public void Threshold_alerts_can_be_switched_off_and_their_threshold_chosen()
+    {
+        var (f, vm, _, _) = Create();
+        using var _f = f;
+
+        vm.ThresholdNotifications.Should().BeTrue();
+        vm.NotifyThreshold.Should().Be(0.8);
+        vm.NotifyThresholdText.Should().Be("80" + UsageNotch.Presentation.Formatting.FrenchText.Nbsp + "%");
+
+        vm.NotifyThreshold = 0.65;
+        vm.ThresholdNotifications = false;
+
+        f.Draft.Value.NotifyThreshold.Should().Be(0.65);
+        f.Draft.Value.ThresholdNotifications.Should().BeFalse();
+        vm.NotifyThresholdEditable.Should().BeFalse();
+    }
+
+    [Fact]
+    public void The_alert_threshold_is_clamped_and_same_values_are_ignored()
+    {
+        var (f, vm, _, _) = Create();
+        using var _f = f;
+
+        vm.NotifyThreshold = 0.8;
+        f.Draft.HasPendingEdits.Should().BeFalse();
+
+        vm.NotifyThreshold = 0.99;
+        vm.NotifyThreshold.Should().Be(0.95);
+    }
+
+    [Fact]
+    public void Alerts_warn_when_the_tray_icon_is_hidden()
+    {
+        var (f, vm, _, _) = Create();
+        using var _f = f;
+
+        vm.ThresholdNotificationsNote.Should().BeEmpty();
+
+        vm.TrayIconVisible = false;
+        vm.ThresholdNotificationsNote.Should().Be(BehaviorPageViewModel.AlertsNeedTrayIconNote);
+
+        vm.ThresholdNotifications = false;
+        vm.ThresholdNotificationsNote.Should().BeEmpty();
+    }
+
+    [Fact]
     public void The_tray_icon_can_be_hidden_except_in_hidden_mode()
     {
         var (f, vm, _, _) = Create();

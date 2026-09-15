@@ -45,6 +45,20 @@
     <TextBlock Text="{Binding AutoStartNote}" Style="{StaticResource NoteText}" />
     <TextBlock Text="{Binding AutoStartError}" Style="{StaticResource ErrorText}" />
 
+    <TextBlock Text="Alertes d'usage" Style="{StaticResource SectionTitle}" />
+    <CheckBox Content="Me prévenir quand une limite approche" IsChecked="{Binding ThresholdNotifications}"
+              AutomationProperties.AutomationId="ThresholdNotifications" />
+    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+      <TextBlock Text="Seuil d'alerte" Width="200" Style="{StaticResource FieldLabel}" />
+      <Slider AutomationProperties.AutomationId="NotifyThreshold" AutomationProperties.Name="Seuil d'alerte"
+              Minimum="0.6" Maximum="0.95" TickFrequency="0.05" Value="{Binding NotifyThreshold}"
+              IsEnabled="{Binding NotifyThresholdEditable}" />
+      <TextBlock Text="{Binding NotifyThresholdText}" Margin="12,0,0,0" VerticalAlignment="Center" />
+      <TextBlock Text="et à 100&#160;%" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="#5C5C5C" />
+    </StackPanel>
+    <TextBlock Text="Une notification Windows par fenêtre de limite (session, hebdomadaire) et par période." Style="{StaticResource NoteText}" />
+    <TextBlock Text="{Binding ThresholdNotificationsNote}" Style="{StaticResource ErrorText}" />
+
     <TextBlock Text="Icône de notification" Style="{StaticResource SectionTitle}" />
     <CheckBox Content="Afficher l'icône dans la zone de notification" IsChecked="{Binding TrayIconVisible}"
               IsEnabled="{Binding TrayIconEditable}" AutomationProperties.AutomationId="TrayIconVisible" />
