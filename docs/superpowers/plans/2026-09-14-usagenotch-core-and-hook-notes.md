@@ -58,12 +58,11 @@ Chaque ligne : décision, raison, coût si elle est fausse.
 ## Points mineurs laissés en l'état
 
 - Un thème personnalisé partiel sans seuils prend 0 avant bornage, au lieu des valeurs par défaut.
-- `Retry-After` au format date HTTP est ignoré ; le backoff exponentiel s'applique quand même.
 - Le chemin du hook dans la commande utilise des barres obliques inverses.
 - Deux fenêtres de course théoriques dans les tests du planificateur (attendre `Calls >= 2`, et lire le statut après `Apply`).
 - Après un échec de la copie « corrupt », un `Save` ultérieur écrase le fichier illisible sans copie.
 - Le compteur de backoff pourrait déborder après 2³¹ échecs consécutifs.
-- `StopAsync` du récepteur n'attend pas les requêtes en cours de traitement.
+- `StopAsync` du récepteur n'attend pas les requêtes en cours de traitement : sans effet visible, il ne s'arrête qu'à la fermeture de l'application et le hook abandonne de lui-même après 2 s.
 
 ## Plan 2 — application
 
@@ -106,7 +105,7 @@ Chaque ligne : décision, raison, coût si elle est fausse.
 ### Points laissés en l'état après le Plan 2
 
 - Non vérifié : écrans à mise à l'échelle différente (DPI mixte), clics focus et ✕ sur les lignes de session, son d'ouverture automatique.
-- Mineurs : purge du journal seulement au démarrage, saut du glissement à la réouverture de la carte, allocation du stylo de `ProgressRing`, longueur du jeton affichée par `doctor`, chemin de copie du Hook codé en dur, `AttachConsole` du diagnostic, minuteries de survol non remises à null, pid recyclé possible pour le retour au terminal.
+- Mineurs : allocation du stylo de `ProgressRing`, longueur du jeton affichée par `doctor`, chemin de copie du Hook codé en dur, minuteries de survol non remises à null.
 
 ## Plan 3 — fenêtre de réglages
 
@@ -147,7 +146,6 @@ Chaque ligne : décision, raison, coût si elle est fausse.
 
 ### Points laissés en l'état après le Plan 3
 
-- Miniature des écrans : focus clavier perdu après le choix d'une tuile, repère de la pilule minuscule avec beaucoup d'écrans, infobulle avec le nom technique `\\.\DISPLAYn`.
 - Diagnostic et installation ou désinstallation des hooks exécutés sur le thread UI, au clic de l'utilisateur (fraction de seconde).
 - Mineurs : miniature recalculée à chaque lecture, repli de `KeyFor` sur l'identifiant brut, repli d'« Ouvrir le dossier » sur le chemin du fichier, pas de plancher sous 48 DIP dans l'ajustement de la fenêtre, « Quitter » pendant la boîte « Couleurs » non testé.
 
@@ -193,4 +191,13 @@ La spec plaçait le masquage automatique en plein écran hors de la première ve
 - Pendant le plein écran : pilule et carte masquées ; ouverture automatique de la carte et son suspendus, sans rejeu à la sortie ; icône de notification et alertes de seuil inchangées.
 - Réglage `hideInFullscreen` (activé par défaut), page Position › Visibilité ; sans effet en mode Masqué.
 - Vérifié en démo avec une fenêtre sans bordure couvrant l'écran : pilule masquée puis rétablie, carte non ouverte par une session en attente pendant le plein écran (témoin : elle s'ouvre hors plein écran), plein écran sur un autre écran sans effet.
+
+## Lot de finitions et de robustesse (après le Plan 3)
+
+- Journal : la rétention de 7 jours s'applique aussi au changement de jour, pas seulement au démarrage.
+- `Retry-After` au format date HTTP est pris en compte (délai jusqu'à la date, zéro si elle est passée).
+- Retour au terminal : un processus démarré après le début de la session (numéro réutilisé) n'est jamais ramené au premier plan.
+- Miniature des écrans : infobulle lisible (« Écran 2 — 2560 × 1600, 200 % »), repère d'au moins 6 DIP, pas de redessin si rien ne change, focus clavier conservé sur la tuile choisie.
+- Défaut trouvé en vérifiant ce lot : amener la pilule (ou la carte) sur un écran d'une autre mise à l'échelle l'activait. WPF la repositionne alors sans `SWP_NOACTIVATE` et Windows lui donnait le premier plan, retiré à la fenêtre de réglages. Les deux fenêtres non activables rendent désormais l'activation à la fenêtre qui l'avait.
+- Carte rouverte pendant son fondu de fermeture : seul le fondu s'inverse, sans nouveau glissement (non vérifié visuellement).
 
