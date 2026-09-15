@@ -103,11 +103,13 @@ public sealed class TrayIconService(
         menu.Items.Add(new Separator());
         menu.Items.Add(Item("Quitter", () => _ = quit()));
 
-        menu.Opened += (_, _) =>
+        menu.Opened += async (_, _) =>
         {
             _lockItem.IsChecked = vm.Locked;
-            _hooksItem.IsChecked = hooks.IsInstalled();
             if (autoStart.IsAvailable) _autoStartItem.IsChecked = autoStart.IsEnabled();
+            // Lecture de settings.json de Claude Code hors du thread UI : le menu s'ouvre sans attendre, la coche suit.
+            var installed = await Task.Run(hooks.IsInstalled);
+            _hooksItem.IsChecked = installed;
         };
         return menu;
     }

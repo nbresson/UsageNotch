@@ -55,7 +55,7 @@ public sealed class FakeAutoStart : IAutoStart
     }
 }
 
-public sealed class FakeHooks : IHookSetup
+public class FakeHooks : IHookSetup
 {
     public string SettingsPath { get; set; } = @"C:\Users\test\.claude\settings.json";
     public string HookExePath { get; set; } = @"C:\apps\UsageNotch\UsageNotch.Hook.exe";
@@ -63,7 +63,7 @@ public sealed class FakeHooks : IHookSetup
     public bool Installed { get; set; }
     public HookSetupResult? NextResult { get; set; }
 
-    public bool IsInstalled() => Installed;
+    public virtual bool IsInstalled() => Installed;
 
     public HookSetupResult Install() => Apply(installed: true, "7 hooks écrits");
 

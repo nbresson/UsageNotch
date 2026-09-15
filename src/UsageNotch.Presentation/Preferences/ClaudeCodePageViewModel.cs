@@ -16,6 +16,7 @@ public sealed class ClaudeCodePageViewModel : ObservableObject, IDisposable
     private readonly IHookSetup _hooks;
     private readonly SettingsEnvironment _environment;
     private bool _installed;
+    private long _statusVersion;
     private string _lastMessage = "";
     private bool _lastActionFailed;
     private string _portText;
@@ -112,9 +113,28 @@ public sealed class ClaudeCodePageViewModel : ObservableObject, IDisposable
         Refresh();
     }
 
+    /// <summary>
+    /// Relit l'état des hooks hors du thread UI : la lecture de settings.json de Claude Code ne bloque pas la fenêtre
+    /// quand elle revient au premier plan. Une action ou une relecture lancée entre-temps l'emporte : un résultat devenu
+    /// périmé est ignoré. À appeler depuis le thread UI.
+    /// </summary>
+    public async Task RefreshInBackgroundAsync()
+    {
+        var version = ++_statusVersion;
+        var installed = await Task.Run(() => _hooks.IsInstalled());
+        if (version != _statusVersion) return;
+        SetInstalled(installed);
+    }
+
     private void Refresh()
     {
-        _installed = _hooks.IsInstalled();
+        _statusVersion++;
+        SetInstalled(_hooks.IsInstalled());
+    }
+
+    private void SetInstalled(bool installed)
+    {
+        _installed = installed;
         OnPropertyChanged(nameof(HooksInstalled));
         OnPropertyChanged(nameof(HooksStatus));
         OnPropertyChanged(nameof(HookExeStatus));

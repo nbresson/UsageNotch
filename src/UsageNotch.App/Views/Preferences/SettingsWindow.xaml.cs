@@ -32,7 +32,8 @@ public partial class SettingsWindow : Window
         Activated += (_, _) =>
         {
             _vm.Position.RefreshMonitorsCommand.Execute(null);
-            _vm.ClaudeCode.RefreshCommand.Execute(null);
+            // Lecture de settings.json de Claude Code hors du thread UI : la fenêtre revient au premier plan sans attendre.
+            _ = _vm.ClaudeCode.RefreshInBackgroundAsync();
             _vm.Behavior.RefreshAutoStart();
         };
         Deactivated += (_, _) => _vm.Flush();

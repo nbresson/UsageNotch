@@ -103,6 +103,65 @@ public class ClaudeCodePageViewModelTests
     }
 
     [Fact]
+    public async Task A_background_refresh_rereads_the_hook_status_and_notifies()
+    {
+        var (f, vm, hooks, _) = Create();
+        using var _f = f;
+        var names = new List<string?>();
+        vm.PropertyChanged += (_, e) => names.Add(e.PropertyName);
+
+        hooks.Installed = true;
+        await vm.RefreshInBackgroundAsync();
+
+        vm.HooksInstalled.Should().BeTrue();
+        vm.HooksStatus.Should().Be("Installés");
+        names.Should().Contain(nameof(ClaudeCodePageViewModel.HooksStatus));
+        vm.InstallCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task An_install_during_a_background_refresh_is_not_overwritten_by_the_stale_result()
+    {
+        var hooks = new GatedHooks();
+        var (f, vm, _, _) = Create(hooks);
+        using var _f = f;
+
+        hooks.Arm();
+        var refresh = vm.RefreshInBackgroundAsync();
+        hooks.Entered.Wait(TimeSpan.FromSeconds(5)).Should().BeTrue();
+
+        vm.InstallCommand.Execute(null);
+        hooks.Release();
+        await refresh;
+
+        vm.HooksInstalled.Should().BeTrue();
+        vm.LastMessage.Should().Be("7 hooks écrits");
+    }
+
+    /// <summary>La première lecture après <see cref="Arm"/> rend l'état du moment puis attend <see cref="Release"/>.</summary>
+    private sealed class GatedHooks : FakeHooks
+    {
+        private readonly ManualResetEventSlim _gate = new(false);
+        private bool _armed;
+
+        public ManualResetEventSlim Entered { get; } = new(false);
+
+        public void Arm() => _armed = true;
+
+        public void Release() => _gate.Set();
+
+        public override bool IsInstalled()
+        {
+            if (!_armed) return Installed;
+            _armed = false;
+            var snapshot = Installed;
+            Entered.Set();
+            _gate.Wait(TimeSpan.FromSeconds(5));
+            return snapshot;
+        }
+    }
+
+    [Fact]
     public void A_valid_port_edits_the_draft_and_announces_a_restart()
     {
         var (f, vm, _, _) = Create();

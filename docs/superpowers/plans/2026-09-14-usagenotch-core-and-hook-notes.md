@@ -106,7 +106,7 @@ Chaque ligne : décision, raison, coût si elle est fausse.
 ### Points laissés en l'état après le Plan 2
 
 - Non vérifié : écrans à mise à l'échelle différente (DPI mixte), clics focus et ✕ sur les lignes de session, son d'ouverture automatique.
-- Mineurs : lecture du fichier de réglages sur le thread UI sans gestionnaire `Error`, purge du journal seulement au démarrage, saut du glissement à la réouverture de la carte, allocation du stylo de `ProgressRing`, longueur du jeton affichée par `doctor`, chemin de copie du Hook codé en dur, `AttachConsole` du diagnostic, minuteries de survol non remises à null, pid recyclé possible pour le retour au terminal.
+- Mineurs : purge du journal seulement au démarrage, saut du glissement à la réouverture de la carte, allocation du stylo de `ProgressRing`, longueur du jeton affichée par `doctor`, chemin de copie du Hook codé en dur, `AttachConsole` du diagnostic, minuteries de survol non remises à null, pid recyclé possible pour le retour au terminal.
 
 ## Plan 3 — fenêtre de réglages
 
@@ -148,7 +148,7 @@ Chaque ligne : décision, raison, coût si elle est fausse.
 ### Points laissés en l'état après le Plan 3
 
 - Miniature des écrans : focus clavier perdu après le choix d'une tuile, repère de la pilule minuscule avec beaucoup d'écrans, infobulle avec le nom technique `\\.\DISPLAYn`.
-- Diagnostic, état des hooks et installation lus ou écrits de façon synchrone sur le thread UI (fraction de seconde).
+- Diagnostic et installation ou désinstallation des hooks exécutés sur le thread UI, au clic de l'utilisateur (fraction de seconde).
 - Mineurs : miniature recalculée à chaque lecture, repli de `KeyFor` sur l'identifiant brut, repli d'« Ouvrir le dossier » sur le chemin du fichier, pas de plancher sous 48 DIP dans l'ajustement de la fenêtre, « Quitter » pendant la boîte « Couleurs » non testé.
 
 ## Performance des animations (après le Plan 3)
@@ -165,3 +165,10 @@ Processeur de la démo (build Debug, 30 s par état, en % d'un cœur) :
 | Replié, bande pulsante | 6,25 | 3,33 |
 | Masqué (pics de la démo) | 1,77 | 1,72 |
 | Pourcentage seul | 3,90 | 0,42 |
+
+## Fluidité de l'interface (après le Plan 3)
+
+- La relecture de `settings.json` se fait hors du thread UI : lecture avec essais courts et analyse sur un thread du pool, seul l'enregistrement du résultat passe par le thread UI.
+- Plus aucune relecture après nos propres enregistrements (fenêtre de réglages toutes les 250 ms pendant un glisser, glisser Alt, Quitter) : un fichier identique aux réglages courants est simplement ignoré.
+- Un `settings.json` illisible n'est signalé qu'une fois tant que son contenu ne change pas ; la perte de surveillance du dossier est journalisée.
+- L'état des hooks est relu hors du thread UI à l'activation de la fenêtre de réglages et à l'ouverture du menu de l'icône ; une action lancée pendant la lecture l'emporte sur un résultat périmé.
