@@ -136,3 +136,18 @@ Chaque ligne : décision, raison, coût si elle est fausse.
 
 - Vérifier la pilule, la carte et la miniature des écrans sur un écran à une autre mise à l'échelle (DPI mixte).
 - Tests d'interface automatisés (FlaUI, spec §9) : la vérification reste manuelle, par UI Automation en démo.
+
+### Arbitrages pris pendant l'exécution du Plan 3
+
+- La fenêtre de réglages s'ajuste à la zone de travail de l'écran où elle s'ouvre (marge de 24 DIP) : 940 × 760 débordait d'un écran 1280 × 800.
+- La miniature des écrans déclare un pair d'automatisation : un `Canvas` n'en a pas, son identifiant restait invisible pour UI Automation.
+- La zone de page revient en haut à chaque changement de page ; les légendes de l'aperçu ont leur propre fond, lisible sur les deux moitiés.
+- À chaque activation de la fenêtre, l'état des hooks, de « Démarrer avec Windows » et la liste des écrans sont relus (changement possible depuis l'icône de notification).
+- Vérifications faites alors que l'instance réelle de l'utilisateur tournait : fenêtres de la démo retrouvées par identifiant de processus, pilule de démo au quart du bord droit, publication de contrôle hors de `publish\`.
+
+### Points laissés en l'état après le Plan 3
+
+- Pas d'icône propre à la fenêtre de réglages (icône WPF générique).
+- Miniature des écrans : focus clavier perdu après le choix d'une tuile, repère de la pilule minuscule avec beaucoup d'écrans, infobulle avec le nom technique `\\.\DISPLAYn`.
+- Diagnostic, état des hooks et installation lus ou écrits de façon synchrone sur le thread UI (fraction de seconde).
+- Mineurs : miniature recalculée à chaque lecture, repli de `KeyFor` sur l'identifiant brut, repli d'« Ouvrir le dossier » sur le chemin du fichier, pas de plancher sous 48 DIP dans l'ajustement de la fenêtre, « Quitter » pendant la boîte « Couleurs » non testé.
