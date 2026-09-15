@@ -25,7 +25,9 @@ public partial class PillWindow : Window
     private readonly Action _openSettings;
 
     private bool _initialized;
+    private bool _closed;
     private bool _dragging;
+    private bool _reapplyPending;
     private double _dragFraction;
     private double _thicknessDip = PillMetrics.Thickness;
 
@@ -51,6 +53,7 @@ public partial class PillWindow : Window
         PreviewMouseLeftButtonDown += OnLeftButtonDown;
         PreviewMouseLeftButtonUp += OnLeftButtonUp;
         MouseMove += OnMouseMove;
+        LostMouseCapture += (_, _) => EndDrag();
         _vm.PropertyChanged += OnViewModelChanged;
     }
 
@@ -79,8 +82,15 @@ public partial class PillWindow : Window
             case NativeMethods.WM_DISPLAYCHANGE:
             case NativeMethods.WM_SETTINGCHANGE:
             case NativeMethods.WM_DPICHANGED:
-                // WPF traite d'abord le message (mise à l'échelle), puis on replace la pilule.
-                Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => ApplySettings()));
+                // WPF traite d'abord le message (mise à l'échelle), puis on replace la pilule. Une seule demande en attente ;
+                // pendant un glisser, on ne déplace rien : l'enregistrement au relâchement replace la pilule.
+                if (_reapplyPending) break;
+                _reapplyPending = true;
+                Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+                {
+                    _reapplyPending = false;
+                    if (!_dragging) ApplySettings();
+                }));
                 break;
         }
         return 0;
@@ -112,7 +122,7 @@ public partial class PillWindow : Window
     /// <summary>Recalcule forme, contenu et position à partir des réglages courants.</summary>
     private void ApplySettings(bool fromSourceInitialized = false)
     {
-        if (!_initialized) return;
+        if (!_initialized || _closed) return;
         var s = _vm.Settings;
 
         if (s.Visibility == VisibilityMode.Hidden)
@@ -199,7 +209,7 @@ public partial class PillWindow : Window
 
     private void OnMouseMove(object sender, MouseEventArgs e)
     {
-        if (!_dragging || Placement is null) return;
+        if (!_dragging || Placement is null || e.LeftButton != MouseButtonState.Pressed) return;
         var (cx, cy) = WindowStyles.CursorPosition();
         var edge = _vm.Settings.Edge;
         _dragFraction = _placer.FractionForCursor(Placement, edge, cx, cy);
@@ -211,15 +221,24 @@ public partial class PillWindow : Window
     {
         if (_dragging)
         {
-            _dragging = false;
+            // Relâcher la capture d'abord (IsMouseOver redevient exact) ; cela déclenche LostMouseCapture → EndDrag.
+            // L'appel explicite ne fait rien si c'est déjà fait : la position n'est enregistrée qu'une fois.
             ReleaseMouseCapture();
-            _settings.Save(_settings.Current.WithPosition(_vm.Settings.Edge, _dragFraction));
-            if (!IsMouseOver) _vm.PointerLeftPill();
+            EndDrag();
             e.Handled = true;
             return;
         }
         _vm.ToggleLockCommand.Execute(null);
         e.Handled = true;
+    }
+
+    /// <summary>Termine un glisser (relâchement ou capture perdue : Alt+Tab, UAC, menu) et enregistre la position une seule fois.</summary>
+    private void EndDrag()
+    {
+        if (!_dragging) return;
+        _dragging = false;
+        _settings.Save(_settings.Current.WithPosition(_vm.Settings.Edge, _dragFraction));
+        if (!IsMouseOver) _vm.PointerLeftPill();
     }
 
     private void OnSettingsClick(object sender, RoutedEventArgs e) => _openSettings();
@@ -228,6 +247,7 @@ public partial class PillWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
+        _closed = true;
         _vm.PropertyChanged -= OnViewModelChanged;
         base.OnClosed(e);
     }
