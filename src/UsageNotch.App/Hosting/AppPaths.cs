@@ -12,6 +12,10 @@ public sealed record AppPaths(
     string HookExe,
     string ClaudeSettingsFile)
 {
+    /// <summary>Port utilisé par le récepteur de hooks en démo, distinct du port réel : une démo ne doit jamais
+    /// recevoir les événements du vrai Claude Code, ni bloquer le port de la vraie application.</summary>
+    public const int DemoPort = 48667;
+
     /// <summary>En démo, tout vit dans %TEMP%\UsageNotch-demo : ni les réglages, ni la lecture, ni la config Claude Code réelles ne sont touchés.</summary>
     public static AppPaths For(bool demo)
     {

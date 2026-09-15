@@ -1,3 +1,4 @@
+using System.IO;
 using Microsoft.Win32;
 using UsageNotch.Presentation.Services;
 
@@ -17,7 +18,7 @@ public sealed class SystemAccentColor : IAccentColorSource
                 var v = unchecked((uint)abgr);
                 return $"#{v & 0xFF:X2}{(v >> 8) & 0xFF:X2}{(v >> 16) & 0xFF:X2}";
             }
-            catch (System.Security.SecurityException)
+            catch (Exception e) when (e is System.Security.SecurityException or UnauthorizedAccessException or IOException)
             {
                 return null;
             }
