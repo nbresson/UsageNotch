@@ -7,7 +7,8 @@ namespace UsageNotch.Presentation.Preferences;
 
 public readonly record struct MapRect(double X, double Y, double Width, double Height);
 
-public sealed record MonitorTile(string DeviceId, int Number, bool IsPrimary, bool IsSelected, MapRect Rect);
+/// <summary><paramref name="Label"/> : description lisible (« Écran 2 — 1920 × 1080, 100 % »), la même que dans la liste des écrans.</summary>
+public sealed record MonitorTile(string DeviceId, int Number, bool IsPrimary, bool IsSelected, MapRect Rect, string Label);
 
 public sealed record MonitorMapModel(IReadOnlyList<MonitorTile> Tiles, MapRect? PillMarker)
 {
@@ -17,7 +18,8 @@ public sealed record MonitorMapModel(IReadOnlyList<MonitorTile> Tiles, MapRect? 
 /// <summary>Miniature des écrans : le bureau virtuel réduit et centré dans une zone donnée, avec le repère de la pilule.</summary>
 public static class MonitorMap
 {
-    public const double MinMarkerSize = 3;
+    /// <summary>Plus petite dimension du repère : visible même sur un bureau de nombreux écrans.</summary>
+    public const double MinMarkerSize = 6;
 
     public static MonitorMapModel Layout(IReadOnlyList<MonitorInfo> monitors, CoreSettings settings, double width, double height, double padding)
     {
@@ -36,7 +38,7 @@ public static class MonitorMap
 
         var selected = PillPlacement.Choose(ordered, settings.MonitorDeviceId);
         var tiles = ordered
-            .Select((m, i) => new MonitorTile(m.DeviceId, i + 1, m.IsPrimary, ReferenceEquals(m, selected), Map(m.Bounds)))
+            .Select((m, i) => new MonitorTile(m.DeviceId, i + 1, m.IsPrimary, ReferenceEquals(m, selected), Map(m.Bounds), MonitorChoices.Describe(m, i + 1)))
             .ToList();
 
         var physical = selected.Scale * settings.Scale;

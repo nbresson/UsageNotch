@@ -54,10 +54,21 @@ public sealed class MonitorMapView : Canvas
     // Un Canvas n'a pas de pair d'automatisation : sans celui-ci, l'identifiant MonitorMap serait introuvable.
     protected override AutomationPeer OnCreateAutomationPeer() => new MonitorMapAutomationPeer(this);
 
-    private static void OnInputChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) => ((MonitorMapView)d).Rebuild();
+    private static void OnInputChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        // La page relit la miniature à chaque modification : une miniature identique n'est pas redessinée.
+        if (e.Property == ModelProperty && e.OldValue is MonitorMapModel before && e.NewValue is MonitorMapModel after
+            && before.PillMarker == after.PillMarker && before.Tiles.SequenceEqual(after.Tiles))
+        {
+            return;
+        }
+        ((MonitorMapView)d).Rebuild();
+    }
 
     private void Rebuild()
     {
+        // Le choix d'un écran au clavier reconstruit les tuiles : le focus revient sur la tuile du même écran.
+        var focusedDeviceId = Children.OfType<Button>().FirstOrDefault(b => b.IsKeyboardFocused)?.CommandParameter as string;
         Children.Clear();
         if (Model is not { } model) return;
 
@@ -78,7 +89,7 @@ public sealed class MonitorMapView : Canvas
                 Command = SelectCommand,
                 CommandParameter = tile.DeviceId,
                 Cursor = Cursors.Hand,
-                ToolTip = $"{name} — {tile.DeviceId}",
+                ToolTip = tile.Label,
                 Content = new TextBlock
                 {
                     Text = tile.IsPrimary ? $"{tile.Number.ToString(CultureInfo.InvariantCulture)} (principal)" : tile.Number.ToString(CultureInfo.InvariantCulture),
@@ -91,6 +102,11 @@ public sealed class MonitorMapView : Canvas
             SetLeft(button, tile.Rect.X);
             SetTop(button, tile.Rect.Y);
             Children.Add(button);
+            if (tile.DeviceId == focusedDeviceId)
+            {
+                // Après la mise en page : une tuile pas encore affichée ne peut pas prendre le focus.
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() => button.Focus()));
+            }
         }
 
         if (model.PillMarker is { } marker)

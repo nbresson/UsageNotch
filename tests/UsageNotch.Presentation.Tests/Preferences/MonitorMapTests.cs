@@ -30,6 +30,8 @@ public class MonitorMapTests
         map.Tiles.Select(t => t.Number).Should().Equal(1, 2);
         map.Tiles[0].DeviceId.Should().Be(@"\\.\DISPLAY1");
         map.Tiles[0].IsPrimary.Should().BeTrue();
+        map.Tiles[0].Label.Should().Be(MonitorChoices.Describe(Main, 1));
+        map.Tiles[1].Label.Should().Be(MonitorChoices.Describe(Side, 2));
         ShouldBe(map.Tiles[0].Rect, 4, 23, 96, 54);
         ShouldBe(map.Tiles[1].Rect, 100, 23, 96, 54);
     }
@@ -40,8 +42,9 @@ public class MonitorMapTests
         var map = MonitorMap.Layout([Main, Side], new Settings(), 200, 100, 4);
 
         map.Tiles.Select(t => t.IsSelected).Should().Equal(true, false);
-        // Pilule 64 × 136 au bord droit, centrée : (1856, 472) sur l'écran principal.
-        ShouldBe(map.PillMarker!.Value, 4 + 1856 * 0.05, 23 + 472 * 0.05, 64 * 0.05, 136 * 0.05);
+        // Pilule 64 × 136 au bord droit, centrée : (1856, 472) sur l'écran principal ; son épaisseur réduite (3,2) est
+        // portée au minimum de 6, collée au bord droit.
+        ShouldBe(map.PillMarker!.Value, 4 + 1920 * 0.05 - MonitorMap.MinMarkerSize, 23 + 472 * 0.05, MonitorMap.MinMarkerSize, 136 * 0.05);
     }
 
     [Fact]
@@ -52,7 +55,7 @@ public class MonitorMapTests
         var map = MonitorMap.Layout([Main, Side], settings, 200, 100, 4);
 
         map.Tiles.Select(t => t.IsSelected).Should().Equal(false, true);
-        ShouldBe(map.PillMarker!.Value, 100, 23, 64 * 0.05, 136 * 0.05);
+        ShouldBe(map.PillMarker!.Value, 100, 23, MonitorMap.MinMarkerSize, 136 * 0.05);
     }
 
     [Fact]
@@ -68,12 +71,12 @@ public class MonitorMapTests
     {
         var hiDpi = M(@"\\.\DISPLAY1", true, 0, 0, 1920, 1080, 1.5);
 
-        var map = MonitorMap.Layout([hiDpi], new Settings { Scale = 0.5 }, 200, 100, 4);
+        var map = MonitorMap.Layout([hiDpi], new Settings { Scale = 1.5 }, 200, 100, 4);
 
-        // Échelle physique 1,5 × 0,5 = 0,75 : épaisseur round(64 × 0,75) = 48, longueur round(136 × 0,75) = 102.
+        // Échelle physique 1,5 × 1,5 = 2,25 : épaisseur round(64 × 2,25) = 144, longueur round(136 × 2,25) = 306.
         var factor = Math.Min(192.0 / 1920, 92.0 / 1080);
-        map.PillMarker!.Value.Width.Should().BeApproximately(48 * factor, 1e-6);
-        map.PillMarker!.Value.Height.Should().BeApproximately(102 * factor, 1e-6);
+        map.PillMarker!.Value.Width.Should().BeApproximately(144 * factor, 1e-6);
+        map.PillMarker!.Value.Height.Should().BeApproximately(306 * factor, 1e-6);
     }
 
     [Fact]
