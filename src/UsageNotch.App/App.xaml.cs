@@ -21,6 +21,11 @@ public partial class App : Application
     private IDisposable? _demo;
     private ILogger<App>? _log;
     private bool _quitting;
+    private bool _repeatedFailureHandled;
+    private readonly Queue<DateTimeOffset> _recentUiFailures = new();
+
+    private static readonly TimeSpan RepeatedFailureWindow = TimeSpan.FromSeconds(10);
+    private const int RepeatedFailureThreshold = 3;
 
     protected override async void OnStartup(StartupEventArgs e)
     {
@@ -162,5 +167,21 @@ public partial class App : Application
     {
         _log?.LogError(e.Exception, "Exception non gérée sur le thread UI");
         e.Handled = true;
+
+        // Spec §9 : une erreur isolée est journalisée et ignorée ; des erreurs répétées ferment l'application.
+        var now = TimeProvider.System.GetUtcNow();
+        _recentUiFailures.Enqueue(now);
+        while (_recentUiFailures.Count > 0 && now - _recentUiFailures.Peek() > RepeatedFailureWindow)
+        {
+            _recentUiFailures.Dequeue();
+        }
+        if (_recentUiFailures.Count < RepeatedFailureThreshold || _repeatedFailureHandled || _quitting) return;
+
+        _repeatedFailureHandled = true;
+        _log?.LogCritical("{Count} exceptions sur le thread UI en moins de {Seconds} s : arrêt de l'application",
+            _recentUiFailures.Count, RepeatedFailureWindow.TotalSeconds);
+        MessageBox.Show("UsageNotch a rencontré des erreurs répétées et va se fermer. Les détails sont dans le journal.",
+            "UsageNotch", MessageBoxButton.OK, MessageBoxImage.Error);
+        _ = QuitAsync(userInitiated: false);
     }
 }
