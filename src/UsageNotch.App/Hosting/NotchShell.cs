@@ -21,17 +21,21 @@ public sealed class NotchShell(
 {
     private Action? _onOpenSettings;
     private PillWindow? _pill;
+    private CardWindow? _card;
 
     public void Start()
     {
         _onOpenSettings = () => ui.Post(() => viewModel.PeekCommand.Execute(null));
         listener.OpenSettingsRequested += _onOpenSettings;
 
-        _pill = new PillWindow(viewModel, placer, settings, () => ((App)Application.Current).QuitAsync(userInitiated: true), OpenSettingsFile);
+        _pill = new PillWindow(viewModel, placer, settings, QuitAsync, OpenSettingsFile);
+        _card = new CardWindow(viewModel, placer, _pill);
         if (settings.Current.Visibility != VisibilityMode.Hidden) _pill.Show();
 
         logger.LogInformation("Coquille démarrée");
     }
+
+    private static Task QuitAsync() => ((App)Application.Current).QuitAsync(userInitiated: true);
 
     /// <summary>Plan 2 : les réglages s'éditent dans settings.json ; le Plan 3 remplacera ceci par la fenêtre de réglages.</summary>
     private void OpenSettingsFile()
@@ -49,6 +53,7 @@ public sealed class NotchShell(
     public void Dispose()
     {
         if (_onOpenSettings is not null) listener.OpenSettingsRequested -= _onOpenSettings;
+        _card?.Close();
         _pill?.Close();
         viewModel.Dispose();
     }
