@@ -105,8 +105,6 @@ Chaque ligne : décision, raison, coût si elle est fausse.
 
 ### Points laissés en l'état après le Plan 2
 
-- Environ 5 % d'un cœur tant qu'une pulsation est visible (rendu logiciel à 60 i/s d'une fenêtre en couches). Piste : `Timeline.DesiredFrameRate` à 20 sur Pulse et BandPulse, 30 sur Spin, à mesurer.
-- Spin et Pulse tournent encore quand l'anneau est masqué (contenu « pourcentage seul ») ; environ 1 % d'un cœur en mode Masqué, source inconnue.
 - Non vérifié : écrans à mise à l'échelle différente (DPI mixte), clics focus et ✕ sur les lignes de session, son d'ouverture automatique.
 - Mineurs : lecture du fichier de réglages sur le thread UI sans gestionnaire `Error`, purge du journal seulement au démarrage, saut du glissement à la réouverture de la carte, allocation du stylo de `ProgressRing`, longueur du jeton affichée par `doctor`, chemin de copie du Hook codé en dur, `AttachConsole` du diagnostic, minuteries de survol non remises à null, pid recyclé possible pour le retour au terminal.
 
@@ -152,3 +150,18 @@ Chaque ligne : décision, raison, coût si elle est fausse.
 - Miniature des écrans : focus clavier perdu après le choix d'une tuile, repère de la pilule minuscule avec beaucoup d'écrans, infobulle avec le nom technique `\\.\DISPLAYn`.
 - Diagnostic, état des hooks et installation lus ou écrits de façon synchrone sur le thread UI (fraction de seconde).
 - Mineurs : miniature recalculée à chaque lecture, repli de `KeyFor` sur l'identifiant brut, repli d'« Ouvrir le dossier » sur le chemin du fichier, pas de plancher sous 48 DIP dans l'ajustement de la fenêtre, « Quitter » pendant la boîte « Couleurs » non testé.
+
+## Performance des animations (après le Plan 3)
+
+- Cadence plafonnée sur les animations en boucle de la pilule : 20 images/s pour les pulsations (anneau d'attention, bande repliée), 30 images/s pour l'arc en travail. Le repli et l'ouverture de la carte restent à 60 images/s.
+- L'arc et l'anneau d'attention ne s'animent plus en contenu « pourcentage seul », où l'anneau n'est pas dessiné.
+- Mode Masqué : pas de charge continue. Les pics mesurés suivent les changements de session de la démo (toutes les 20 s), qui redessinent l'icône de notification ; en usage réel, ils n'arrivent qu'avec un événement Claude Code.
+
+Processeur de la démo (build Debug, 30 s par état, en % d'un cœur) :
+
+| État | Avant | Après |
+|---|---|---|
+| Déplié, pulsation | 6,97 | 3,07 |
+| Replié, bande pulsante | 6,25 | 3,33 |
+| Masqué (pics de la démo) | 1,77 | 1,72 |
+| Pourcentage seul | 3,90 | 0,42 |

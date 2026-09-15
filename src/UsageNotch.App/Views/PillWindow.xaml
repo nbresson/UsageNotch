@@ -11,13 +11,15 @@
     <conv:HexBrushConverter x:Key="Hex" />
     <conv:ActivityVisibilityConverter x:Key="Activity" />
     <BooleanToVisibilityConverter x:Key="BoolVis" />
-    <Storyboard x:Key="Spin" RepeatBehavior="Forever">
+    <!-- Cadence plafonnée : chaque image d'une fenêtre transparente est rendue en logiciel. Un fondu d'opacité reste fluide
+         à 20 images/s ; la rotation garde 30 images/s pour ne pas saccader. Le repli (200 ms) reste à 60 images/s. -->
+    <Storyboard x:Key="Spin" RepeatBehavior="Forever" Timeline.DesiredFrameRate="30">
       <DoubleAnimation Storyboard.TargetName="SpinRotate" Storyboard.TargetProperty="Angle" From="0" To="360" Duration="0:0:1.2" />
     </Storyboard>
-    <Storyboard x:Key="Pulse" RepeatBehavior="Forever" AutoReverse="True">
+    <Storyboard x:Key="Pulse" RepeatBehavior="Forever" AutoReverse="True" Timeline.DesiredFrameRate="20">
       <DoubleAnimation Storyboard.TargetName="AttentionRing" Storyboard.TargetProperty="Opacity" From="0.4" To="1" Duration="0:0:1" />
     </Storyboard>
-    <Storyboard x:Key="BandPulse" RepeatBehavior="Forever" AutoReverse="True">
+    <Storyboard x:Key="BandPulse" RepeatBehavior="Forever" AutoReverse="True" Timeline.DesiredFrameRate="20">
       <DoubleAnimation Storyboard.TargetName="BandPath" Storyboard.TargetProperty="Opacity" From="0.4" To="1" Duration="0:0:1" />
     </Storyboard>
   </Window.Resources>

@@ -213,9 +213,10 @@ public partial class PillWindow : Window
     private void UpdateAnimations()
     {
         var activity = _vm.Cell.Activity;
-        var shown = IsVisible && PillLayer.Visibility == Visibility.Visible;
-        SetStoryboard("Spin", ref _spinRunning, shown && activity == ActivityKind.Running);
-        SetStoryboard("Pulse", ref _pulseRunning, shown && activity == ActivityKind.Attention);
+        // L'arc et l'anneau d'attention vivent dans l'anneau : en contenu « pourcentage seul », ils ne sont pas dessinés.
+        var ringShown = IsVisible && PillLayer.Visibility == Visibility.Visible && _vm.Cell.ShowRing;
+        SetStoryboard("Spin", ref _spinRunning, ringShown && activity == ActivityKind.Running);
+        SetStoryboard("Pulse", ref _pulseRunning, ringShown && activity == ActivityKind.Attention);
         SetStoryboard("BandPulse", ref _bandPulseRunning,
             IsVisible && BandPath.Visibility == Visibility.Visible && activity == ActivityKind.Attention);
     }
