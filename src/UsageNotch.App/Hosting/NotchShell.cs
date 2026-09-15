@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Windows;
 using Microsoft.Extensions.Logging;
+using UsageNotch.App.Tray;
 using UsageNotch.App.Views;
 using UsageNotch.Core.Hooks;
 using UsageNotch.Core.Settings;
@@ -16,6 +17,8 @@ public sealed class NotchShell(
     NotchPlacer placer,
     SettingsStore settings,
     AppPaths paths,
+    TrayIconService tray,
+    SettingsFileWatcher watcher,
     IUiDispatcher ui,
     ILogger<NotchShell> logger) : IDisposable
 {
@@ -31,6 +34,9 @@ public sealed class NotchShell(
         _pill = new PillWindow(viewModel, placer, settings, QuitAsync, OpenSettingsFile);
         _card = new CardWindow(viewModel, placer, _pill);
         if (settings.Current.Visibility != VisibilityMode.Hidden) _pill.Show();
+
+        tray.Start(QuitAsync, OpenSettingsFile);
+        watcher.Start();
 
         logger.LogInformation("Coquille démarrée");
     }
@@ -53,6 +59,8 @@ public sealed class NotchShell(
     public void Dispose()
     {
         if (_onOpenSettings is not null) listener.OpenSettingsRequested -= _onOpenSettings;
+        watcher.Dispose();
+        tray.Dispose();
         _card?.Close();
         _pill?.Close();
         viewModel.Dispose();

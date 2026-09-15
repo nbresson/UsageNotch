@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using UsageNotch.App.Interop;
+using UsageNotch.App.Tray;
 using UsageNotch.App.Views;
 using UsageNotch.Core.Hooks;
 using UsageNotch.Core.Logging;
@@ -81,6 +82,8 @@ public static class AppHost
             sp.GetRequiredService<TimeProvider>(),
             TimeZoneInfo.Local));
 
+        s.AddSingleton<TrayIconService>();
+        s.AddSingleton<SettingsFileWatcher>();
         s.AddSingleton<NotchShell>();
         return builder.Build();
     }
