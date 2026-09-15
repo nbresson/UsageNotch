@@ -7,6 +7,13 @@ public static class TerminalWindowChooser
 {
     public const int MaxDepth = 8;
 
+    /// <summary>Marge pour l'horloge et l'ordre des événements : le parent démarre toujours avant le premier hook.</summary>
+    public static readonly TimeSpan StartTolerance = TimeSpan.FromSeconds(5);
+
+    /// <summary>Un processus démarré après la session ne peut pas l'héberger : son numéro a été réutilisé.</summary>
+    public static bool CanHostSession(DateTimeOffset processStarted, DateTimeOffset sessionStarted) =>
+        processStarted <= sessionStarted + StartTolerance;
+
     public static IReadOnlyList<int> AncestorChain(int pid, IReadOnlyDictionary<int, int> parents)
     {
         var chain = new List<int> { pid };

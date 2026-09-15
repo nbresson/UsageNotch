@@ -11,9 +11,14 @@ namespace UsageNotch.App.Interop;
 /// </summary>
 public sealed class TerminalFocus(ILogger<TerminalFocus> logger) : ISessionFocus
 {
-    public bool Focus(int? parentPid)
+    public bool Focus(int? parentPid, DateTimeOffset sessionStarted)
     {
         if (parentPid is not int pid || pid <= 0) return false;
+        if (StartTimeOf(pid) is { } started && !TerminalWindowChooser.CanHostSession(started, sessionStarted))
+        {
+            logger.LogDebug("Le processus {Pid} a démarré après la session : numéro réutilisé, rien n'est ramené", pid);
+            return false;
+        }
 
         var handle = TerminalWindowChooser.Choose(pid, ProcessParents(), VisibleTitledWindows(), Environment.ProcessId);
         if (handle is not nint hwnd)
@@ -34,6 +39,20 @@ public sealed class TerminalFocus(ILogger<TerminalFocus> logger) : ISessionFocus
         };
         NativeMethods.FlashWindowEx(ref flash);
         return true;
+    }
+
+    /// <summary>Heure de démarrage, ou null si elle est illisible (processus terminé, accès refusé).</summary>
+    private static DateTimeOffset? StartTimeOf(int pid)
+    {
+        try
+        {
+            using var process = System.Diagnostics.Process.GetProcessById(pid);
+            return new DateTimeOffset(process.StartTime);
+        }
+        catch (Exception e) when (e is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception or NotSupportedException)
+        {
+            return null;
+        }
     }
 
     private static Dictionary<int, int> ProcessParents()

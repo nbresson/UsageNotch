@@ -16,6 +16,18 @@ public class TerminalWindowChooserTests
         [900] = 1,   // UsageNotch lui-même
     };
 
+    private static readonly DateTimeOffset SessionStart = new(2026, 9, 15, 12, 0, 0, TimeSpan.Zero);
+
+    [Theory]
+    [InlineData(-3600, true)]
+    [InlineData(0, true)]
+    [InlineData(4, true)]
+    [InlineData(60, false)]
+    public void A_process_started_after_the_session_is_a_reused_pid(int processStartOffsetSeconds, bool expected)
+    {
+        TerminalWindowChooser.CanHostSession(SessionStart.AddSeconds(processStartOffsetSeconds), SessionStart).Should().Be(expected);
+    }
+
     [Fact]
     public void The_chain_starts_at_the_pid_and_stops_at_zero() =>
         TerminalWindowChooser.AncestorChain(100, Parents).Should().Equal(100, 200, 300, 400);

@@ -80,7 +80,7 @@ public sealed class NotchViewModel : ObservableObject, IDisposable
         ToggleLockCommand = new RelayCommand(_hover.ToggleLock);
         PeekCommand = new RelayCommand(_hover.Peek);
         DismissSessionCommand = new RelayCommand<string>(id => { if (id is not null) _sessions.Dismiss(id); });
-        FocusSessionCommand = new RelayCommand<string>(id => { if (id is not null) _focus.Focus(_sessions.ParentPidOf(id)); });
+        FocusSessionCommand = new RelayCommand<string>(FocusSession);
 
         _onUsage = _ => Post(Recompute);
         _onSessions = () => Post(OnSessionsChanged);
@@ -129,6 +129,13 @@ public sealed class NotchViewModel : ObservableObject, IDisposable
     public void PointerLeftPill() => _hover.PointerLeftPill();
     public void PointerEnteredCard() => _hover.PointerEnteredCard();
     public void PointerLeftCard() => _hover.PointerLeftCard();
+
+    private void FocusSession(string? id)
+    {
+        var session = id is null ? null : _sessions.Snapshot().FirstOrDefault(s => s.Id == id);
+        if (session is null) return;
+        _focus.Focus(session.ParentPid == 0 ? null : session.ParentPid, session.Started);
+    }
 
     public void Dispose()
     {

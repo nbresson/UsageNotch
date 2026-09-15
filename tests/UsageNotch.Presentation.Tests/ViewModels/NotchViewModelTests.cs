@@ -27,7 +27,8 @@ public sealed class NotchViewModelTests : IDisposable
     private sealed class FakeFocus : ISessionFocus
     {
         public List<int?> Calls { get; } = [];
-        public bool Focus(int? parentPid) { Calls.Add(parentPid); return true; }
+        public List<DateTimeOffset> SessionStarts { get; } = [];
+        public bool Focus(int? parentPid, DateTimeOffset sessionStarted) { Calls.Add(parentPid); SessionStarts.Add(sessionStarted); return true; }
     }
 
     private sealed class FakeSound : ISoundPlayer
@@ -252,6 +253,10 @@ public sealed class NotchViewModelTests : IDisposable
         _sessions.Apply(Ev(HookEvent.Running, "s-9", ppid: 777));
 
         _vm.FocusSessionCommand.Execute("s-9");
+        _focus.Calls.Should().Equal(777);
+        _focus.SessionStarts.Should().Equal(_sessions.Snapshot().Single().Started);
+
+        _vm.FocusSessionCommand.Execute("inconnue");
         _focus.Calls.Should().Equal(777);
 
         _vm.DismissSessionCommand.Execute("s-9");
