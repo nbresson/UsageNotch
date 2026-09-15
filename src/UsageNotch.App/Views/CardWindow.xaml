@@ -61,12 +61,8 @@
             <ItemsControl.ItemTemplate>
               <DataTemplate>
                 <StackPanel Margin="0,0,0,12">
-                  <DockPanel>
-                    <TextBlock DockPanel.Dock="Right" Text="{Binding ResetText}" FontSize="11"
-                               Foreground="{StaticResource Secondary}" />
-                    <TextBlock Text="{Binding Label}" FontSize="12" TextTrimming="CharacterEllipsis"
-                               Foreground="{Binding DataContext.Theme.Text, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Hex}}" />
-                  </DockPanel>
+                  <TextBlock Text="{Binding Label}" FontSize="12" TextTrimming="CharacterEllipsis"
+                             Foreground="{Binding DataContext.Theme.Text, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Hex}}" />
                   <Grid Height="4" Margin="0,6,0,4">
                     <Border CornerRadius="2"
                             Background="{Binding DataContext.Theme.RingTrack, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Hex}}" />
@@ -77,7 +73,11 @@
                       </Border.RenderTransform>
                     </Border>
                   </Grid>
-                  <TextBlock Text="{Binding UsedText}" FontSize="11" Foreground="{StaticResource Secondary}" />
+                  <DockPanel>
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding ResetText}" FontSize="11"
+                               Foreground="{StaticResource Secondary}" />
+                    <TextBlock Text="{Binding UsedText}" FontSize="11" Foreground="{StaticResource Secondary}" />
+                  </DockPanel>
                 </StackPanel>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
