@@ -24,7 +24,6 @@ public sealed class PillPreview : ContentControl
     public static readonly DependencyProperty ModelProperty = DependencyProperty.Register(
         nameof(Model), typeof(PreviewModel), typeof(PillPreview), new PropertyMetadata(null, (d, _) => ((PillPreview)d).Rebuild()));
 
-    private static readonly SolidColorBrush CaptionBrush = Frozen(Color.FromRgb(0x9A, 0x9A, 0x9A));
     private static readonly SolidColorBrush EdgeBrush = Frozen(Color.FromRgb(0x80, 0x80, 0x80));
     private static readonly SolidColorBrush NoteBackground = Frozen(Color.FromArgb(0xB0, 0x00, 0x00, 0x00));
     private static readonly Geometry RunningArc = FrozenGeometry("M 22,8 A 14,14 0 0 1 36,22");
@@ -91,13 +90,15 @@ public sealed class PillPreview : ContentControl
 
         var column = new StackPanel { Margin = new Thickness(SampleSpacing, 0, SampleSpacing, 0), VerticalAlignment = VerticalAlignment.Center };
         column.Children.Add(shapes);
-        column.Children.Add(new TextBlock
+        // Fond sombre propre à chaque légende : elle reste lisible sur la moitié claire comme sur la moitié sombre.
+        column.Children.Add(new Border
         {
-            Text = sample.Caption,
-            FontSize = 11,
-            Foreground = CaptionBrush,
+            Background = NoteBackground,
+            CornerRadius = new CornerRadius(3),
+            Padding = new Thickness(6, 1, 6, 1),
             Margin = new Thickness(0, 8, 0, 0),
             HorizontalAlignment = HorizontalAlignment.Center,
+            Child = new TextBlock { Text = sample.Caption, FontSize = 11, Foreground = Brushes.White },
         });
         return column;
     }
