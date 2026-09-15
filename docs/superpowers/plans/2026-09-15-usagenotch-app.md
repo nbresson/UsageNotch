@@ -33,6 +33,7 @@ La spec couvre deux sous-systèmes d'interface indépendants. Ce plan livre le n
 - Données : `%APPDATA%\UsageNotch\` (`settings.json`, `usage.json`, `logs\`). En mode `--demo`, `usage.json` va dans `%TEMP%\UsageNotch-demo\` pour ne jamais écraser la vraie lecture.
 - Contrats du Plan 1 à respecter : l'application s'appelle `UsageNotch.App.exe` et `UsageNotch.Hook.exe` est dans le même dossier ; `--from-hook` fait quitter une seconde instance sans rien afficher ; « Quitter » met `AutoLaunch` à `false` et un démarrage manuel le remet à `true` ; les abonnements aux événements des magasins se font **avant** `host.StartAsync` ; les événements arrivent sur des threads d'arrière-plan et sont relus sur le thread UI ; `UsagePoller` appelle lui-même `UsageStore.Load()`.
 - `HttpClient.Timeout = ClaudeUsageProvider.Timeout`.
+- Mode démo isolé de la vraie application : mutex `Local\UsageNotch-demo` et port 48667 (`AppPaths.DemoPort`), écrit dans les réglages de démo tant qu'ils gardent le port par défaut. Le hook réel vise toujours 48666 ; une démo ne reçoit donc jamais d'événement Claude Code réel. Toutes les vérifications en démo utilisent 48667.
 - Constantes de mise en page (DIP, avant échelle) : épaisseur de pilule 64, longueur de corps 104, rayon des coins 16, congé 16, anneau 44, écart pilule-carte 10, marge écran 8.
 - Délais : fermeture de la carte 250 ms, repli 400 ms, dépli 200 ms, ouverture carte 180 ms, fermeture carte 150 ms, filet de sécurité du survol 200 ms, ouverture automatique 5 s, rafraîchissement des textes de réinitialisation 30 s.
 - Sécurité des vérifications manuelles : ne jamais modifier `%USERPROFILE%\.claude\settings.json` ni lire `.credentials.json` hors du code de l'application ; ne jamais installer les hooks sur la vraie configuration pendant l'exécution du plan (la tâche 15 le laisse à l'utilisateur).
@@ -99,7 +100,7 @@ Attendu : `True` puis `False`. Le coin supérieur gauche du rectangle est hors d
 **Démarrer et arrêter la démo** :
 ```powershell
 $exe = "src\UsageNotch.App\bin\Debug\net10.0-windows\UsageNotch.App.exe"
-if (Get-NetTCPConnection -LocalPort 48666 -State Listen -ErrorAction SilentlyContinue) { throw "port 48666 occupé" }
+if (Get-NetTCPConnection -LocalPort 48667 -State Listen -ErrorAction SilentlyContinue) { throw "port 48667 occupé" }
 $app = Start-Process $exe -ArgumentList "--demo" -PassThru
 Start-Sleep -Seconds 4
 # … étapes …
@@ -3361,17 +3362,17 @@ Expected : aucun avertissement, tous les tests passent.
 Vérification manuelle (démo uniquement) :
 ```powershell
 $exe = "src\UsageNotch.App\bin\Debug\net10.0-windows\UsageNotch.App.exe"
-if (Get-NetTCPConnection -LocalPort 48666 -State Listen -ErrorAction SilentlyContinue) { throw "port 48666 occupé" }
+if (Get-NetTCPConnection -LocalPort 48667 -State Listen -ErrorAction SilentlyContinue) { throw "port 48667 occupé" }
 $first = Start-Process $exe -ArgumentList "--demo" -PassThru
 Start-Sleep -Seconds 3
 $second = Start-Process $exe -ArgumentList "--demo","--from-hook" -PassThru
 $second.WaitForExit(5000) | Out-Null
 "second instance exited: $($second.HasExited) ; first alive: $(-not $first.HasExited)"
-Invoke-WebRequest -Method Post -Uri "http://127.0.0.1:48666/event?e=running&ppid=1" -Body '{"session_id":"manual"}' -UseBasicParsing | Select-Object StatusCode
+Invoke-WebRequest -Method Post -Uri "http://127.0.0.1:48667/event?e=running&ppid=1" -Body '{"session_id":"manual"}' -UseBasicParsing | Select-Object StatusCode
 Get-Content "$env:TEMP\UsageNotch-demo\logs\usagenotch-$((Get-Date).ToUniversalTime().ToString('yyyyMMdd')).log"
 Stop-Process -Id $first.Id
 ```
-Expected : `second instance exited: True ; first alive: True` ; `StatusCode 200` ; le journal contient « Coquille démarrée », « Récepteur de hooks à l'écoute sur 127.0.0.1:48666 » et « UsageNotch démarré (démo : True, lancé par le hook : False) ». Aucune fenêtre n'est encore visible, c'est attendu.
+Expected : `second instance exited: True ; first alive: True` ; `StatusCode 200` ; le journal contient « Coquille démarrée », « Récepteur de hooks à l'écoute sur 127.0.0.1:48667 » et « UsageNotch démarré (démo : True, lancé par le hook : False) ». Aucune fenêtre n'est encore visible, c'est attendu.
 
 - [ ] **Step 7 : Commit**
 
@@ -5228,8 +5229,8 @@ $app = Start-Process $exe -ArgumentList "--demo" -PassThru
 Start-Sleep -Seconds 3
 $np = Start-Process notepad.exe -PassThru
 Start-Sleep -Seconds 1
-Invoke-WebRequest -Method Post -Uri "http://127.0.0.1:48666/event?e=running&ppid=$($np.Id)" -Body '{"session_id":"focus-test-0001","cwd":"C:\\tmp\\focus"}' -UseBasicParsing | Out-Null
-Invoke-WebRequest -Method Post -Uri "http://127.0.0.1:48666/event?e=attention&ppid=$($np.Id)" -Body '{"session_id":"focus-test-0001","message":"Test du retour"}' -UseBasicParsing | Out-Null
+Invoke-WebRequest -Method Post -Uri "http://127.0.0.1:48667/event?e=running&ppid=$($np.Id)" -Body '{"session_id":"focus-test-0001","cwd":"C:\\tmp\\focus"}' -UseBasicParsing | Out-Null
+Invoke-WebRequest -Method Post -Uri "http://127.0.0.1:48667/event?e=attention&ppid=$($np.Id)" -Body '{"session_id":"focus-test-0001","message":"Test du retour"}' -UseBasicParsing | Out-Null
 ```
 Puis procédure « Survol » sur la pilule, capture pour repérer la ligne « focus · focu » dans la carte, procédure « Clic » sur cette ligne, attendre 500 ms, et lire la fenêtre au premier plan :
 ```powershell
@@ -5303,11 +5304,22 @@ Expected :
 - `publish\UsageNotch.App.exe` et `publish\UsageNotch.Hook.exe` présents, le hook pèse environ 2 Mo (natif, sans `.dll` à côté) ;
 - le diagnostic indique « Exécutable hook : présent — …\publish\UsageNotch.Hook.exe ».
 
-Puis démarrer `publish\UsageNotch.App.exe --demo`, procédure « Capture d'écran » : la pilule est visible comme en Task 11. Envoyer un événement avec le hook publié, sans l'installer dans Claude Code :
+Puis démarrer `publish\UsageNotch.App.exe --demo`, procédure « Capture d'écran » : la pilule est visible comme en Task 11. Envoyer un événement à la démo (port 48667) :
 ```powershell
-'{"session_id":"publish-check-01","cwd":"C:\\tmp\\publish"}' | & publish\UsageNotch.Hook.exe running
+Invoke-WebRequest -Method Post -Uri "http://127.0.0.1:48667/event?e=running&ppid=1" -Body '{"session_id":"publish-check-01","cwd":"C:\\tmp\\publish"}' -UseBasicParsing | Out-Null
 ```
 Procédure « Survol » sur la pilule, capture : la carte liste « publish · publ » en cours. `Stop-Process` de l'application.
+
+Le hook publié vise le port réel 48666 (il lit les réglages réels, absents ici). Le vérifier contre un récepteur PowerShell, sans application ni configuration Claude Code :
+```powershell
+if (Get-NetTCPConnection -LocalPort 48666 -State Listen -ErrorAction SilentlyContinue) { throw "port 48666 occupé" }
+$l = New-Object System.Net.HttpListener; $l.Prefixes.Add("http://127.0.0.1:48666/"); $l.Start()
+$job = Start-Job -ScriptBlock { param($e) '{"session_id":"publish-check-02"}' | & $e done } -ArgumentList (Resolve-Path publish\UsageNotch.Hook.exe).Path
+$task = $l.GetContextAsync()
+if ($task.Wait(5000)) { $c = $task.Result; $b = (New-Object IO.StreamReader($c.Request.InputStream)).ReadToEnd(); "$($c.Request.HttpMethod) $($c.Request.RawUrl) body=$b"; $c.Response.StatusCode = 400; $c.Response.Close() } else { "aucune requête en 5 s" }
+$l.Stop(); Wait-Job $job -Timeout 5 | Out-Null; Remove-Job $job -Force
+```
+Attendu : `POST /event?e=done&ppid=<nombre> body={"session_id":"publish-check-02"}`.
 
 - [ ] **Step 3 : Notes du Plan 2**
 
