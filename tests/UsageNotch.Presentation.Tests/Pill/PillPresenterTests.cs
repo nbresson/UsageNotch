@@ -161,7 +161,8 @@ public class PillPresenterTests
     [Fact]
     public void The_activity_marks_clear_the_outer_ring_and_stay_inside_the_host()
     {
-        var outerEdge = (PillMetrics.RingOuter + PillMetrics.RingBandThickness) / 2;
+        var outerEdge = PillMetrics.RingOuter / 2;
+        // Les voyants sont tracés sur leur géométrie nominale (Path/Ellipse) ; l'anneau, lui, est en retrait dans le contrôle.
         var activityInnerEdge = (PillMetrics.ActivitySize - 2.5) / 2;
         var activityOuterEdge = (PillMetrics.ActivitySize + 2.5) / 2;
 
