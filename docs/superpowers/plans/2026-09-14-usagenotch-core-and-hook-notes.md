@@ -274,3 +274,83 @@ compilation sans avertissement.
   `coloring` prend sa valeur par défaut `PerRing`, et `edge`/`scale`/`notifyThreshold` restent inchangés ; aucun
   fichier `.corrupt-` n'apparaît.
 
+## Logo du fournisseur comme voyant d'activité (Plan 5)
+
+Livré le 2026-09-20 sur la branche `feat/activity-logo`, à partir de
+`docs/superpowers/specs/2026-09-20-usagenotch-activity-logo-design.md`. Les trois marques d'activité
+de la pilule (arc tournant, anneau pulsant, point « terminé ») cèdent la place à un seul glyphe — la
+marque du fournisseur — au centre de la pile d'anneaux, dont la couleur porte l'état. Résultat : 537
+tests, compilation sans avertissement.
+
+- **La séparation délibérée entre `PillPresenter.ActivityColor` et `CardPresenter.RowColor`.** Quatre
+  lignes dupliquées, volontairement : la pilule porte désormais la couleur de marque (`Theme.LogoDone`,
+  terracotta) quand une session se termine, tandis que la carte de détail garde `Theme.Done`, la
+  couleur que désigne son réglage « Session terminée ». Un futur lecteur qui verrait ces deux
+  fonctions presque identiques voudrait naturellement les factoriser en une seule — c'est justement
+  ce que ce paragraphe interdit : les deux langages visuels n'ont pas à rester liés, et une
+  factorisation ferait suivre la carte vers le terracotta sans que personne ne l'ait décidé.
+  `PillPresenter.ActivityOf` — la traduction état de session → `ActivityKind` — reste en revanche
+  partagée par la pilule et la carte : seule la correspondance couleur diverge, pas la classification
+  de l'état. Le test `CardPresenterTests.A_finished_row_keeps_the_card_colour_while_the_pill_wears_the_brand_one`
+  fige la divergence avec trois assertions : la ligne de carte reste à `Theme.Done`, elle n'est pas
+  `Theme.LogoDone`, et `PillPresenter.ActivityColor(ActivityKind.Done, theme)` vaut bien
+  `Theme.LogoDone`. Une régression qui refactoriserait les deux fonctions en une seule le ferait
+  échouer.
+
+- **Nouvelles cotes de la pile.** Les trois anneaux passent à 56/44/32 DIP de diamètre (bandes tracées
+  aux rayons 24→28, 18→22, 12→16 ; épaisseur 4, écart de 2 entre voisins), ce qui porte le trou
+  central libre à 24 DIP — le double d'avant ce chantier — où loge un glyphe de 20 DIP (2 DIP de
+  dégagement de chaque côté). Rappel de l'arithmétique des bandes, déjà source d'erreur au chantier
+  précédent (Plan 4) : un `ProgressRing` de côté `D` et d'épaisseur `T` pose son rayon à `(D − T) / 2`
+  et centre un stylo de largeur `T` dessus, donc sa bande va de `(D − 2T) / 2` à `D / 2` — le bord
+  extérieur tombe exactement sur `D`, l'intérieur est en retrait d'un `T` entier. Un `Path` ou une
+  `Ellipse` WPF ordinaires, eux, tracent leur géométrie nominale à `D/2` et étalent le trait de
+  `±T/2` de part et d'autre. Les trois `ProgressRing` de la pile suivent la première formule ; le
+  glyphe, un `Path` statique, suit la seconde — sans conséquence ici puisqu'il ne trace pas de bande.
+
+- **Pourquoi la pulsation superpose deux tracés plutôt qu'un effet WPF.** Le glyphe « en attente » est
+  rendu par deux `Path` identiques empilés dans `LogoHost` : un tracé du dessous, fixe, rempli de
+  `Cell.ActivityMutedColor` (la version désaturée de la couleur d'état, calculée par
+  `HexColor.Desaturate`, luminance Rec. 709) ; un tracé du dessus, `LogoTint`, rempli de
+  `Cell.ActivityColor`, dont on anime l'opacité de 1 à 0 et retour (storyboard `Pulse`, 20 images/s,
+  comme `BandPulse`). Un effet WPF (masque d'opacité, `Blend`) aurait fait le même crossfade sur un
+  seul tracé, mais chaque image d'une fenêtre en couches (`AllowsTransparency`) est déjà rendue en
+  logiciel ; deux remplissages statiques dont on anime une seule propriété simple restent bon marché,
+  un effet composite ne l'est pas. C'est la même logique de cadence plafonnée que le reste des
+  animations en boucle de la pilule.
+
+- **`TrayIconService` n'a délibérément pas été touché.** `RenderIcon` ne dessine son point d'activité
+  que sous `ActivityKind.Attention` (`cell.Activity == ActivityKind.Attention`), et la couleur de cet
+  état, `Theme.Attention`, n'a pas changé par ce chantier — seule celle de `Done` a bougé. Qui
+  chercherait « qui consomme `ActivityColor` » trouvera trois surfaces (pilule, icône de notification,
+  carte de détail) et pourrait se demander pourquoi seules deux ont changé : la réponse est que la
+  troisième ne regarde jamais l'état que ce chantier a modifié.
+
+- **Deux dégradations assumées, mesurées avant conception.** D'abord la lisibilité du glyphe selon la
+  taille : mesurée à 8, 14, 20 et 30 DIP, la marque reste nette à 20 et 30, devient floue à 14 et n'est
+  plus qu'une tache indifférenciée à 8 (l'échelle 40 %) — mais sa **couleur** reste parfaitement
+  lisible à toutes les tailles, ce qui suffit puisque c'est elle qui porte l'état ; c'est cette mesure
+  qui a fait accepter la dégradation plutôt que de maintenir une seconde géométrie de repli. Ensuite le
+  contraste de la rotation : la marque, à symétrie quasi radiale, tourne de façon nettement moins
+  visible en périphérie de l'œil que ne balayait l'ancien arc autour d'un anneau vide ; la couleur
+  compense pour la lecture de l'état, le signal périphérique s'affaiblit. Assumé sans correction : si
+  l'usage montre que ce signal manque, la réponse ne sera pas d'accélérer la rotation mais de
+  redessiner un élément asymétrique, sujet de conception à part entière hors de ce chantier.
+
+- `Assets/anthropic.svg` (fourni par l'utilisateur) reste la source de référence du tracé ; il n'est
+  jamais lu au démarrage. `src/UsageNotch.App/Controls/BrandGeometry.cs` porte la transcription unique,
+  en `Geometry` statique gelée, partagée par la pilule et par `PillPreview` (aperçu des réglages).
+  Transcription vérifiée octet pour octet à la tâche : l'attribut `d` du SVG et la chaîne du fichier
+  C# comparés par `cmp`, 2423 octets identiques des deux côtés.
+
+- Vérifié à l'écran en démo (pilule au bord Gauche, échelle 150 %), sessions pilotées par événement de
+  hook plutôt qu'en `--demo` natif : **repos**, glyphe dans le gris de piste, discret comme voulu ;
+  **en cours**, glyphe vert (`Theme.Running`) ; **en attente**, deux captures à 500 ms d'écart montrent
+  le glyphe tantôt désaturé, tantôt en amber plein — la preuve que la pulsation va bien du coloré vers
+  le noir et blanc et non vers rien, ce qu'il fallait vérifier puisque les deux tracés empilés
+  auraient pu être inversés sans qu'aucun test ne le remarque ; **terminé**, glyphe dans le terracotta
+  de marque. La pile d'anneaux est visiblement plus grande, les trois anneaux gardent leur ordre et
+  leurs couleurs, et la fenêtre de la pilule mesure 96 × 204 px à l'échelle 150 % — exactement
+  1,5 × (64 × 136), donc inchangée. Aucun pourcentage affiché, ce qui est correct : le mode de contenu
+  par défaut est « anneaux seuls » depuis le Plan 4.
+
