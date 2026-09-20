@@ -6,7 +6,7 @@ using CoreSettings = UsageNotch.Core.Settings.Settings;
 
 namespace UsageNotch.Presentation.Preferences;
 
-/// <summary>Page « Apparence » : préréglage, couleurs, opacité, seuils, échelle, contenu de la cellule.</summary>
+/// <summary>Page « Apparence » : préréglage, couleurs, opacité, seuils, échelle, contenu de la pilule et coloration des anneaux.</summary>
 public sealed class AppearancePageViewModel : ObservableObject, IDisposable
 {
     public const string CustomHint =
