@@ -143,11 +143,12 @@ pilule : la phase « noir et blanc » se lit comme telle et non comme une dispar
 | Surface | Appel | Ce qu'elle dessine |
 |---|---|---|
 | Pilule | `CellModel.ActivityColor`, lié en XAML | le futur glyphe |
-| Icône de notification | `CellModel.ActivityColor`, `TrayIconService` | un point de 4 px de rayon |
+| Icône de notification | `CellModel.ActivityColor`, `TrayIconService` | un point de 4 px, **pour « en attente » uniquement** |
 | Carte de détail | `PillPresenter.ActivityColor(...)`, `CardPresenter.SessionRowOf` | la pastille de chaque ligne de session |
 
-L'icône de notification est un miroir de la pilule et doit la suivre : elle passera au terracotta
-pour « terminé », sans travail particulier, puisqu'elle lit le même champ.
+L'icône de notification n'est **pas concernée** : `TrayIconService.RenderIcon` ne dessine son point
+que sous `ActivityKind.Attention`, et cet état garde sa couleur. Changer « terminé » ne la touche
+pas.
 
 La carte est le cas qui demande une décision. Elle appelle la **même fonction** que la pilule, donc
 elle afficherait elle aussi le terracotta. **C'est une correction de l'analyse faite en
