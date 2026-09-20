@@ -3,12 +3,12 @@ using UsageNotch.Core.Usage;
 
 namespace UsageNotch.App.Hosting;
 
-/// <summary>Lecture fixe : session 73 %, hebdomadaire 21 %, Opus 52 %.</summary>
+/// <summary>Lecture fixe : session 73 %, hebdomadaire 21 %, par modèle 52 %.</summary>
 public sealed class DemoUsageProvider(TimeProvider time) : IUsageProvider
 {
     public string Id => "claude";
     public string DisplayName => "Claude";
-    public string HeadlineWindowId => "session";
+    public IReadOnlyList<IReadOnlyList<string>> RingWindowIds => RingWindows.Claude;
 
     public Task<FetchResult> FetchAsync(CancellationToken ct)
     {
@@ -17,7 +17,7 @@ public sealed class DemoUsageProvider(TimeProvider time) : IUsageProvider
         [
             new("session", "Session en cours", 0.73, now.AddMinutes(51)),
             new("weekly_all", "Hebdomadaire (tous modèles)", 0.21, now.AddDays(3)),
-            new("weekly_opus", "Hebdomadaire (Opus)", 0.52, now.AddDays(3)),
+            new("weekly_scoped", "Hebdomadaire (par modèle)", 0.52, now.AddDays(3)),
         ];
         return Task.FromResult<FetchResult>(new FetchResult.Success(windows));
     }

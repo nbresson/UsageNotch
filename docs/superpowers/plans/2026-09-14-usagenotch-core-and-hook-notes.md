@@ -207,3 +207,70 @@ La spec plaçait le masquage automatique en plein écran hors de la première ve
 - Défaut trouvé en vérifiant ce lot : amener la pilule (ou la carte) sur un écran d'une autre mise à l'échelle l'activait. WPF la repositionne alors sans `SWP_NOACTIVATE` et Windows lui donnait le premier plan, retiré à la fenêtre de réglages. Les deux fenêtres non activables rendent désormais l'activation à la fenêtre qui l'avait.
 - Carte rouverte pendant son fondu de fermeture : seul le fondu s'inverse, sans nouveau glissement (non vérifié visuellement).
 
+## Pilule à trois anneaux (Plan 4)
+
+Livré le 2026-09-20 sur la branche `feat/pill-rings`, à partir de
+`docs/superpowers/specs/2026-09-20-usagenotch-pill-rings-design.md`. La pilule dessine désormais trois anneaux
+concentriques (session, hebdomadaire tous modèles, hebdomadaire par modèle) au lieu d'un seul. Résultat : 516 tests,
+compilation sans avertissement.
+
+- `CellModel.Rings` porte toujours trois éléments, dans l'ordre extérieur → intérieur : session, hebdomadaire tous
+  modèles, hebdomadaire par modèle (`weekly_scoped`). Un anneau sans lecture (compte non authentifié, ou fenêtre
+  absente de la réponse de l'API) prend la couleur de sa piste plutôt que d'être masqué (`PillPresenter.ColorFor`) :
+  son rang dans la pile reste donc à la même place et reconnaissable même sans valeur, au lieu de décaler les deux
+  autres anneaux vers l'extérieur.
+
+- **Deux formules de bande, pas une.** `ProgressRing.OnRender` calcule `radius = (size - RingThickness) / 2` puis
+  trace un `Pen` d'épaisseur T centré sur ce rayon : pour un anneau de diamètre nominal D, la bande peinte va de
+  `(D − 2T) / 2` à `D / 2`. Le bord extérieur tombe donc exactement sur D, mais le bord intérieur est en retrait de
+  tout T (pas T/2). Un `Ellipse` ou un `Path` WPF ordinaire ne se comporte pas ainsi : son contour nominal est à
+  D/2 et le trait s'étend de ±T/2 de part et d'autre, donc *au-delà* de D côté extérieur. Les trois anneaux
+  (`PillMetrics.RingOuter/Middle/Inner` = 44/32/20, `RingBandThickness` = 4) suivent la première formule ; les
+  voyants d'activité (`RunningArc`, `AttentionRing`, le point « terminé »), qui sont des `Path`/`Ellipse` WPF
+  classiques et non des `ProgressRing`, suivent la seconde. Le plan avait initialement mal calculé cette bande et un
+  test a dû être corrigé après coup (voir `6dd6037`) ; le test
+  `PillPresenterTests.The_ring_stack_leaves_two_dip_between_neighbours_and_a_twelve_dip_core` fige maintenant les
+  deux conséquences numériques — 2 DIP d'écart entre anneaux voisins, 12 DIP de trou central — et un commentaire y
+  rappelle l'asymétrie. Quiconque doit re-dériver ces bornes devrait relire ce test avant de recalculer quoi que ce
+  soit.
+
+- C'est cette même asymétrie qui a forcé les voyants d'activité à sortir de la pile : pour tourner *autour* de
+  l'anneau extérieur avec un espace visible, il fallait un diamètre nominal (52 à 56 DIP) dont le bord intérieur,
+  décalé de +T/2 et non +T, dépasse le bord réel de l'anneau extérieur (22 DIP de rayon). Le point « session
+  terminée » vit au centre, dans le trou de 12 DIP. Le test
+  `The_activity_marks_clear_the_outer_ring_and_stay_inside_the_host` fige cette contrainte.
+
+- **Le piège `JsonStringEnumConverter`.** Une valeur d'enum inconnue dans `settings.json` condamne tout le fichier :
+  `SettingsStore.Load()` traite alors l'ensemble comme corrompu, le copie en
+  `settings.json.corrupt-<secondes Unix>` et repart des valeurs par défaut. `CellContent.PercentOnly` — l'ancien
+  mode « Pourcentage seul », retiré de
+  l'IHM — survit donc dans l'enum : un fichier de version 1 qui porte encore cette valeur doit rester lisible.
+  `Settings.Clamp()` la remappe silencieusement vers `RingAndPercent`. Retirer ce membre en le croyant mort
+  effacerait, au prochain démarrage, les réglages de quiconque a encore ce fichier.
+
+- `RingColoring` (une couleur par anneau, ou couleur selon le niveau) vit dans `Settings` et non dans `Theme`, bien
+  qu'il touche à l'apparence de la pilule. Un `Theme` entier est remplacé au changement de préréglage ; si la
+  coloration y vivait, choisir un nouveau préréglage écraserait sans le dire le choix de l'utilisateur.
+
+- `RingWindows.Session` / `WeeklyAll` / `WeeklyScoped` listent chacun plusieurs `kind` acceptés dans l'ordre d'essai
+  (par exemple `["session", "five_hour"]`) parce que l'API ne renvoie pas le même identifiant de fenêtre selon le
+  compte et la version ; `UsageSnapshot.Window(IEnumerable<string>)` essaie chaque alias du groupe jusqu'à trouver
+  une correspondance.
+
+- Vérifié à l'écran en démo, aux bords Droite/Haut/Bas, aux échelles 40 %/100 %/150 % et pour les deux contenus :
+  la pilule ne change jamais de taille par rapport à avant ce chantier (droite à 100 % : 64 × 136 ; haut à 100 % :
+  136 × 64, transposée correctement, marge de 6 DIP conservée ; droite à 40 % : 26 × 54 ; droite à 150 % en
+  « Anneaux seuls » : 96 × 204, exactement 1,5×, ce qui confirme qu'aucun contenu n'allonge la pilule ; bas à
+  125 % en « Selon le niveau » : 170 × 80). Les trois anneaux rendent dans le bon ordre et les bonnes couleurs
+  (démo : extérieur vert 73 %, milieu bleu 21 %, intérieur violet 52 %) ; l'anneau d'attention (or) reste bien
+  à l'extérieur de la pile avec un espace sombre visible au-dessus de l'anneau extérieur — les voyants ne mordent
+  plus sur les anneaux. À 40 %, les trois anneaux restent distincts entre eux et de leur piste ; c'est le texte du
+  pourcentage qui devient difficile à lire à cette échelle, pas la pile. Page Réglages › Apparence : le combo
+  « Coloration des anneaux » et sa note s'affichent correctement, et passer à « Selon le niveau » regrade
+  visiblement les trois anneaux de l'aperçu sans faire dériver le sélecteur « Thème » hors de « Codenotch ».
+
+- Vérifié sur un vrai fichier : un `settings.json` de démo porteur de `"version": 1` et
+  `"cellContent": "PercentOnly"` est relu sans erreur, `version` passe à `2`, `cellContent` à `RingAndPercent`,
+  `coloring` prend sa valeur par défaut `PerRing`, et `edge`/`scale`/`notifyThreshold` restent inchangés ; aucun
+  fichier `.corrupt-` n'apparaît.
+

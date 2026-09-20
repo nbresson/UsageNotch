@@ -220,8 +220,8 @@ public partial class PillWindow : Window
     private void UpdateAnimations()
     {
         var activity = _vm.Cell.Activity;
-        // L'arc et l'anneau d'attention vivent dans l'anneau : en contenu « pourcentage seul », ils ne sont pas dessinés.
-        var ringShown = IsVisible && PillLayer.Visibility == Visibility.Visible && _vm.Cell.ShowRing;
+        // La pile est toujours dessinée : seule compte la visibilité réelle de la fenêtre et du calque.
+        var ringShown = IsVisible && PillLayer.Visibility == Visibility.Visible;
         SetStoryboard("Spin", ref _spinRunning, ringShown && activity == ActivityKind.Running);
         SetStoryboard("Pulse", ref _pulseRunning, ringShown && activity == ActivityKind.Attention);
         SetStoryboard("BandPulse", ref _bandPulseRunning,

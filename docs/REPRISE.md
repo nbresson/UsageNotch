@@ -20,11 +20,12 @@ l'historique.
 |---|---|
 | `README.md` | Présentation, installation, utilisation, confidentialité, organisation du code |
 | `docs/superpowers/specs/2026-09-14-usagenotch-design.md` | Spec de conception d'origine (référence ; ses sections « hors périmètre » sont en partie dépassées, voir plus haut) |
-| `docs/superpowers/specs/2026-09-20-usagenotch-pill-rings-design.md` | Spec de la pilule à trois anneaux (validée, plan à écrire) |
+| `docs/superpowers/specs/2026-09-20-usagenotch-pill-rings-design.md` | Spec de la pilule à trois anneaux (livrée par le Plan 4) |
 | `docs/superpowers/plans/2026-09-14-usagenotch-core-and-hook.md` | Plan 1 : Core et hook |
 | `docs/superpowers/plans/2026-09-15-usagenotch-app.md` | Plan 2 : application WPF |
 | `docs/superpowers/plans/2026-09-15-usagenotch-settings-window.md` | Plan 3 : fenêtre de réglages |
-| `docs/superpowers/plans/2026-09-14-usagenotch-core-and-hook-notes.md` | **Journal de bord** : contrats entre couches, arbitrages, écarts à la spec, points laissés en l'état, puis chaque chantier postérieur (performance, fluidité, alertes, plein écran, finitions) |
+| `docs/superpowers/plans/2026-09-20-usagenotch-pill-rings.md` | Plan 4 : pilule à trois anneaux |
+| `docs/superpowers/plans/2026-09-14-usagenotch-core-and-hook-notes.md` | **Journal de bord** : contrats entre couches, arbitrages, écarts à la spec, points laissés en l'état, puis chaque chantier postérieur (performance, fluidité, alertes, plein écran, finitions, pilule à trois anneaux) |
 
 Les plans décrivent l'intention au moment de leur écriture ; le code et le journal de bord font foi quand ils divergent.
 
@@ -88,7 +89,8 @@ src\UsageNotch.App\bin\Debug\net10.0-windows\UsageNotch.App.exe --demo
 - clic sur une ligne de session (retour au terminal) et bouton ✕ ;
 - son d'ouverture automatique ;
 - masquage avec un vrai jeu en plein écran exclusif et une vidéo YouTube en plein écran ;
-- alerte de seuil à 100 % et changement de période en conditions réelles.
+- alerte de seuil à 100 % et changement de période en conditions réelles ;
+- lisibilité de l'anneau intérieur à l'usage quotidien, à l'échelle habituelle de l'utilisateur.
 
 **Mineurs, sans effet visible** : allocation du stylo de `ProgressRing` à chaque rendu, longueur du jeton affichée par
 `doctor`, chemin de copie du hook codé en dur dans le projet App, minuteries de survol non remises à null, arrêt du
@@ -103,10 +105,9 @@ récepteur sans attendre les requêtes en cours. Détail et raisons dans le jour
 
 **Idées à concevoir** (déposées telles quelles ; chacune demande sa propre conception, puis un plan) :
 
-1. ~~**Pilule à plusieurs anneaux.**~~ **Conçue le 2026-09-20**, voir
-   `docs/superpowers/specs/2026-09-20-usagenotch-pill-rings-design.md`. Trois anneaux concentriques Ø 44 / 32 / 20 —
-   session, hebdomadaire tous modèles, `weekly_scoped` —, pourcentage optionnel, couleur fixe par anneau ou coloration
-   par niveau au choix. Plan d'implémentation à écrire.
+1. ~~**Pilule à plusieurs anneaux.**~~ **Livrée le 2026-09-20**, voir
+   `docs/superpowers/specs/2026-09-20-usagenotch-pill-rings-design.md` et
+   `docs/superpowers/plans/2026-09-20-usagenotch-pill-rings.md`.
 
 2. **Logo du fournisseur au centre des anneaux.** Le jour où un deuxième fournisseur existe, identifier celui que la
    pilule affiche par une petite marque au centre de la pile (Anthropic pour Claude, OpenAI pour ChatGPT…).

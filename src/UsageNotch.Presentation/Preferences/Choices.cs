@@ -21,9 +21,14 @@ public static class Choices
 
     public static IReadOnlyList<Choice<CellContent>> CellContents { get; } =
     [
-        new(CellContent.RingAndPercent, "Anneau et pourcentage"),
-        new(CellContent.RingOnly, "Anneau seul"),
-        new(CellContent.PercentOnly, "Pourcentage seul"),
+        new(CellContent.RingAndPercent, "Anneaux et pourcentage"),
+        new(CellContent.RingOnly, "Anneaux seuls"),
+    ];
+
+    public static IReadOnlyList<Choice<RingColoring>> RingColorings { get; } =
+    [
+        new(RingColoring.PerRing, "Une couleur par anneau"),
+        new(RingColoring.ByLevel, "Selon le niveau"),
     ];
 
     public static IReadOnlyList<Choice<ScreenEdge>> Edges { get; } =

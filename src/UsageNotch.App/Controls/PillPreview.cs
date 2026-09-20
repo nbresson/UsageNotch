@@ -26,7 +26,7 @@ public sealed class PillPreview : ContentControl
 
     private static readonly SolidColorBrush EdgeBrush = Frozen(Color.FromRgb(0x80, 0x80, 0x80));
     private static readonly SolidColorBrush NoteBackground = Frozen(Color.FromArgb(0xB0, 0x00, 0x00, 0x00));
-    private static readonly Geometry RunningArc = FrozenGeometry("M 22,8 A 14,14 0 0 1 36,22");
+    private static readonly Geometry RunningArc = FrozenGeometry("M 28,2 A 26,26 0 0 1 54,28");
 
     public PillPreview()
     {
@@ -128,7 +128,7 @@ public sealed class PillPreview : ContentControl
             VerticalAlignment = VerticalAlignment.Center,
             LayoutTransform = new ScaleTransform(model.Scale, model.Scale),
         };
-        if (cell.ShowRing) stack.Children.Add(BuildRing(cell, vertical));
+        stack.Children.Add(BuildRing(cell, vertical));
         if (cell.ShowPercent)
         {
             stack.Children.Add(new TextBlock
@@ -152,19 +152,27 @@ public sealed class PillPreview : ContentControl
     {
         var host = new Grid
         {
-            Width = PillMetrics.RingSize,
-            Height = PillMetrics.RingSize,
+            Width = PillMetrics.RingHostSize,
+            Height = PillMetrics.RingHostSize,
             Margin = vertical ? new Thickness(0, 0, 0, 4) : new Thickness(0, 0, 6, 0),
         };
-        host.Children.Add(new ProgressRing
+
+        double[] diameters = [PillMetrics.RingOuter, PillMetrics.RingMiddle, PillMetrics.RingInner];
+        for (var i = 0; i < diameters.Length; i++)
         {
-            RingThickness = 5,
-            RingBrush = HexBrushConverter.ToBrush(cell.RingColor),
-            TrackBrush = HexBrushConverter.ToBrush(cell.TrackColor),
-            // Fraction d'abord : l'animation lancée par TargetFraction part alors de la valeur finale, sans balayage à chaque retouche.
-            Fraction = cell.RingFraction ?? 0,
-            TargetFraction = cell.RingFraction,
-        });
+            var ring = cell.Rings[i];
+            host.Children.Add(new ProgressRing
+            {
+                Width = diameters[i],
+                Height = diameters[i],
+                RingThickness = PillMetrics.RingBandThickness,
+                RingBrush = HexBrushConverter.ToBrush(ring.Color),
+                TrackBrush = HexBrushConverter.ToBrush(ring.TrackColor),
+                // Fraction d'abord : l'animation lancée par TargetFraction part alors de la valeur finale, sans balayage à chaque retouche.
+                Fraction = ring.Fraction ?? 0,
+                TargetFraction = ring.Fraction,
+            });
+        }
 
         var activity = HexBrushConverter.ToBrush(cell.ActivityColor);
         switch (cell.Activity)
@@ -172,8 +180,8 @@ public sealed class PillPreview : ContentControl
             case ActivityKind.Running:
                 host.Children.Add(new Path
                 {
-                    Width = PillMetrics.RingSize,
-                    Height = PillMetrics.RingSize,
+                    Width = PillMetrics.RingHostSize,
+                    Height = PillMetrics.RingHostSize,
                     Stretch = Stretch.None,
                     Data = RunningArc,
                     StrokeThickness = 2.5,
@@ -183,7 +191,13 @@ public sealed class PillPreview : ContentControl
                 });
                 break;
             case ActivityKind.Attention:
-                host.Children.Add(new Ellipse { Width = 28, Height = 28, StrokeThickness = 2.5, Stroke = activity });
+                host.Children.Add(new Ellipse
+                {
+                    Width = PillMetrics.ActivitySize,
+                    Height = PillMetrics.ActivitySize,
+                    StrokeThickness = 2.5,
+                    Stroke = activity,
+                });
                 break;
             case ActivityKind.Done:
                 host.Children.Add(new Ellipse { Width = 8, Height = 8, Fill = activity });

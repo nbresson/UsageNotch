@@ -21,7 +21,7 @@ public class AppearancePageViewModelTests
     private static ColorSlot Slot(AppearancePageViewModel vm, string key) => vm.Colors.Single(c => c.Key == key);
 
     [Fact]
-    public void Lists_presets_contents_and_the_ten_theme_colours_in_order()
+    public void Lists_presets_contents_and_the_thirteen_theme_colours_in_order()
     {
         var (f, vm, _, _) = Create();
         using var _f = f;
@@ -29,11 +29,50 @@ public class AppearancePageViewModelTests
         vm.Presets.Should().BeSameAs(Choices.ThemePresets);
         vm.CellContents.Should().BeSameAs(Choices.CellContents);
         vm.Colors.Select(c => c.Key).Should().Equal(
-            "PillBackground", "PillBorder", "RingTrack", "LevelAmple", "LevelWatch", "LevelCritical", "Running", "Attention", "Done", "Text");
+            "PillBackground", "PillBorder", "RingTrack", "LevelAmple", "LevelWatch", "LevelCritical",
+            "RingSession", "RingWeeklyAll", "RingWeeklyScoped", "Running", "Attention", "Done", "Text");
         vm.Colors.Select(c => c.Label).Should().Equal(
             "Fond de la pilule", "Contour de la pilule", "Piste de l'anneau", "Niveau modéré", "Niveau vigilance",
-            "Niveau critique", "Session en cours", "Session en attente", "Session terminée", "Texte");
+            "Niveau critique", "Anneau session", "Anneau hebdomadaire", "Anneau hebdo. par modèle",
+            "Session en cours", "Session en attente", "Session terminée", "Texte");
         Slot(vm, "LevelAmple").Hex.Should().Be(Theme.Codenotch.LevelAmple);
+    }
+
+    [Fact]
+    public void Editing_a_ring_colour_switches_to_the_custom_theme()
+    {
+        var (f, vm, _, _) = Create();
+        using var _f = f;
+
+        Slot(vm, "RingWeeklyScoped").Hex = "#123456";
+
+        vm.Preset.Should().Be(ThemePreset.Custom);
+        vm.Theme.RingWeeklyScoped.Should().Be("#123456");
+    }
+
+    [Fact]
+    public void The_colouring_mode_is_offered_and_saved()
+    {
+        var (f, vm, _, _) = Create();
+        using var _f = f;
+
+        vm.RingColorings.Should().BeSameAs(Choices.RingColorings);
+
+        vm.Coloring = RingColoring.ByLevel;
+
+        vm.Coloring.Should().Be(RingColoring.ByLevel);
+        f.Draft.Value.Coloring.Should().Be(RingColoring.ByLevel);
+    }
+
+    [Fact]
+    public void Changing_the_colouring_mode_does_not_switch_to_the_custom_theme()
+    {
+        var (f, vm, _, _) = Create();
+        using var _f = f;
+
+        vm.Coloring = RingColoring.ByLevel;
+
+        vm.Preset.Should().Be(ThemePreset.Codenotch);
     }
 
     [Fact]

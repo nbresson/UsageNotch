@@ -10,4 +10,8 @@ public sealed record UsageSnapshot(
     public static UsageSnapshot Empty { get; } = new(SnapshotStatus.Error, [], DateTimeOffset.MinValue, "", null);
 
     public LimitWindow? Window(string id) => Windows.FirstOrDefault(w => w.Id == id);
+
+    /// <summary>La première fenêtre dont l'identifiant figure dans le groupe d'alias, ou null.</summary>
+    public LimitWindow? Window(IEnumerable<string> aliases) =>
+        aliases.Select(Window).FirstOrDefault(w => w is not null);
 }

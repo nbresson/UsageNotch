@@ -162,9 +162,9 @@ public sealed class TrayIconService(
             var center = new Point(size / 2.0, size / 2.0);
             dc.DrawEllipse(Brushes.Black, null, center, 15.5, 15.5);
             dc.DrawEllipse(null, new Pen(HexBrushConverter.ToBrush(cell.TrackColor), 5), center, 11, 11);
-            if (cell.RingFraction is { } f && f > 0.0005)
+            if (cell.Rings[0].Fraction is { } f && f > 0.0005)
             {
-                var pen = new Pen(HexBrushConverter.ToBrush(cell.RingColor), 5);
+                var pen = new Pen(HexBrushConverter.ToBrush(cell.Rings[0].Color), 5);
                 if (f >= 0.9995) dc.DrawEllipse(null, pen, center, 11, 11);
                 // Nom complet : System.Windows.Controls est aussi importé.
                 else dc.DrawGeometry(null, pen, UsageNotch.App.Controls.ProgressRing.ArcGeometry(center, 11, f));
