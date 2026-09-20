@@ -26,7 +26,6 @@ public sealed class PillPreview : ContentControl
 
     private static readonly SolidColorBrush EdgeBrush = Frozen(Color.FromRgb(0x80, 0x80, 0x80));
     private static readonly SolidColorBrush NoteBackground = Frozen(Color.FromArgb(0xB0, 0x00, 0x00, 0x00));
-    private static readonly Geometry RunningArc = FrozenGeometry("M 28,2 A 26,26 0 0 1 54,28");
 
     public PillPreview()
     {
@@ -152,8 +151,8 @@ public sealed class PillPreview : ContentControl
     {
         var host = new Grid
         {
-            Width = PillMetrics.RingHostSize,
-            Height = PillMetrics.RingHostSize,
+            Width = PillMetrics.RingOuter,
+            Height = PillMetrics.RingOuter,
             Margin = vertical ? new Thickness(0, 0, 0, 4) : new Thickness(0, 0, 6, 0),
         };
 
@@ -174,35 +173,16 @@ public sealed class PillPreview : ContentControl
             });
         }
 
-        var activity = HexBrushConverter.ToBrush(cell.ActivityColor);
-        switch (cell.Activity)
+        // L'aperçu est statique : la pulsation ne tourne pas, on montre donc le glyphe dans sa couleur d'état.
+        host.Children.Add(new Path
         {
-            case ActivityKind.Running:
-                host.Children.Add(new Path
-                {
-                    Width = PillMetrics.RingHostSize,
-                    Height = PillMetrics.RingHostSize,
-                    Stretch = Stretch.None,
-                    Data = RunningArc,
-                    StrokeThickness = 2.5,
-                    StrokeStartLineCap = PenLineCap.Round,
-                    StrokeEndLineCap = PenLineCap.Round,
-                    Stroke = activity,
-                });
-                break;
-            case ActivityKind.Attention:
-                host.Children.Add(new Ellipse
-                {
-                    Width = PillMetrics.ActivitySize,
-                    Height = PillMetrics.ActivitySize,
-                    StrokeThickness = 2.5,
-                    Stroke = activity,
-                });
-                break;
-            case ActivityKind.Done:
-                host.Children.Add(new Ellipse { Width = 8, Height = 8, Fill = activity });
-                break;
-        }
+            Width = PillMetrics.LogoSize,
+            Height = PillMetrics.LogoSize,
+            Stretch = Stretch.Uniform,
+            Data = BrandGeometry.Mark,
+            Fill = HexBrushConverter.ToBrush(cell.ActivityColor),
+        });
+
         return host;
     }
 

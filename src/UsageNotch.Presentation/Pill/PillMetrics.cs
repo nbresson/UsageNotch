@@ -7,14 +7,13 @@ public static class PillMetrics
     public const double BodyLength = 104;
     public const double CornerRadius = 16;
     public const double Fillet = 16;
-    /// <summary>Hôte de la pile : contient les trois anneaux et les voyants d'activité qui les entourent.</summary>
-    public const double RingHostSize = 56;
-    public const double RingOuter = 44;
-    public const double RingMiddle = 32;
-    public const double RingInner = 20;
+    /// <summary>Diamètres de la pile, de l'extérieur vers l'intérieur. L'hôte de la pile vaut <see cref="RingOuter"/>.</summary>
+    public const double RingOuter = 56;
+    public const double RingMiddle = 44;
+    public const double RingInner = 32;
     public const double RingBandThickness = 4;
-    /// <summary>Diamètre de l'arc de rotation et de l'anneau d'attente, tracés autour de la pile.</summary>
-    public const double ActivitySize = 52;
+    /// <summary>Côté du glyphe de marque, au centre de la pile, dans un trou de 24 DIP.</summary>
+    public const double LogoSize = 20;
     public const double CardGap = 10;
     public const double ScreenMargin = 8;
 

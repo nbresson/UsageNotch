@@ -157,8 +157,9 @@ public class PillPresenterTests
         PillMetrics.WindowLength.Should().Be(PillMetrics.BodyLength + 2 * PillMetrics.Fillet);
 
     [Fact]
-    public void The_ring_stack_leaves_two_dip_between_neighbours_and_a_twelve_dip_core()
+    public void The_ring_stack_leaves_two_dip_between_neighbours_and_a_twenty_four_dip_core()
     {
+        // Un ProgressRing pose son rayon à (D − T) / 2 et centre un stylo de largeur T dessus.
         static (double Inner, double Outer) Band(double diameter) =>
             ((diameter - 2 * PillMetrics.RingBandThickness) / 2, diameter / 2);
 
@@ -168,19 +169,16 @@ public class PillPresenterTests
 
         (outer.Inner - middle.Outer).Should().Be(2);
         (middle.Inner - inner.Outer).Should().Be(2);
-        (inner.Inner * 2).Should().Be(12);
+        (inner.Inner * 2).Should().Be(24);
     }
 
     [Fact]
-    public void The_activity_marks_clear_the_outer_ring_and_stay_inside_the_host()
+    public void The_logo_fits_the_core_with_room_to_spare()
     {
-        var outerEdge = PillMetrics.RingOuter / 2;
-        // Les voyants sont tracés sur leur géométrie nominale (Path/Ellipse) ; l'anneau, lui, est en retrait dans le contrôle.
-        var activityInnerEdge = (PillMetrics.ActivitySize - 2.5) / 2;
-        var activityOuterEdge = (PillMetrics.ActivitySize + 2.5) / 2;
+        var core = PillMetrics.RingInner - 2 * PillMetrics.RingBandThickness;
 
-        activityInnerEdge.Should().BeGreaterThan(outerEdge);
-        (activityOuterEdge * 2).Should().BeLessThan(PillMetrics.RingHostSize);
+        PillMetrics.LogoSize.Should().BeLessThan(core);
+        (core - PillMetrics.LogoSize).Should().Be(4);   // 2 DIP de chaque côté
     }
 
     [Fact]
@@ -189,8 +187,8 @@ public class PillPresenterTests
         const double percentTextHeight = 18;
         const double gap = 4;
 
-        (PillMetrics.RingHostSize + gap + percentTextHeight).Should().BeLessThan(PillMetrics.BodyLength);
-        PillMetrics.RingHostSize.Should().BeLessThan(PillMetrics.Thickness);
+        (PillMetrics.RingOuter + gap + percentTextHeight).Should().BeLessThan(PillMetrics.BodyLength);
+        PillMetrics.RingOuter.Should().BeLessThan(PillMetrics.Thickness);
     }
 
     [Fact]
