@@ -8,6 +8,9 @@ public sealed record Theme(
     string LevelAmple,
     string LevelWatch,
     string LevelCritical,
+    string RingSession,
+    string RingWeeklyAll,
+    string RingWeeklyScoped,
     string Running,
     string Attention,
     string Done,
@@ -19,12 +22,14 @@ public sealed record Theme(
     public static Theme Codenotch { get; } = new(
         PillBackground: "#000000", PillBorder: "#2E2E2E", RingTrack: "#3A3A3A",
         LevelAmple: "#28E07B", LevelWatch: "#F5E400", LevelCritical: "#FF4500",
+        RingSession: "#28E07B", RingWeeklyAll: "#57C7FF", RingWeeklyScoped: "#C792EA",
         Running: "#28E07B", Attention: "#FFBF00", Done: "#57C7FF",
         Text: "#FFFFFF", PillOpacity: 1.0, ThresholdWatch: 0.50, ThresholdCritical: 0.80);
 
     public static Theme Monochrome { get; } = new(
         PillBackground: "#111111", PillBorder: "#3A3A3A", RingTrack: "#333333",
         LevelAmple: "#E0E0E0", LevelWatch: "#A0A0A0", LevelCritical: "#FFFFFF",
+        RingSession: "#E0E0E0", RingWeeklyAll: "#A0A0A0", RingWeeklyScoped: "#707070",
         Running: "#E0E0E0", Attention: "#FFFFFF", Done: "#B0B0B0",
         Text: "#FFFFFF", PillOpacity: 0.9, ThresholdWatch: 0.50, ThresholdCritical: 0.80);
 
@@ -34,7 +39,7 @@ public sealed record Theme(
         ThemePreset.Monochrome => Monochrome,
         ThemePreset.SystemAccent => systemAccentHex is null
             ? Codenotch
-            : Codenotch with { LevelAmple = systemAccentHex, Running = systemAccentHex },
+            : Codenotch with { LevelAmple = systemAccentHex, Running = systemAccentHex, RingSession = systemAccentHex },
         ThemePreset.Custom => custom,
         _ => Codenotch,
     };
@@ -59,6 +64,9 @@ public sealed record Theme(
             LevelAmple = Or(LevelAmple, d.LevelAmple),
             LevelWatch = Or(LevelWatch, d.LevelWatch),
             LevelCritical = Or(LevelCritical, d.LevelCritical),
+            RingSession = Or(RingSession, d.RingSession),
+            RingWeeklyAll = Or(RingWeeklyAll, d.RingWeeklyAll),
+            RingWeeklyScoped = Or(RingWeeklyScoped, d.RingWeeklyScoped),
             Running = Or(Running, d.Running),
             Attention = Or(Attention, d.Attention),
             Done = Or(Done, d.Done),
