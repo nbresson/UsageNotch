@@ -38,7 +38,7 @@ public class SettingsStoreTests
             Edge = ScreenEdge.Top,
             MonitorDeviceId = @"\\.\DISPLAY2",
             Scale = 0.75,
-            CellContent = CellContent.PercentOnly,
+            CellContent = CellContent.RingOnly,
             Visibility = VisibilityMode.Folded,
             FoldedThicknessPx = 6,
             ThemePreset = ThemePreset.Custom,
@@ -119,6 +119,50 @@ public class SettingsStoreTests
         published!.Scale.Should().Be(0.5);
         store.Current.Scale.Should().Be(0.5);
         Directory.GetFiles(dir.Path).Should().ContainSingle().Which.Should().EndWith("settings.json");
+    }
+
+    [Fact]
+    public void A_version_1_file_loads_into_version_2_without_losing_its_values()
+    {
+        using var dir = new TempDir();
+        File.WriteAllText(dir.File("settings.json"), """
+            { "version": 1, "port": 49000, "edge": "Top", "scale": 0.75, "cellContent": "RingOnly" }
+            """);
+
+        var s = Build(dir).Load();
+
+        s.Version.Should().Be(2);
+        s.Port.Should().Be(49000);
+        s.Edge.Should().Be(ScreenEdge.Top);
+        s.Scale.Should().Be(0.75);
+        s.CellContent.Should().Be(CellContent.RingOnly);
+        s.Coloring.Should().Be(RingColoring.PerRing);
+    }
+
+    [Fact]
+    public void The_retired_percent_only_mode_is_remapped_without_condemning_the_file()
+    {
+        using var dir = new TempDir();
+        File.WriteAllText(dir.File("settings.json"), """
+            { "version": 1, "port": 49000, "cellContent": "PercentOnly" }
+            """);
+
+        var s = Build(dir).Load();
+
+        s.CellContent.Should().Be(CellContent.RingAndPercent);
+        s.Port.Should().Be(49000);
+        Directory.GetFiles(dir.Path).Should().NotContain(f => f.Contains(".corrupt-"));
+    }
+
+    [Fact]
+    public void The_ring_colouring_mode_round_trips()
+    {
+        using var dir = new TempDir();
+        var store = Build(dir);
+
+        store.Save(new UsageNotch.Core.Settings.Settings { Coloring = RingColoring.ByLevel });
+
+        Build(dir).Load().Coloring.Should().Be(RingColoring.ByLevel);
     }
 
     [Fact]
