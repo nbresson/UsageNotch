@@ -13,13 +13,13 @@ public class SettingsPreviewTests
     [Fact]
     public void Three_samples_show_each_usage_level_and_session_state()
     {
-        var model = SettingsPreview.Build(new Settings(), accentHex: null);
+        var model = SettingsPreview.Build(new Settings { Coloring = RingColoring.ByLevel }, accentHex: null);
         var theme = Theme.Codenotch;
 
         model.Theme.Should().Be(theme);
         model.Samples.Select(s => s.Caption).Should().Equal("Modéré · en cours", "Vigilance · en attente", "Critique · terminé");
         model.Samples.Select(s => s.Cell.PercentText).Should().Equal(Pct(25), Pct(65), Pct(90));
-        model.Samples.Select(s => s.Cell.RingColor).Should().Equal(theme.LevelAmple, theme.LevelWatch, theme.LevelCritical);
+        model.Samples.Select(s => s.Cell.Rings[0].Color).Should().Equal(theme.LevelAmple, theme.LevelWatch, theme.LevelCritical);
         model.Samples.Select(s => s.Cell.Activity).Should().Equal(ActivityKind.Running, ActivityKind.Attention, ActivityKind.Done);
         model.Samples.Should().OnlyContain(s => !s.Cell.Dimmed);
     }
@@ -31,14 +31,16 @@ public class SettingsPreviewTests
         {
             ThemePreset = ThemePreset.Custom,
             CustomTheme = Theme.Codenotch with { ThresholdWatch = 0.3, ThresholdCritical = 0.6 },
+            Coloring = RingColoring.ByLevel,
         };
 
         var model = SettingsPreview.Build(settings, accentHex: null);
 
-        model.Samples[0].Cell.RingFraction.Should().BeApproximately(0.15, 1e-9);
-        model.Samples[1].Cell.RingFraction.Should().BeApproximately(0.45, 1e-9);
-        model.Samples[2].Cell.RingFraction.Should().BeApproximately(0.8, 1e-9);
-        model.Samples.Select(s => s.Cell.RingColor).Should().Equal(Theme.Codenotch.LevelAmple, Theme.Codenotch.LevelWatch, Theme.Codenotch.LevelCritical);
+        model.Samples[0].Cell.Rings[0].Fraction.Should().BeApproximately(0.15, 1e-9);
+        model.Samples[1].Cell.Rings[0].Fraction.Should().BeApproximately(0.45, 1e-9);
+        model.Samples[2].Cell.Rings[0].Fraction.Should().BeApproximately(0.8, 1e-9);
+        model.Samples.Select(s => s.Cell.Rings[0].Color).Should().Equal(
+            Theme.Codenotch.LevelAmple, Theme.Codenotch.LevelWatch, Theme.Codenotch.LevelCritical);
     }
 
     [Fact]
@@ -47,7 +49,19 @@ public class SettingsPreviewTests
         var model = SettingsPreview.Build(new Settings { ThemePreset = ThemePreset.SystemAccent }, "#0078D4");
 
         model.Theme.LevelAmple.Should().Be("#0078D4");
-        model.Samples[0].Cell.RingColor.Should().Be("#0078D4");
+        model.Samples[0].Cell.Rings[0].Color.Should().Be("#0078D4");
+    }
+
+    [Fact]
+    public void Per_ring_colouring_shows_the_three_ring_colours_in_the_preview()
+    {
+        var model = SettingsPreview.Build(new Settings(), accentHex: null);
+        var theme = Theme.Codenotch;
+
+        model.Samples.Should().OnlyContain(s =>
+            s.Cell.Rings[0].Color == theme.RingSession
+            && s.Cell.Rings[1].Color == theme.RingWeeklyAll
+            && s.Cell.Rings[2].Color == theme.RingWeeklyScoped);
     }
 
     [Fact]

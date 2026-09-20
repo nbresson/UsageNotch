@@ -12,18 +12,27 @@ public static class PillPresenter
 
     public static CellModel Cell(
         UsageSnapshot snapshot,
-        string headlineWindowId,
+        IReadOnlyList<IReadOnlyList<string>> ringWindowIds,
         SessionState aggregate,
         Theme theme,
         CellContent content,
+        RingColoring coloring,
         DateTimeOffset now)
     {
         var activity = ActivityOf(aggregate);
-        var headline = snapshot.Status == SnapshotStatus.NeedsAuth ? null : snapshot.Window(headlineWindowId);
+        var blind = snapshot.Status == SnapshotStatus.NeedsAuth;
+        string[] fixedColors = [theme.RingSession, theme.RingWeeklyAll, theme.RingWeeklyScoped];
 
-        double? fraction = headline is null ? null : Math.Clamp(headline.UsedFraction, 0.0, 1.0);
-        var ringColor = fraction is { } f ? theme.LevelColor(f) : theme.RingTrack;
-        var percent = fraction is { } p
+        var rings = new RingModel[ringWindowIds.Count];
+        for (var i = 0; i < ringWindowIds.Count; i++)
+        {
+            var window = blind ? null : snapshot.Window(ringWindowIds[i]);
+            double? fraction = window is null ? null : Math.Clamp(window.UsedFraction, 0.0, 1.0);
+            rings[i] = new RingModel(fraction, ColorFor(fraction, fixedColors[i], theme, coloring), theme.RingTrack);
+        }
+
+        var session = rings[0].Fraction;
+        var percent = session is { } p
             ? FrenchText.Percent(p)
             : IsWaitingForFirstReading(snapshot) ? "…" : "—";
 
@@ -31,19 +40,26 @@ public static class PillPresenter
             || (snapshot.FetchedAt != DateTimeOffset.MinValue && now - snapshot.FetchedAt > StaleAfter);
 
         return new CellModel(
-            RingFraction: fraction,
-            RingColor: ringColor,
+            Rings: rings,
+            RingFraction: session,
+            RingColor: rings[0].Color,
             TrackColor: theme.RingTrack,
             PercentText: percent,
             TextColor: theme.Text,
             ShowRing: content != CellContent.PercentOnly,
             ShowPercent: content != CellContent.RingOnly,
             Dimmed: dimmed,
-            Exhausted: fraction >= 1.0,
+            Exhausted: session >= 1.0,
             Activity: activity,
             ActivityColor: ActivityColor(activity, theme),
-            BandColor: activity == ActivityKind.Attention ? theme.Attention : ringColor);
+            BandColor: activity == ActivityKind.Attention ? theme.Attention : rings[0].Color);
     }
+
+    /// <summary>Sans lecture, l'anneau prend la couleur de sa piste : il disparaît dedans.</summary>
+    private static string ColorFor(double? fraction, string fixedColor, Theme theme, RingColoring coloring) =>
+        fraction is not { } f ? theme.RingTrack
+        : coloring == RingColoring.ByLevel ? theme.LevelColor(f)
+        : fixedColor;
 
     public static ActivityKind ActivityOf(SessionState state) => state switch
     {

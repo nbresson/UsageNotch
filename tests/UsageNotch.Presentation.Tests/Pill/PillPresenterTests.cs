@@ -12,36 +12,48 @@ public class PillPresenterTests
     private static readonly DateTimeOffset Now = new(2026, 9, 14, 12, 0, 0, TimeSpan.Zero);
     private static readonly Theme Theme = UsageNotch.Core.Settings.Theme.Codenotch;
 
-    private static UsageSnapshot Snap(SnapshotStatus status, double? session, DateTimeOffset? fetched = null, string note = "")
+    private static UsageSnapshot Snap(
+        SnapshotStatus status,
+        double? session,
+        double? weeklyAll = null,
+        double? weeklyScoped = null,
+        DateTimeOffset? fetched = null,
+        string note = "",
+        string scopedId = "weekly_scoped")
     {
-        var windows = session is { } f
-            ? new[] { new LimitWindow("session", "Session en cours", f, Now.AddHours(2)) }
-            : Array.Empty<LimitWindow>();
+        var windows = new List<LimitWindow>();
+        if (session is { } s) windows.Add(new LimitWindow("session", "Session en cours", s, Now.AddHours(2)));
+        if (weeklyAll is { } a) windows.Add(new LimitWindow("weekly_all", "Hebdomadaire (tous modèles)", a, Now.AddDays(3)));
+        if (weeklyScoped is { } p) windows.Add(new LimitWindow(scopedId, "Hebdomadaire (par modèle)", p, Now.AddDays(3)));
         return new UsageSnapshot(status, windows, fetched ?? Now, note, null);
     }
 
-    private static CellModel Cell(UsageSnapshot s, SessionState agg = SessionState.Idle, CellContent content = CellContent.RingAndPercent) =>
-        PillPresenter.Cell(s, "session", agg, Theme, content, Now);
+    private static CellModel Cell(
+        UsageSnapshot s,
+        SessionState agg = SessionState.Idle,
+        CellContent content = CellContent.RingAndPercent,
+        RingColoring coloring = RingColoring.PerRing) =>
+        PillPresenter.Cell(s, RingWindows.Claude, agg, Theme, content, coloring, Now);
 
     [Fact]
-    public void An_ok_reading_shows_the_headline_fraction_percent_and_level_colour()
+    public void An_ok_reading_shows_the_session_fraction_percent_and_colour()
     {
         var c = Cell(Snap(SnapshotStatus.Ok, 0.73));
         c.RingFraction.Should().BeApproximately(0.73, 1e-9);
         c.PercentText.Should().Be("73" + FrenchText.Nbsp + "%");
-        c.RingColor.Should().Be(Theme.LevelWatch);
+        c.RingColor.Should().Be(Theme.RingSession);
         c.TrackColor.Should().Be(Theme.RingTrack);
         c.TextColor.Should().Be(Theme.Text);
         c.Dimmed.Should().BeFalse();
         c.Exhausted.Should().BeFalse();
-        c.BandColor.Should().Be(Theme.LevelWatch);
+        c.BandColor.Should().Be(Theme.RingSession);
     }
 
     [Theory]
     [InlineData(0.10, "#28E07B")]
     [InlineData(0.85, "#FF4500")]
     public void The_ring_colour_follows_the_theme_thresholds(double used, string colour) =>
-        Cell(Snap(SnapshotStatus.Ok, used)).RingColor.Should().Be(colour);
+        Cell(Snap(SnapshotStatus.Ok, used), coloring: RingColoring.ByLevel).RingColor.Should().Be(colour);
 
     [Fact]
     public void A_full_window_is_exhausted()
@@ -130,4 +142,75 @@ public class PillPresenterTests
     [Fact]
     public void Window_length_includes_both_fillets() =>
         PillMetrics.WindowLength.Should().Be(PillMetrics.BodyLength + 2 * PillMetrics.Fillet);
+
+    [Fact]
+    public void The_three_rings_are_ordered_session_then_weekly_then_scoped()
+    {
+        var c = Cell(Snap(SnapshotStatus.Ok, 0.73, 0.21, 0.52));
+
+        c.Rings.Should().HaveCount(3);
+        c.Rings[0].Fraction.Should().BeApproximately(0.73, 1e-9);
+        c.Rings[1].Fraction.Should().BeApproximately(0.21, 1e-9);
+        c.Rings[2].Fraction.Should().BeApproximately(0.52, 1e-9);
+        c.Rings.Should().OnlyContain(r => r.TrackColor == Theme.RingTrack);
+    }
+
+    [Fact]
+    public void A_legacy_opus_window_still_feeds_the_inner_ring()
+    {
+        var c = Cell(Snap(SnapshotStatus.Ok, 0.1, 0.2, 0.52, scopedId: "weekly_opus"));
+
+        c.Rings[2].Fraction.Should().BeApproximately(0.52, 1e-9);
+    }
+
+    [Fact]
+    public void Per_ring_colouring_gives_each_ring_its_own_theme_colour()
+    {
+        var c = Cell(Snap(SnapshotStatus.Ok, 0.95, 0.05, 0.5));
+
+        c.Rings[0].Color.Should().Be(Theme.RingSession);
+        c.Rings[1].Color.Should().Be(Theme.RingWeeklyAll);
+        c.Rings[2].Color.Should().Be(Theme.RingWeeklyScoped);
+    }
+
+    [Fact]
+    public void By_level_colouring_grades_each_ring_on_its_own_fraction()
+    {
+        var c = Cell(Snap(SnapshotStatus.Ok, 0.95, 0.05, 0.6), coloring: RingColoring.ByLevel);
+
+        c.Rings[0].Color.Should().Be(Theme.LevelCritical);
+        c.Rings[1].Color.Should().Be(Theme.LevelAmple);
+        c.Rings[2].Color.Should().Be(Theme.LevelWatch);
+    }
+
+    [Fact]
+    public void A_missing_window_draws_its_track_alone_without_moving_the_others()
+    {
+        var c = Cell(Snap(SnapshotStatus.Ok, 0.73, weeklyScoped: 0.52));
+
+        c.Rings.Should().HaveCount(3);
+        c.Rings[1].Fraction.Should().BeNull();
+        c.Rings[1].Color.Should().Be(Theme.RingTrack);
+        c.Rings[2].Fraction.Should().BeApproximately(0.52, 1e-9);
+    }
+
+    [Fact]
+    public void Needs_auth_leaves_the_three_rings_as_bare_tracks()
+    {
+        var c = Cell(Snap(SnapshotStatus.NeedsAuth, 0.4, 0.4, 0.4, note: "Identifiant refusé"));
+
+        c.Rings.Should().OnlyContain(r => r.Fraction == null && r.Color == Theme.RingTrack);
+        c.PercentText.Should().Be("—");
+    }
+
+    [Fact]
+    public void Exhausted_and_the_percent_still_speak_for_the_session_alone()
+    {
+        var c = Cell(Snap(SnapshotStatus.Ok, 1.0, 0.1, 0.1));
+
+        c.Exhausted.Should().BeTrue();
+        c.PercentText.Should().Be("100" + FrenchText.Nbsp + "%");
+
+        Cell(Snap(SnapshotStatus.Ok, 0.1, 1.0, 1.0)).Exhausted.Should().BeFalse();
+    }
 }

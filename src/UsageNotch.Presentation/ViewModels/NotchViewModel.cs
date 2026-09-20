@@ -176,7 +176,7 @@ public sealed class NotchViewModel : ObservableObject, IDisposable
         Settings = settings;
         UpdateFullscreen();
         Theme = theme;
-        Cell = PillPresenter.Cell(snapshot, _provider.HeadlineWindowId, _sessions.Aggregate, theme, settings.CellContent, now);
+        Cell = PillPresenter.Cell(snapshot, _provider.RingWindowIds, _sessions.Aggregate, theme, settings.CellContent, settings.Coloring, now);
         Card = CardPresenter.Build(snapshot, _provider.DisplayName, _sessions.Snapshot(), theme, now, _zone);
         TrayText = $"UsageNotch — {_provider.DisplayName} {Cell.PercentText}";
     }

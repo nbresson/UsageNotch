@@ -27,21 +27,26 @@ public static class SettingsPreview
         var content = settings.CellContent;
         PreviewSample[] samples =
         [
-            Sample("Modéré · en cours", theme.ThresholdWatch / 2, SessionState.Running, theme, content),
-            Sample("Vigilance · en attente", (theme.ThresholdWatch + theme.ThresholdCritical) / 2, SessionState.Attention, theme, content),
-            Sample("Critique · terminé", (theme.ThresholdCritical + 1.0) / 2, SessionState.Done, theme, content),
+            Sample("Modéré · en cours", theme.ThresholdWatch / 2, SessionState.Running, theme, content, settings.Coloring),
+            Sample("Vigilance · en attente", (theme.ThresholdWatch + theme.ThresholdCritical) / 2, SessionState.Attention, theme, content, settings.Coloring),
+            Sample("Critique · terminé", (theme.ThresholdCritical + 1.0) / 2, SessionState.Done, theme, content, settings.Coloring),
         ];
         return new PreviewModel(theme, settings.Edge, settings.Scale, settings.Visibility, settings.FoldedThicknessPx, samples);
     }
 
-    private static PreviewSample Sample(string caption, double fraction, SessionState state, Theme theme, CellContent content)
+    private static PreviewSample Sample(
+        string caption, double fraction, SessionState state, Theme theme, CellContent content, RingColoring coloring)
     {
         var snapshot = new UsageSnapshot(
             SnapshotStatus.Ok,
-            [new LimitWindow("session", "Session en cours", fraction, SampleTime.AddHours(3))],
+            [
+                new LimitWindow("session", "Session en cours", fraction, SampleTime.AddHours(3)),
+                new LimitWindow("weekly_all", "Hebdomadaire (tous modèles)", fraction * 0.6, SampleTime.AddDays(3)),
+                new LimitWindow("weekly_scoped", "Hebdomadaire (par modèle)", fraction * 0.3, SampleTime.AddDays(3)),
+            ],
             SampleTime,
             "",
             null);
-        return new PreviewSample(caption, PillPresenter.Cell(snapshot, "session", state, theme, content, SampleTime));
+        return new PreviewSample(caption, PillPresenter.Cell(snapshot, RingWindows.Claude, state, theme, content, coloring, SampleTime));
     }
 }

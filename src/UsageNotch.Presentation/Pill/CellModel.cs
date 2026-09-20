@@ -1,10 +1,12 @@
 namespace UsageNotch.Presentation.Pill;
 
 /// <summary>
-/// Tout ce que la cellule dessine. <see cref="RingFraction"/> null = pas de lecture exploitable (tiret ou attente).
-/// Couleurs en <c>#RRGGBB</c>.
+/// Tout ce que la cellule dessine. <see cref="Rings"/> porte toujours trois anneaux, de l'extérieur vers
+/// l'intérieur. <see cref="RingFraction"/> et <see cref="RingColor"/> reprennent l'anneau de session : ils
+/// disparaissent dès que la vue lit <see cref="Rings"/>. Couleurs en <c>#RRGGBB</c>.
 /// </summary>
 public sealed record CellModel(
+    IReadOnlyList<RingModel> Rings,
     double? RingFraction,
     string RingColor,
     string TrackColor,
