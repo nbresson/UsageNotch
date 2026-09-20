@@ -20,6 +20,7 @@ l'historique.
 |---|---|
 | `README.md` | Présentation, installation, utilisation, confidentialité, organisation du code |
 | `docs/superpowers/specs/2026-09-14-usagenotch-design.md` | Spec de conception d'origine (référence ; ses sections « hors périmètre » sont en partie dépassées, voir plus haut) |
+| `docs/superpowers/specs/2026-09-20-usagenotch-pill-rings-design.md` | Spec de la pilule à trois anneaux (validée, plan à écrire) |
 | `docs/superpowers/plans/2026-09-14-usagenotch-core-and-hook.md` | Plan 1 : Core et hook |
 | `docs/superpowers/plans/2026-09-15-usagenotch-app.md` | Plan 2 : application WPF |
 | `docs/superpowers/plans/2026-09-15-usagenotch-settings-window.md` | Plan 3 : fenêtre de réglages |
@@ -99,3 +100,22 @@ récepteur sans attendre les requêtes en cours. Détail et raisons dans le jour
 - suivi de l'application desktop Claude, qui n'utilise pas les hooks (surveillance des transcriptions) ;
 - tests d'interface automatisés (FlaUI) pour remplacer les vérifications manuelles ;
 - mise à jour automatique, interface multilingue (peu utiles pour un outil personnel).
+
+**Idées à concevoir** (déposées telles quelles ; chacune demande sa propre conception, puis un plan) :
+
+1. ~~**Pilule à plusieurs anneaux.**~~ **Conçue le 2026-09-20**, voir
+   `docs/superpowers/specs/2026-09-20-usagenotch-pill-rings-design.md`. Trois anneaux concentriques Ø 44 / 32 / 20 —
+   session, hebdomadaire tous modèles, `weekly_scoped` —, pourcentage optionnel, couleur fixe par anneau ou coloration
+   par niveau au choix. Plan d'implémentation à écrire.
+
+2. **Logo du fournisseur au centre des anneaux.** Le jour où un deuxième fournisseur existe, identifier celui que la
+   pilule affiche par une petite marque au centre de la pile (Anthropic pour Claude, OpenAI pour ChatGPT…).
+   **Réflexion à approfondir avant tout code** : rattachée à l'extension multi-fournisseurs ci-dessus, qui tranchera
+   d'abord la question dont elle dépend — une pilule par fournisseur, ou une seule à bascule ? Tant que la réponse
+   manque, on ne sait pas si l'identité doit vivre sur la pilule, ni où. Contraintes déjà relevées : le trou central de
+   la pile concentrique ne fait que 12 DIP, et suit `Settings.Scale` (6,4 DIP à l'échelle 40 %, où aucune marque n'est
+   plus lisible — le nœud d'OpenAI en particulier meurt bien avant) ; le point « session terminée » y vit déjà ; la
+   carte affiche **déjà** le nom du fournisseur, que `CardPresenter.Build` reçoit en `displayName` ; enfin le dépôt est
+   public sous licence MIT, embarquer des marques déposées dans le binaire n'est pas anodin. Si l'identité doit finir
+   sur la pilule, les candidats sérieux sont plutôt une couleur d'accent par fournisseur, la bande du mode Replié, ou
+   une lettre unique.
