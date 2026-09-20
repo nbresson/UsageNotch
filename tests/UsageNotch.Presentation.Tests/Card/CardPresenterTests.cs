@@ -103,4 +103,14 @@ public class CardPresenterTests
         card.Sessions.Should().ContainSingle().Which.Should().Be(
             new SessionRow("d", "api · 1234", "Terminé en 42 s", ActivityKind.Done, Theme.Done));
     }
+
+    [Fact]
+    public void A_finished_row_keeps_the_card_colour_while_the_pill_wears_the_brand_one()
+    {
+        var card = Build(Ok(), S("d", SessionState.Done, total: TimeSpan.FromMinutes(1)));
+
+        card.Sessions[0].DotColor.Should().Be(Theme.Done);
+        card.Sessions[0].DotColor.Should().NotBe(Theme.LogoDone);
+        PillPresenter.ActivityColor(ActivityKind.Done, Theme).Should().Be(Theme.LogoDone);
+    }
 }

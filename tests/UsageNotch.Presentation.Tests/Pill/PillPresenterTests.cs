@@ -116,8 +116,26 @@ public class PillPresenterTests
     {
         PillPresenter.ActivityColor(ActivityKind.Running, Theme).Should().Be(Theme.Running);
         PillPresenter.ActivityColor(ActivityKind.Attention, Theme).Should().Be(Theme.Attention);
-        PillPresenter.ActivityColor(ActivityKind.Done, Theme).Should().Be(Theme.Done);
+        PillPresenter.ActivityColor(ActivityKind.Done, Theme).Should().Be(Theme.LogoDone);
         PillPresenter.ActivityColor(ActivityKind.None, Theme).Should().Be(Theme.RingTrack);
+    }
+
+    [Fact]
+    public void The_finished_state_wears_the_brand_colour_not_the_card_colour()
+    {
+        PillPresenter.ActivityColor(ActivityKind.Done, Theme).Should().NotBe(Theme.Done);
+    }
+
+    [Theory]
+    [InlineData(SessionState.Idle)]
+    [InlineData(SessionState.Running)]
+    [InlineData(SessionState.Attention)]
+    [InlineData(SessionState.Done)]
+    public void The_muted_colour_is_the_desaturated_activity_colour(SessionState state)
+    {
+        var c = Cell(Snap(SnapshotStatus.Ok, 0.2), state);
+
+        c.ActivityMutedColor.Should().Be(HexColor.Desaturate(c.ActivityColor));
     }
 
     [Fact]
