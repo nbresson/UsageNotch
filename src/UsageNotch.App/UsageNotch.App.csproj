@@ -6,7 +6,7 @@
     <AssemblyName>UsageNotch.App</AssemblyName>
     <RootNamespace>UsageNotch.App</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>0.3.0</Version>
+    <Version>0.4.0</Version>
     <!-- Nom affiché par Windows (notifications, gestionnaire des tâches) : description du fichier. -->
     <AssemblyTitle>UsageNotch</AssemblyTitle>
     <Product>UsageNotch</Product>
