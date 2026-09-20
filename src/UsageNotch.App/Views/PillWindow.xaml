@@ -54,14 +54,22 @@
             <ScaleTransform x:Name="BodyScale" ScaleX="1" ScaleY="1" />
           </StackPanel.LayoutTransform>
 
-          <Grid x:Name="RingHost" Width="44" Height="44" Margin="0,0,0,4"
+          <Grid x:Name="RingHost" Width="56" Height="56" Margin="0,0,0,4"
                 Visibility="{Binding Cell.ShowRing, Converter={StaticResource BoolVis}}">
-            <controls:ProgressRing RingThickness="5"
-                                   TargetFraction="{Binding Cell.RingFraction}"
-                                   RingBrush="{Binding Cell.RingColor, Converter={StaticResource Hex}}"
-                                   TrackBrush="{Binding Cell.TrackColor, Converter={StaticResource Hex}}" />
-            <Path x:Name="RunningArc" Width="44" Height="44" Stretch="None"
-                  Data="M 22,8 A 14,14 0 0 1 36,22"
+            <controls:ProgressRing Width="44" Height="44" RingThickness="4"
+                                   TargetFraction="{Binding Cell.Rings[0].Fraction}"
+                                   RingBrush="{Binding Cell.Rings[0].Color, Converter={StaticResource Hex}}"
+                                   TrackBrush="{Binding Cell.Rings[0].TrackColor, Converter={StaticResource Hex}}" />
+            <controls:ProgressRing Width="32" Height="32" RingThickness="4"
+                                   TargetFraction="{Binding Cell.Rings[1].Fraction}"
+                                   RingBrush="{Binding Cell.Rings[1].Color, Converter={StaticResource Hex}}"
+                                   TrackBrush="{Binding Cell.Rings[1].TrackColor, Converter={StaticResource Hex}}" />
+            <controls:ProgressRing Width="20" Height="20" RingThickness="4"
+                                   TargetFraction="{Binding Cell.Rings[2].Fraction}"
+                                   RingBrush="{Binding Cell.Rings[2].Color, Converter={StaticResource Hex}}"
+                                   TrackBrush="{Binding Cell.Rings[2].TrackColor, Converter={StaticResource Hex}}" />
+            <Path x:Name="RunningArc" Width="56" Height="56" Stretch="None"
+                  Data="M 28,2 A 26,26 0 0 1 54,28"
                   StrokeThickness="2.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                   RenderTransformOrigin="0.5,0.5"
                   Stroke="{Binding Cell.ActivityColor, Converter={StaticResource Hex}}"
@@ -70,7 +78,7 @@
                 <RotateTransform x:Name="SpinRotate" />
               </Path.RenderTransform>
             </Path>
-            <Ellipse x:Name="AttentionRing" Width="28" Height="28" StrokeThickness="2.5"
+            <Ellipse x:Name="AttentionRing" Width="52" Height="52" StrokeThickness="2.5"
                      Stroke="{Binding Cell.ActivityColor, Converter={StaticResource Hex}}"
                      Visibility="{Binding Cell.Activity, Converter={StaticResource Activity}, ConverterParameter=Attention}" />
             <Ellipse Width="8" Height="8"

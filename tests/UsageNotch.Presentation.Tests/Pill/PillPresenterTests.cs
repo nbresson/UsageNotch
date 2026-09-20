@@ -144,6 +144,42 @@ public class PillPresenterTests
         PillMetrics.WindowLength.Should().Be(PillMetrics.BodyLength + 2 * PillMetrics.Fillet);
 
     [Fact]
+    public void The_ring_stack_leaves_two_dip_between_neighbours_and_a_twelve_dip_core()
+    {
+        static (double Inner, double Outer) Band(double diameter) =>
+            ((diameter - 2 * PillMetrics.RingBandThickness) / 2, diameter / 2);
+
+        var outer = Band(PillMetrics.RingOuter);
+        var middle = Band(PillMetrics.RingMiddle);
+        var inner = Band(PillMetrics.RingInner);
+
+        (outer.Inner - middle.Outer).Should().Be(2);
+        (middle.Inner - inner.Outer).Should().Be(2);
+        (inner.Inner * 2).Should().Be(12);
+    }
+
+    [Fact]
+    public void The_activity_marks_clear_the_outer_ring_and_stay_inside_the_host()
+    {
+        var outerEdge = (PillMetrics.RingOuter + PillMetrics.RingBandThickness) / 2;
+        var activityInnerEdge = (PillMetrics.ActivitySize - 2.5) / 2;
+        var activityOuterEdge = (PillMetrics.ActivitySize + 2.5) / 2;
+
+        activityInnerEdge.Should().BeGreaterThan(outerEdge);
+        (activityOuterEdge * 2).Should().BeLessThan(PillMetrics.RingHostSize);
+    }
+
+    [Fact]
+    public void The_stack_and_the_percent_fit_the_body_without_lengthening_the_pill()
+    {
+        const double percentTextHeight = 18;
+        const double gap = 4;
+
+        (PillMetrics.RingHostSize + gap + percentTextHeight).Should().BeLessThan(PillMetrics.BodyLength);
+        PillMetrics.RingHostSize.Should().BeLessThan(PillMetrics.Thickness);
+    }
+
+    [Fact]
     public void The_three_rings_are_ordered_session_then_weekly_then_scoped()
     {
         var c = Cell(Snap(SnapshotStatus.Ok, 0.73, 0.21, 0.52));
