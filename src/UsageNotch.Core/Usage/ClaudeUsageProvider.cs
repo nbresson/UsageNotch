@@ -14,7 +14,6 @@ public sealed class ClaudeUsageProvider(HttpClient http, ClaudeCredentialReader 
 
     public string Id => "claude";
     public string DisplayName => "Claude";
-    public string HeadlineWindowId => "session";
     public IReadOnlyList<IReadOnlyList<string>> RingWindowIds => RingWindows.Claude;
 
     public async Task<FetchResult> FetchAsync(CancellationToken ct)

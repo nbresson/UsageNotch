@@ -41,12 +41,9 @@ public static class PillPresenter
 
         return new CellModel(
             Rings: rings,
-            RingFraction: session,
-            RingColor: rings[0].Color,
             TrackColor: theme.RingTrack,
             PercentText: percent,
             TextColor: theme.Text,
-            ShowRing: content != CellContent.PercentOnly,
             ShowPercent: content != CellContent.RingOnly,
             Dimmed: dimmed,
             Exhausted: session >= 1.0,

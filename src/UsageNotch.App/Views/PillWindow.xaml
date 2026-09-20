@@ -54,8 +54,7 @@
             <ScaleTransform x:Name="BodyScale" ScaleX="1" ScaleY="1" />
           </StackPanel.LayoutTransform>
 
-          <Grid x:Name="RingHost" Width="56" Height="56" Margin="0,0,0,4"
-                Visibility="{Binding Cell.ShowRing, Converter={StaticResource BoolVis}}">
+          <Grid x:Name="RingHost" Width="56" Height="56" Margin="0,0,0,4">
             <controls:ProgressRing Width="44" Height="44" RingThickness="4"
                                    TargetFraction="{Binding Cell.Rings[0].Fraction}"
                                    RingBrush="{Binding Cell.Rings[0].Color, Converter={StaticResource Hex}}"

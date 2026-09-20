@@ -8,7 +8,6 @@ public sealed class DemoUsageProvider(TimeProvider time) : IUsageProvider
 {
     public string Id => "claude";
     public string DisplayName => "Claude";
-    public string HeadlineWindowId => "session";
     public IReadOnlyList<IReadOnlyList<string>> RingWindowIds => RingWindows.Claude;
 
     public Task<FetchResult> FetchAsync(CancellationToken ct)

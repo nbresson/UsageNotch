@@ -39,9 +39,7 @@ public class PillPresenterTests
     public void An_ok_reading_shows_the_session_fraction_percent_and_colour()
     {
         var c = Cell(Snap(SnapshotStatus.Ok, 0.73));
-        c.RingFraction.Should().BeApproximately(0.73, 1e-9);
         c.PercentText.Should().Be("73" + FrenchText.Nbsp + "%");
-        c.RingColor.Should().Be(Theme.RingSession);
         c.TrackColor.Should().Be(Theme.RingTrack);
         c.TextColor.Should().Be(Theme.Text);
         c.Dimmed.Should().BeFalse();
@@ -53,25 +51,25 @@ public class PillPresenterTests
     [InlineData(0.10, "#28E07B")]
     [InlineData(0.85, "#FF4500")]
     public void The_ring_colour_follows_the_theme_thresholds(double used, string colour) =>
-        Cell(Snap(SnapshotStatus.Ok, used), coloring: RingColoring.ByLevel).RingColor.Should().Be(colour);
+        Cell(Snap(SnapshotStatus.Ok, used), coloring: RingColoring.ByLevel).Rings[0].Color.Should().Be(colour);
 
     [Fact]
     public void A_full_window_is_exhausted()
     {
         var c = Cell(Snap(SnapshotStatus.Ok, 1.0));
         c.Exhausted.Should().BeTrue();
-        c.RingFraction.Should().Be(1.0);
+        c.Rings[0].Fraction.Should().Be(1.0);
     }
 
     [Fact]
-    public void A_missing_headline_window_is_a_dash_not_another_window()
+    public void A_missing_session_window_is_a_dash_not_another_window()
     {
         var s = new UsageSnapshot(SnapshotStatus.Ok,
             [new LimitWindow("weekly_all", "Hebdomadaire (tous modèles)", 0.6, Now.AddDays(3))], Now, "", null);
         var c = Cell(s);
-        c.RingFraction.Should().BeNull();
+        c.Rings[0].Fraction.Should().BeNull();
         c.PercentText.Should().Be("—");
-        c.RingColor.Should().Be(Theme.RingTrack);
+        c.Rings[0].Color.Should().Be(Theme.RingTrack);
         c.BandColor.Should().Be(Theme.RingTrack);
     }
 
@@ -80,7 +78,7 @@ public class PillPresenterTests
     {
         var c = Cell(UsageSnapshot.Empty);
         PillPresenter.IsWaitingForFirstReading(UsageSnapshot.Empty).Should().BeTrue();
-        c.RingFraction.Should().BeNull();
+        c.Rings[0].Fraction.Should().BeNull();
         c.PercentText.Should().Be("…");
     }
 
@@ -88,7 +86,7 @@ public class PillPresenterTests
     public void Needs_auth_shows_a_dash_even_with_old_windows()
     {
         var c = Cell(Snap(SnapshotStatus.NeedsAuth, 0.4, note: "Identifiant refusé"));
-        c.RingFraction.Should().BeNull();
+        c.Rings[0].Fraction.Should().BeNull();
         c.PercentText.Should().Be("—");
     }
 
@@ -129,14 +127,11 @@ public class PillPresenterTests
     }
 
     [Theory]
-    [InlineData(CellContent.RingAndPercent, true, true)]
-    [InlineData(CellContent.RingOnly, true, false)]
-    [InlineData(CellContent.PercentOnly, false, true)]
-    public void Cell_content_setting_controls_what_is_shown(CellContent content, bool ring, bool percent)
+    [InlineData(CellContent.RingAndPercent, true)]
+    [InlineData(CellContent.RingOnly, false)]
+    public void Cell_content_setting_controls_whether_the_percent_is_written(CellContent content, bool percent)
     {
-        var c = Cell(Snap(SnapshotStatus.Ok, 0.2), content: content);
-        c.ShowRing.Should().Be(ring);
-        c.ShowPercent.Should().Be(percent);
+        Cell(Snap(SnapshotStatus.Ok, 0.2), content: content).ShowPercent.Should().Be(percent);
     }
 
     [Fact]

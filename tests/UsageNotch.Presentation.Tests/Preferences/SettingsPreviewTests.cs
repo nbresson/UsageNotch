@@ -67,9 +67,9 @@ public class SettingsPreviewTests
     [Fact]
     public void Cell_content_is_honoured()
     {
-        var model = SettingsPreview.Build(new Settings { CellContent = CellContent.PercentOnly }, accentHex: null);
+        var model = SettingsPreview.Build(new Settings { CellContent = CellContent.RingOnly }, accentHex: null);
 
-        model.Samples.Should().OnlyContain(s => !s.Cell.ShowRing && s.Cell.ShowPercent);
+        model.Samples.Should().OnlyContain(s => !s.Cell.ShowPercent && s.Cell.Rings.Count == 3);
     }
 
     [Fact]

@@ -128,7 +128,7 @@ public sealed class PillPreview : ContentControl
             VerticalAlignment = VerticalAlignment.Center,
             LayoutTransform = new ScaleTransform(model.Scale, model.Scale),
         };
-        if (cell.ShowRing) stack.Children.Add(BuildRing(cell, vertical));
+        stack.Children.Add(BuildRing(cell, vertical));
         if (cell.ShowPercent)
         {
             stack.Children.Add(new TextBlock
