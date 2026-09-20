@@ -15,7 +15,7 @@ Inspiré de [codenotch](https://github.com/vinzdg/codenotch) (MIT), réécrit en
 - **Aucune zone fantôme** : ce qui n'est pas dessiné laisse passer les clics vers l'application du dessous.
 - **Trois modes** : Déplié, Replié (une fine bande de 2 à 12 px qui se déplie au survol), Masqué (icône de notification seule).
 - **Placement libre** : bord droit, gauche, haut ou bas, position le long du bord (Alt + glisser), n'importe quel écran, mise à l'échelle par écran.
-- **Personnalisation** : préréglages Codenotch, Monochrome, Accent système ou Personnalisé (dix couleurs, opacité, seuils), échelle de 40 à 150 %, contenu de la pilule (anneaux et pourcentage, ou anneaux seuls), coloration des anneaux (une couleur par anneau, ou selon le niveau).
+- **Personnalisation** : préréglages Codenotch, Monochrome, Accent système ou Personnalisé (treize couleurs, opacité, seuils), échelle de 40 à 150 %, contenu de la pilule (anneaux et pourcentage, ou anneaux seuls), coloration des anneaux (une couleur par anneau, ou selon le niveau).
 - **Fenêtre de réglages** avec aperçu en direct ; toutes les modifications s'appliquent sans redémarrer (sauf le port).
 - **Alertes de seuil** : notification Windows quand une fenêtre de limite franchit un seuil réglable (80 % par défaut) puis 100 %.
 - **Plein écran** : la pilule se masque pendant un jeu, une vidéo ou un diaporama sur son écran.

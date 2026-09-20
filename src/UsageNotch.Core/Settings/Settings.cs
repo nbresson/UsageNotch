@@ -22,7 +22,9 @@ public sealed record Settings
     /// <summary>Identifiant de périphérique de l'écran d'ancrage ; null = écran principal.</summary>
     public string? MonitorDeviceId { get; init; }
     public double Scale { get; init; } = 1.0;
-    public CellContent CellContent { get; init; } = CellContent.RingAndPercent;
+    // Décision de la spec : le pourcentage écrit est retiré du mode par défaut (l'information est déjà sur la carte),
+    // mais reste disponible en option pour un repli chiffré aux petites échelles.
+    public CellContent CellContent { get; init; } = CellContent.RingOnly;
     /// <summary>Couleur propre à chaque anneau, ou couleur du niveau de chacun.</summary>
     public RingColoring Coloring { get; init; } = RingColoring.PerRing;
     public VisibilityMode Visibility { get; init; } = VisibilityMode.Expanded;

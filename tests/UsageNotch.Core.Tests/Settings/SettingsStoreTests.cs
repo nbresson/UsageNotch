@@ -155,6 +155,16 @@ public class SettingsStoreTests
     }
 
     [Fact]
+    public void Fresh_settings_default_to_rings_without_the_written_percentage()
+    {
+        // Spec, section 3, décision 3 : le pourcentage écrit est retiré du mode par défaut (l'information est
+        // déjà sur la carte) et ne reste qu'une option. Ce test échoue si le défaut revient à RingAndPercent.
+        var s = new UsageNotch.Core.Settings.Settings();
+
+        s.CellContent.Should().Be(CellContent.RingOnly, "la spec retire le pourcentage écrit du mode par défaut");
+    }
+
+    [Fact]
     public void The_ring_colouring_mode_round_trips()
     {
         using var dir = new TempDir();
