@@ -20,7 +20,7 @@ l'historique.
 |---|---|
 | `README.md` | Présentation, installation, utilisation, confidentialité, organisation du code |
 | `docs/superpowers/specs/2026-09-14-usagenotch-design.md` | Spec de conception d'origine (référence ; ses sections « hors périmètre » sont en partie dépassées, voir plus haut) |
-| `docs/superpowers/specs/2026-09-20-usagenotch-pill-rings-design.md` | Spec de la pilule à trois anneaux (validée, plan à écrire) |
+| `docs/superpowers/specs/2026-09-20-usagenotch-pill-rings-design.md` | Spec de la pilule à trois anneaux (livrée par le Plan 4) |
 | `docs/superpowers/plans/2026-09-14-usagenotch-core-and-hook.md` | Plan 1 : Core et hook |
 | `docs/superpowers/plans/2026-09-15-usagenotch-app.md` | Plan 2 : application WPF |
 | `docs/superpowers/plans/2026-09-15-usagenotch-settings-window.md` | Plan 3 : fenêtre de réglages |
