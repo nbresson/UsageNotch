@@ -37,6 +37,7 @@ public sealed class AppearancePageViewModel : ObservableObject, IDisposable
             Slot("Running", "Session en cours", t => t.Running, (t, h) => t with { Running = h }),
             Slot("Attention", "Session en attente", t => t.Attention, (t, h) => t with { Attention = h }),
             Slot("Done", "Session terminée", t => t.Done, (t, h) => t with { Done = h }),
+            Slot("LogoDone", "Logo, session terminée", t => t.LogoDone, (t, h) => t with { LogoDone = h }),
             Slot("Text", "Texte", t => t.Text, (t, h) => t with { Text = h }),
         ];
 
