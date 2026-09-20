@@ -39,6 +39,8 @@ public static class PillPresenter
         var dimmed = snapshot.Status == SnapshotStatus.Stale
             || (snapshot.FetchedAt != DateTimeOffset.MinValue && now - snapshot.FetchedAt > StaleAfter);
 
+        var activityColor = ActivityColor(activity, theme);
+
         return new CellModel(
             Rings: rings,
             TrackColor: theme.RingTrack,
@@ -48,7 +50,8 @@ public static class PillPresenter
             Dimmed: dimmed,
             Exhausted: session >= 1.0,
             Activity: activity,
-            ActivityColor: ActivityColor(activity, theme),
+            ActivityColor: activityColor,
+            ActivityMutedColor: HexColor.Desaturate(activityColor),
             BandColor: activity == ActivityKind.Attention ? theme.Attention : rings[0].Color);
     }
 
@@ -70,7 +73,7 @@ public static class PillPresenter
     {
         ActivityKind.Attention => theme.Attention,
         ActivityKind.Running => theme.Running,
-        ActivityKind.Done => theme.Done,
+        ActivityKind.Done => theme.LogoDone,
         _ => theme.RingTrack,
     };
 

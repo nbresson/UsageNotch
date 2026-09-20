@@ -21,11 +21,13 @@ l'historique.
 | `README.md` | Présentation, installation, utilisation, confidentialité, organisation du code |
 | `docs/superpowers/specs/2026-09-14-usagenotch-design.md` | Spec de conception d'origine (référence ; ses sections « hors périmètre » sont en partie dépassées, voir plus haut) |
 | `docs/superpowers/specs/2026-09-20-usagenotch-pill-rings-design.md` | Spec de la pilule à trois anneaux (livrée par le Plan 4) |
+| `docs/superpowers/specs/2026-09-20-usagenotch-activity-logo-design.md` | Spec du logo du fournisseur comme voyant d'activité (livrée par le Plan 5) |
 | `docs/superpowers/plans/2026-09-14-usagenotch-core-and-hook.md` | Plan 1 : Core et hook |
 | `docs/superpowers/plans/2026-09-15-usagenotch-app.md` | Plan 2 : application WPF |
 | `docs/superpowers/plans/2026-09-15-usagenotch-settings-window.md` | Plan 3 : fenêtre de réglages |
 | `docs/superpowers/plans/2026-09-20-usagenotch-pill-rings.md` | Plan 4 : pilule à trois anneaux |
-| `docs/superpowers/plans/2026-09-14-usagenotch-core-and-hook-notes.md` | **Journal de bord** : contrats entre couches, arbitrages, écarts à la spec, points laissés en l'état, puis chaque chantier postérieur (performance, fluidité, alertes, plein écran, finitions, pilule à trois anneaux) |
+| `docs/superpowers/plans/2026-09-20-usagenotch-activity-logo.md` | Plan 5 : logo du fournisseur comme voyant d'activité |
+| `docs/superpowers/plans/2026-09-14-usagenotch-core-and-hook-notes.md` | **Journal de bord** : contrats entre couches, arbitrages, écarts à la spec, points laissés en l'état, puis chaque chantier postérieur (performance, fluidité, alertes, plein écran, finitions, pilule à trois anneaux, logo du fournisseur) |
 
 Les plans décrivent l'intention au moment de leur écriture ; le code et le journal de bord font foi quand ils divergent.
 
@@ -89,8 +91,7 @@ src\UsageNotch.App\bin\Debug\net10.0-windows\UsageNotch.App.exe --demo
 - clic sur une ligne de session (retour au terminal) et bouton ✕ ;
 - son d'ouverture automatique ;
 - masquage avec un vrai jeu en plein écran exclusif et une vidéo YouTube en plein écran ;
-- alerte de seuil à 100 % et changement de période en conditions réelles ;
-- lisibilité de l'anneau intérieur à l'usage quotidien, à l'échelle habituelle de l'utilisateur.
+- alerte de seuil à 100 % et changement de période en conditions réelles.
 
 **Mineurs, sans effet visible** : allocation du stylo de `ProgressRing` à chaque rendu, longueur du jeton affichée par
 `doctor`, chemin de copie du hook codé en dur dans le projet App, minuteries de survol non remises à null, arrêt du
@@ -109,14 +110,14 @@ récepteur sans attendre les requêtes en cours. Détail et raisons dans le jour
    `docs/superpowers/specs/2026-09-20-usagenotch-pill-rings-design.md` et
    `docs/superpowers/plans/2026-09-20-usagenotch-pill-rings.md`.
 
-2. **Logo du fournisseur au centre des anneaux.** Le jour où un deuxième fournisseur existe, identifier celui que la
-   pilule affiche par une petite marque au centre de la pile (Anthropic pour Claude, OpenAI pour ChatGPT…).
-   **Réflexion à approfondir avant tout code** : rattachée à l'extension multi-fournisseurs ci-dessus, qui tranchera
-   d'abord la question dont elle dépend — une pilule par fournisseur, ou une seule à bascule ? Tant que la réponse
-   manque, on ne sait pas si l'identité doit vivre sur la pilule, ni où. Contraintes déjà relevées : le trou central de
-   la pile concentrique ne fait que 12 DIP, et suit `Settings.Scale` (6,4 DIP à l'échelle 40 %, où aucune marque n'est
-   plus lisible — le nœud d'OpenAI en particulier meurt bien avant) ; le point « session terminée » y vit déjà ; la
-   carte affiche **déjà** le nom du fournisseur, que `CardPresenter.Build` reçoit en `displayName` ; enfin le dépôt est
-   public sous licence MIT, embarquer des marques déposées dans le binaire n'est pas anodin. Si l'identité doit finir
-   sur la pilule, les candidats sérieux sont plutôt une couleur d'accent par fournisseur, la bande du mode Replié, ou
-   une lettre unique.
+2. ~~**Logo du fournisseur au centre des anneaux.**~~ **Livré partiellement le 2026-09-20**, voir
+   `docs/superpowers/specs/2026-09-20-usagenotch-activity-logo-design.md` et
+   `docs/superpowers/plans/2026-09-20-usagenotch-activity-logo.md`. Le centre de la pile porte désormais un glyphe
+   dont la couleur dit l'état de la session, et le trou central est passé de 12 à 24 DIP — la contrainte de place qui
+   avait fait refuser l'idée en l'état est donc levée. **Reste entier :** le choix dynamique de la marque elle-même. La pilule affiche
+   aujourd'hui toujours celle d'Anthropic, transcrite une fois dans `BrandGeometry` ; rien ne la sélectionne selon le
+   fournisseur actif. Cette partie reste rattachée à l'extension multi-fournisseurs ci-dessus, qui tranchera d'abord
+   la question dont elle dépend — une pilule par fournisseur, ou une seule à bascule ? Tant que la réponse manque, on
+   ne sait pas comment l'identité doit changer sur la pilule. La carte affiche déjà le nom du fournisseur, que
+   `CardPresenter.Build` reçoit en `displayName` ; le dépôt reste public sous licence MIT, embarquer plusieurs marques
+   déposées dans le binaire n'est pas anodin.

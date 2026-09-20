@@ -14,6 +14,7 @@ public sealed record Theme(
     string Running,
     string Attention,
     string Done,
+    string LogoDone,
     string Text,
     double PillOpacity,
     double ThresholdWatch,
@@ -23,14 +24,14 @@ public sealed record Theme(
         PillBackground: "#000000", PillBorder: "#2E2E2E", RingTrack: "#3A3A3A",
         LevelAmple: "#28E07B", LevelWatch: "#F5E400", LevelCritical: "#FF4500",
         RingSession: "#28E07B", RingWeeklyAll: "#57C7FF", RingWeeklyScoped: "#C792EA",
-        Running: "#28E07B", Attention: "#FFBF00", Done: "#57C7FF",
+        Running: "#28E07B", Attention: "#FFBF00", Done: "#57C7FF", LogoDone: "#D97757",
         Text: "#FFFFFF", PillOpacity: 1.0, ThresholdWatch: 0.50, ThresholdCritical: 0.80);
 
     public static Theme Monochrome { get; } = new(
         PillBackground: "#111111", PillBorder: "#3A3A3A", RingTrack: "#333333",
         LevelAmple: "#E0E0E0", LevelWatch: "#A0A0A0", LevelCritical: "#FFFFFF",
         RingSession: "#E0E0E0", RingWeeklyAll: "#A0A0A0", RingWeeklyScoped: "#707070",
-        Running: "#E0E0E0", Attention: "#FFFFFF", Done: "#B0B0B0",
+        Running: "#E0E0E0", Attention: "#FFFFFF", Done: "#B0B0B0", LogoDone: "#B0B0B0",
         Text: "#FFFFFF", PillOpacity: 0.9, ThresholdWatch: 0.50, ThresholdCritical: 0.80);
 
     /// <summary>Le thème effectif. L'accent système est fourni par l'App ; sans accent, le préréglage Codenotch sert de repli.</summary>
@@ -70,6 +71,7 @@ public sealed record Theme(
             Running = Or(Running, d.Running),
             Attention = Or(Attention, d.Attention),
             Done = Or(Done, d.Done),
+            LogoDone = Or(LogoDone, d.LogoDone),
             Text = Or(Text, d.Text),
             PillOpacity = Math.Clamp(PillOpacity, 0.2, 1.0),
             ThresholdWatch = watch,

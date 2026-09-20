@@ -21,7 +21,7 @@ public class AppearancePageViewModelTests
     private static ColorSlot Slot(AppearancePageViewModel vm, string key) => vm.Colors.Single(c => c.Key == key);
 
     [Fact]
-    public void Lists_presets_contents_and_the_thirteen_theme_colours_in_order()
+    public void Lists_presets_contents_and_the_fourteen_theme_colours_in_order()
     {
         var (f, vm, _, _) = Create();
         using var _f = f;
@@ -30,12 +30,24 @@ public class AppearancePageViewModelTests
         vm.CellContents.Should().BeSameAs(Choices.CellContents);
         vm.Colors.Select(c => c.Key).Should().Equal(
             "PillBackground", "PillBorder", "RingTrack", "LevelAmple", "LevelWatch", "LevelCritical",
-            "RingSession", "RingWeeklyAll", "RingWeeklyScoped", "Running", "Attention", "Done", "Text");
+            "RingSession", "RingWeeklyAll", "RingWeeklyScoped", "Running", "Attention", "Done", "LogoDone", "Text");
         vm.Colors.Select(c => c.Label).Should().Equal(
             "Fond de la pilule", "Contour de la pilule", "Piste de l'anneau", "Niveau modéré", "Niveau vigilance",
             "Niveau critique", "Anneau session", "Anneau hebdomadaire", "Anneau hebdo. par modèle",
-            "Session en cours", "Session en attente", "Session terminée", "Texte");
+            "Session en cours", "Session en attente", "Session terminée", "Logo, session terminée", "Texte");
         Slot(vm, "LevelAmple").Hex.Should().Be(Theme.Codenotch.LevelAmple);
+    }
+
+    [Fact]
+    public void Editing_the_brand_colour_switches_to_the_custom_theme()
+    {
+        var (f, vm, _, _) = Create();
+        using var _f = f;
+
+        Slot(vm, "LogoDone").Hex = "#123456";
+
+        vm.Preset.Should().Be(ThemePreset.Custom);
+        vm.Theme.LogoDone.Should().Be("#123456");
     }
 
     [Fact]

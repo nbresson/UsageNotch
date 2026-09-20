@@ -53,4 +53,33 @@ public class ThemeTests
         t.RingWeeklyAll.Should().Be(Theme.Codenotch.RingWeeklyAll);
         t.RingWeeklyScoped.Should().Be(Theme.Codenotch.RingWeeklyScoped);
     }
+
+    [Fact]
+    public void The_codenotch_preset_carries_the_provider_brand_colour()
+    {
+        Theme.Codenotch.LogoDone.Should().Be("#D97757");
+    }
+
+    [Fact]
+    public void The_monochrome_preset_keeps_the_finished_logo_grey()
+    {
+        Theme.Monochrome.LogoDone.Should().Be("#B0B0B0");
+    }
+
+    [Fact]
+    public void Every_preset_keeps_its_four_activity_colours_distinct()
+    {
+        foreach (var t in new[] { Theme.Codenotch, Theme.Monochrome })
+        {
+            new[] { t.RingTrack, t.Running, t.Attention, t.LogoDone }.Should().OnlyHaveUniqueItems();
+        }
+    }
+
+    [Fact]
+    public void A_theme_missing_its_brand_colour_falls_back_to_codenotch()
+    {
+        var partial = Theme.Monochrome with { LogoDone = "" };
+
+        partial.Clamp().LogoDone.Should().Be(Theme.Codenotch.LogoDone);
+    }
 }

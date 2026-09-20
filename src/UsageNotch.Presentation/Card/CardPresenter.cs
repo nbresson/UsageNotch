@@ -63,6 +63,19 @@ public static class CardPresenter
             SessionState.Done => "Terminé en " + FrenchText.Duration(s.Total),
             _ => "",
         };
-        return new SessionRow(s.Id, s.Title, detail, activity, PillPresenter.ActivityColor(activity, theme));
+        return new SessionRow(s.Id, s.Title, detail, activity, RowColor(activity, theme));
     }
+
+    /// <summary>
+    /// La carte garde ses propres couleurs d'état. La pilule fait porter « terminé » par la couleur de marque
+    /// du logo ; la carte reste sur <see cref="Theme.Done"/>, que son réglage « Session terminée » désigne.
+    /// Duplication assumée : deux langages visuels que rien n'oblige à rester liés.
+    /// </summary>
+    private static string RowColor(ActivityKind kind, Theme theme) => kind switch
+    {
+        ActivityKind.Attention => theme.Attention,
+        ActivityKind.Running => theme.Running,
+        ActivityKind.Done => theme.Done,
+        _ => theme.RingTrack,
+    };
 }
