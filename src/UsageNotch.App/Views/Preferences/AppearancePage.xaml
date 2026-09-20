@@ -22,6 +22,15 @@
     <TextBlock Text="{x:Static pref:AppearancePageViewModel.CustomHint}" Style="{StaticResource NoteText}" />
 
     <TextBlock Text="Couleurs" Style="{StaticResource SectionTitle}" />
+    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+      <TextBlock Text="Coloration des anneaux" Width="180" Style="{StaticResource FieldLabel}" />
+      <ComboBox Width="220" VerticalAlignment="Center"
+                AutomationProperties.AutomationId="RingColoring" AutomationProperties.Name="Coloration des anneaux"
+                ItemsSource="{Binding RingColorings}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                SelectedValue="{Binding Coloring}" />
+    </StackPanel>
+    <TextBlock Style="{StaticResource NoteText}"
+               Text="Selon le niveau : chaque anneau prend la couleur de son propre niveau, et les trois couleurs d'anneaux ci-dessous restent sans effet." />
     <ItemsControl ItemsSource="{Binding Colors}" Focusable="False">
       <ItemsControl.ItemTemplate>
         <DataTemplate>
@@ -89,9 +98,9 @@
               Minimum="0.4" Maximum="1.5" TickFrequency="0.05" Value="{Binding Scale}" />
       <TextBlock Grid.Column="2" Text="{Binding ScaleText}" Margin="12,0,0,0" VerticalAlignment="Center" />
 
-      <TextBlock Grid.Row="1" Text="Contenu de la cellule" Style="{StaticResource FieldLabel}" />
+      <TextBlock Grid.Row="1" Text="Contenu de la pilule" Style="{StaticResource FieldLabel}" />
       <ComboBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" VerticalAlignment="Center"
-                AutomationProperties.AutomationId="CellContent" AutomationProperties.Name="Contenu de la cellule"
+                AutomationProperties.AutomationId="CellContent" AutomationProperties.Name="Contenu de la pilule"
                 ItemsSource="{Binding CellContents}" DisplayMemberPath="Label" SelectedValuePath="Value"
                 SelectedValue="{Binding CellContent}" />
     </Grid>

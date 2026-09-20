@@ -17,10 +17,19 @@ public class ChoicesTests
     {
         Choices.ThemePresets.Select(c => c.Value).Should().Equal(ThemePreset.Codenotch, ThemePreset.Monochrome, ThemePreset.SystemAccent, ThemePreset.Custom);
         Choices.ThemePresets.Select(c => c.Label).Should().Equal("Codenotch", "Monochrome", "Accent système", "Personnalisé");
-        Choices.CellContents.Select(c => c.Label).Should().Equal("Anneau et pourcentage", "Anneau seul", "Pourcentage seul");
+        Choices.CellContents.Select(c => c.Value).Should().Equal(CellContent.RingAndPercent, CellContent.RingOnly);
+        Choices.CellContents.Select(c => c.Label).Should().Equal("Anneaux et pourcentage", "Anneaux seuls");
+        Choices.RingColorings.Select(c => c.Value).Should().Equal(RingColoring.PerRing, RingColoring.ByLevel);
+        Choices.RingColorings.Select(c => c.Label).Should().Equal("Une couleur par anneau", "Selon le niveau");
         Choices.Edges.Select(c => c.Value).Should().Equal(ScreenEdge.Right, ScreenEdge.Left, ScreenEdge.Top, ScreenEdge.Bottom);
         Choices.Edges.Select(c => c.Label).Should().Equal("Droite", "Gauche", "Haut", "Bas");
         Choices.Visibilities.Select(c => c.Label).Should().Equal("Déplié", "Replié", "Masqué");
+    }
+
+    [Fact]
+    public void The_retired_percent_only_mode_is_no_longer_offered()
+    {
+        Choices.CellContents.Should().NotContain(c => c.Value == CellContent.PercentOnly);
     }
 
     [Fact]

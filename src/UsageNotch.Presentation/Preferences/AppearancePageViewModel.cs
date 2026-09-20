@@ -31,6 +31,9 @@ public sealed class AppearancePageViewModel : ObservableObject, IDisposable
             Slot("LevelAmple", "Niveau modéré", t => t.LevelAmple, (t, h) => t with { LevelAmple = h }),
             Slot("LevelWatch", "Niveau vigilance", t => t.LevelWatch, (t, h) => t with { LevelWatch = h }),
             Slot("LevelCritical", "Niveau critique", t => t.LevelCritical, (t, h) => t with { LevelCritical = h }),
+            Slot("RingSession", "Anneau session", t => t.RingSession, (t, h) => t with { RingSession = h }),
+            Slot("RingWeeklyAll", "Anneau hebdomadaire", t => t.RingWeeklyAll, (t, h) => t with { RingWeeklyAll = h }),
+            Slot("RingWeeklyScoped", "Anneau hebdo. par modèle", t => t.RingWeeklyScoped, (t, h) => t with { RingWeeklyScoped = h }),
             Slot("Running", "Session en cours", t => t.Running, (t, h) => t with { Running = h }),
             Slot("Attention", "Session en attente", t => t.Attention, (t, h) => t with { Attention = h }),
             Slot("Done", "Session terminée", t => t.Done, (t, h) => t with { Done = h }),
@@ -43,6 +46,8 @@ public sealed class AppearancePageViewModel : ObservableObject, IDisposable
     public IReadOnlyList<Choice<ThemePreset>> Presets => Choices.ThemePresets;
 
     public IReadOnlyList<Choice<CellContent>> CellContents => Choices.CellContents;
+
+    public IReadOnlyList<Choice<RingColoring>> RingColorings => Choices.RingColorings;
 
     public IReadOnlyList<ColorSlot> Colors { get; }
 
@@ -118,6 +123,16 @@ public sealed class AppearancePageViewModel : ObservableObject, IDisposable
         {
             if (value == CellContent) return;
             _draft.Edit(s => s with { CellContent = value });
+        }
+    }
+
+    public RingColoring Coloring
+    {
+        get => _draft.Value.Coloring;
+        set
+        {
+            if (value == Coloring) return;
+            _draft.Edit(s => s with { Coloring = value });
         }
     }
 
