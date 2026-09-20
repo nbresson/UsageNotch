@@ -9,7 +9,6 @@
         Width="64" Height="136" UseLayoutRounding="True" SnapsToDevicePixels="True">
   <Window.Resources>
     <conv:HexBrushConverter x:Key="Hex" />
-    <conv:ActivityVisibilityConverter x:Key="Activity" />
     <BooleanToVisibilityConverter x:Key="BoolVis" />
     <!-- Cadence plafonnée : chaque image d'une fenêtre transparente est rendue en logiciel. Un fondu d'opacité reste fluide
          à 20 images/s ; la rotation garde 30 images/s pour ne pas saccader. Le repli (200 ms) reste à 60 images/s. -->

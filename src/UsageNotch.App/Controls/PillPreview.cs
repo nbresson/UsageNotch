@@ -219,11 +219,4 @@ public sealed class PillPreview : ContentControl
         brush.Freeze();
         return brush;
     }
-
-    private static Geometry FrozenGeometry(string data)
-    {
-        var geometry = Geometry.Parse(data);
-        geometry.Freeze();
-        return geometry;
-    }
 }

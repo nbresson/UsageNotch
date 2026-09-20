@@ -37,14 +37,14 @@ public static class HexColor
 
     /// <summary>
     /// Le gris de même luminance perçue (Rec. 709). Les trois coefficients somment à 1, donc un gris reste
-    /// lui-même. Sert la phase « noir et blanc » de la pulsation du logo.
+    /// lui-même. Sert la phase « noir et blanc » de la pulsation du logo. Une couleur illisible est renvoyée
+    /// telle quelle : un thème fautif doit rester un défaut cosmétique, pas planter l'application.
     /// </summary>
-    /// <exception cref="ArgumentException">La couleur n'est pas lisible par <see cref="TryNormalize"/>.</exception>
     public static string Desaturate(string hex)
     {
         if (!TryNormalize(hex, out var normalized))
         {
-            throw new ArgumentException($"Couleur invalide : {hex}", nameof(hex));
+            return hex;
         }
 
         var r = int.Parse(normalized.AsSpan(1, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);

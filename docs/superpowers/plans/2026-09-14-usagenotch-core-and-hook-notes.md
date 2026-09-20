@@ -354,3 +354,10 @@ tests, compilation sans avertissement.
   1,5 × (64 × 136), donc inchangée. Aucun pourcentage affiché, ce qui est correct : le mode de contenu
   par défaut est « anneaux seuls » depuis le Plan 4.
 
+- **Limite non couverte par la spécification : la règle des quatre états/quatre couleurs s'affaiblit
+  dans le préréglage Monochrome.** Là, `Running` vaut `#E0E0E0`, `Attention` `#FFFFFF`, et `LogoDone`
+  comme `Done` valent tous deux `#B0B0B0` — « terminé » et la couleur de la carte y tombent donc sur
+  la même valeur, et trois des quatre états doivent s'y distinguer par des gris quasi identiques sur un
+  glyphe de 20 DIP. Le mouvement (rotation, pulsation) y porte davantage la lecture de l'état que ne le
+  laisse supposer le tableau de la spécification. Limite constatée, pas un défaut à corriger.
+

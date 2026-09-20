@@ -12,6 +12,7 @@ public class HexColorDesaturateTests
     [InlineData("#D97757", "#8A8A8A")]   // terracotta « terminé »
     [InlineData("#000000", "#000000")]
     [InlineData("#FFFFFF", "#FFFFFF")]
+    [InlineData("#00292C", "#212121")]   // luminance exactement 32,5 : épingle l'arrondi au supérieur
     public void A_colour_becomes_the_grey_of_the_same_perceived_lightness(string hex, string grey) =>
         HexColor.Desaturate(hex).Should().Be(grey);
 
@@ -33,11 +34,9 @@ public class HexColorDesaturateTests
     }
 
     [Fact]
-    public void An_unreadable_colour_is_refused()
+    public void An_unreadable_colour_is_returned_unchanged()
     {
-        var act = () => HexColor.Desaturate("bleu");
-
-        act.Should().Throw<ArgumentException>();
+        HexColor.Desaturate("bleu").Should().Be("bleu");
     }
 
     [Fact]
