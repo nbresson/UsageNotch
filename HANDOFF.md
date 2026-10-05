@@ -25,7 +25,7 @@
 
 ## 2. État courant du projet (au 2026-10-05)
 
-- **Version** : `0.4.0` (branche `main`).
+- **Version** : `0.5.0` (branche `main`).
 - **Tests** : **601 tests xUnit verts** (295 Core, 306 Presentation), durée totale d'exécution < 2 s.
 - **Dernières fonctionnalités majeures livrées** :
   1. **Fournisseur Google Antigravity** : détection automatique du processus `agy.exe`, découverte du port d'écoute et du jeton SQLite/process, interrogation des quotas Gemini 5 h, hebdomadaire et modèles tiers.
@@ -151,3 +151,4 @@ dotnet build -c Release UsageNotch.sln
 - **Fournisseur OpenAI / Codex** : structure prête pour un 3ᵉ fournisseur (le logo SVG `src/UsageNotch.App/Assets/openai-light.svg` est déjà présent).
 - **Packaging & Déploiement** : script d'installation MSIX ou installateur InnoSetup pour faciliter la mise à jour par l'utilisateur.
 - **Notifications avancées** : réglage fin des seuils d'alerte par fournisseur (ex. alerte spécifique pour la limite 5h de Gemini distincte de la session Claude).
+
