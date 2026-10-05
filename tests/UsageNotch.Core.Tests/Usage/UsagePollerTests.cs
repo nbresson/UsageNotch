@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
+using UsageNotch.Core.Settings;
 using UsageNotch.Core.Usage;
 
 namespace UsageNotch.Core.Tests.Usage;
@@ -168,6 +169,35 @@ public class UsagePollerTests
             // Avancer à chaque tour d'attente : un seul Advance peut tomber avant que la boucle n'arme son Task.Delay.
             await WaitUntil(() => provider.Calls == 2, () => time.Advance(UsagePoller.IdleInterval));
             store.Current.Status.Should().Be(SnapshotStatus.Ok);
+        }
+        finally
+        {
+            await poller.StopAsync(CancellationToken.None);
+        }
+    }
+
+    [Fact]
+    public async Task Changing_provider_in_settings_triggers_a_refresh()
+    {
+        using var dir = new TempDir();
+        var time = new FakeTimeProvider(Now);
+        var provider = new FakeProvider();
+        var store = new UsageStore(dir.File("usage.json"), time, NullLogger<UsageStore>.Instance);
+        var activity = new FakeActivity();
+        var settingsStore = new SettingsStore(dir.File("settings.json"), NullLogger<SettingsStore>.Instance);
+        settingsStore.Load();
+
+        var poller = new UsagePoller(provider, store, activity, time, NullLogger<UsagePoller>.Instance, settingsStore);
+
+        await poller.StartAsync(CancellationToken.None);
+        try
+        {
+            await WaitUntil(() => provider.Calls == 1);
+
+            // Changer de fournisseur doit réveiller le poller et déclencher un nouvel appel immédiatement
+            settingsStore.Save(settingsStore.Current with { Provider = "antigravity" });
+
+            await WaitUntil(() => provider.Calls == 2);
         }
         finally
         {

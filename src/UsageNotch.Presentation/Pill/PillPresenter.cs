@@ -17,7 +17,8 @@ public static class PillPresenter
         Theme theme,
         CellContent content,
         RingColoring coloring,
-        DateTimeOffset now)
+        DateTimeOffset now,
+        string providerId = "claude")
     {
         var activity = ActivityOf(aggregate);
         var blind = snapshot.Status == SnapshotStatus.NeedsAuth;
@@ -39,7 +40,7 @@ public static class PillPresenter
         var dimmed = snapshot.Status == SnapshotStatus.Stale
             || (snapshot.FetchedAt != DateTimeOffset.MinValue && now - snapshot.FetchedAt > StaleAfter);
 
-        var activityColor = ActivityColor(activity, theme);
+        var activityColor = ActivityColor(activity, theme, providerId);
 
         return new CellModel(
             Rings: rings,
@@ -52,7 +53,8 @@ public static class PillPresenter
             Activity: activity,
             ActivityColor: activityColor,
             ActivityMutedColor: HexColor.Desaturate(activityColor),
-            BandColor: activity == ActivityKind.Attention ? theme.Attention : rings[0].Color);
+            BandColor: activity == ActivityKind.Attention ? theme.Attention : rings[0].Color,
+            ProviderId: providerId);
     }
 
     /// <summary>Sans lecture, l'anneau prend la couleur de sa piste : il disparaît dedans.</summary>
@@ -69,11 +71,11 @@ public static class PillPresenter
         _ => ActivityKind.None,
     };
 
-    public static string ActivityColor(ActivityKind kind, Theme theme) => kind switch
+    public static string ActivityColor(ActivityKind kind, Theme theme, string providerId = "claude") => kind switch
     {
         ActivityKind.Attention => theme.Attention,
         ActivityKind.Running => theme.Running,
-        ActivityKind.Done => theme.LogoDone,
+        ActivityKind.Done => providerId == "antigravity" && theme != Theme.Monochrome ? "#1A73E8" : theme.LogoDone,
         _ => theme.RingTrack,
     };
 

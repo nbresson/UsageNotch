@@ -11,8 +11,11 @@ public sealed record Settings
     public const int DefaultPort = 48666;
     public const double NotifyThresholdMin = 0.6;
     public const double NotifyThresholdMax = 0.95;
+    public const string DefaultProvider = "claude";
 
     public int Version { get; init; } = CurrentVersion;
+    /// <summary>Identifiant du fournisseur actif : « claude » ou « antigravity ».</summary>
+    public string Provider { get; init; } = DefaultProvider;
     public int Port { get; init; } = DefaultPort;
     public ScreenEdge Edge { get; init; } = ScreenEdge.Right;
     public double PositionRight { get; init; } = 0.5;
@@ -70,6 +73,7 @@ public sealed record Settings
     public Settings Clamp() => this with
     {
         Version = CurrentVersion,
+        Provider = Provider is "claude" or "antigravity" ? Provider : DefaultProvider,
         // « Pourcentage seul » a été retiré des choix : le membre survit dans l'enum pour que la relecture
         // d'un fichier de version 1 ne lève pas et ne condamne pas tout le fichier.
         CellContent = CellContent == CellContent.PercentOnly ? CellContent.RingAndPercent : CellContent,

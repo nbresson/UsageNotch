@@ -121,6 +121,7 @@ public partial class PillWindow : Window
                 break;
             case nameof(NotchViewModel.Cell):
                 BodyStack.Opacity = _vm.Cell.Dimmed ? 0.5 : 1.0;
+                UpdateBrandGeometry();
                 UpdateAnimations();
                 break;
         }
@@ -170,6 +171,7 @@ public partial class PillWindow : Window
         UpdateLayout();
         WindowStyles.MoveResize(Handle, placement.PillRect);
         UpdateFold(animated: false);
+        UpdateBrandGeometry();
         PlacementChanged?.Invoke();
         UpdateAnimations();
     }
@@ -283,6 +285,13 @@ public partial class PillWindow : Window
     private void OnSettingsClick(object sender, RoutedEventArgs e) => _openSettings();
 
     private void OnQuitClick(object sender, RoutedEventArgs e) => _ = _quit();
+
+    private void UpdateBrandGeometry()
+    {
+        var geometry = BrandGeometry.ForProvider(_vm.Cell?.ProviderId ?? "claude");
+        LogoMuted.Data = geometry;
+        LogoTint.Data = geometry;
+    }
 
     protected override void OnClosed(EventArgs e)
     {

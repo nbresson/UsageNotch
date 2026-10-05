@@ -1,24 +1,35 @@
 using UsageNotch.Core.Sessions;
+using UsageNotch.Core.Settings;
 using UsageNotch.Core.Usage;
 
 namespace UsageNotch.App.Hosting;
 
-/// <summary>Lecture fixe : session 73 %, hebdomadaire 21 %, par modèle 52 %.</summary>
-public sealed class DemoUsageProvider(TimeProvider time) : IUsageProvider
+/// <summary>Fournisseur de démo simulant les quotas de Claude ou d'Antigravity selon les réglages.</summary>
+public sealed class DemoUsageProvider(SettingsStore settings, TimeProvider time) : IUsageProvider
 {
-    public string Id => "claude";
-    public string DisplayName => "Claude";
-    public IReadOnlyList<IReadOnlyList<string>> RingWindowIds => RingWindows.Claude;
+    public string Id => settings.Current.Provider;
+
+    public string DisplayName => settings.Current.Provider == "antigravity" ? "Google Antigravity" : "Claude";
+
+    public IReadOnlyList<IReadOnlyList<string>> RingWindowIds =>
+        settings.Current.Provider == "antigravity" ? RingWindows.Antigravity : RingWindows.Claude;
 
     public Task<FetchResult> FetchAsync(CancellationToken ct)
     {
         var now = time.GetUtcNow();
-        IReadOnlyList<LimitWindow> windows =
-        [
-            new("session", "Session en cours", 0.73, now.AddMinutes(51)),
-            new("weekly_all", "Hebdomadaire (tous modèles)", 0.21, now.AddDays(3)),
-            new("weekly_scoped", "Hebdomadaire (par modèle)", 0.52, now.AddDays(3)),
-        ];
+        IReadOnlyList<LimitWindow> windows = settings.Current.Provider == "antigravity"
+            ?
+            [
+                new("gemini-5h", "Modèles Gemini (5 h)", 0.65, now.AddHours(3).AddMinutes(12)),
+                new("gemini-weekly", "Modèles Gemini (hebdomadaire)", 0.29, now.AddDays(4)),
+                new("3p-weekly", "Modèles tiers (hebdomadaire)", 0.0, now.AddDays(6)),
+            ]
+            :
+            [
+                new("session", "Session en cours", 0.73, now.AddMinutes(51)),
+                new("weekly_all", "Hebdomadaire (tous modèles)", 0.21, now.AddDays(3)),
+                new("weekly_scoped", "Hebdomadaire (par modèle)", 0.52, now.AddDays(3)),
+            ];
         return Task.FromResult<FetchResult>(new FetchResult.Success(windows));
     }
 }

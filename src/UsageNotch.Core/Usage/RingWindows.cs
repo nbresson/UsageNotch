@@ -11,4 +11,10 @@ public static class RingWindows
     public static readonly IReadOnlyList<string> WeeklyScoped = ["weekly_scoped", "weekly_opus", "seven_day_opus"];
 
     public static readonly IReadOnlyList<IReadOnlyList<string>> Claude = [Session, WeeklyAll, WeeklyScoped];
+
+    public static readonly IReadOnlyList<string> Gemini5h = ["gemini-5h", "5h"];
+    public static readonly IReadOnlyList<string> GeminiWeekly = ["gemini-weekly", "weekly"];
+    public static readonly IReadOnlyList<string> ThirdParty = ["3p-weekly", "3p-5h", "models_3p"];
+
+    public static readonly IReadOnlyList<IReadOnlyList<string>> Antigravity = [Gemini5h, GeminiWeekly, ThirdParty];
 }

@@ -361,3 +361,21 @@ tests, compilation sans avertissement.
   glyphe de 20 DIP. Le mouvement (rotation, pulsation) y porte davantage la lecture de l'état que ne le
   laisse supposer le tableau de la spécification. Limite constatée, pas un défaut à corriger.
 
+## Suivi de l'usage Google Antigravity (2026-10-05, Plan 6)
+
+- **Architecture multi-fournisseur par délégation propre (`RoutingUsageProvider`).** Plutôt que de dupliquer la boucle du poller ou de compliquer `NotchViewModel`, l'hôte enregistre `RoutingUsageProvider` comme implémentation principale de `IUsageProvider`. Celui-ci résout à chaque appel (`Id`, `DisplayName`, `RingWindowIds`, `FetchAsync`) le fournisseur actif désigné par `Settings.Provider` (`"claude"` ou `"antigravity"`). Le poller s'abonne à `SettingsStore.Changed` et réveille immédiatement la boucle via `RequestRefresh()` dès que `Provider` change.
+- **Découverte du hub local sans droits administrateur ni WMI.** Le hub local d'`agy.exe` est lancé avec des arguments CLI contenant `--hub-port=<port>` et `--csrf_token=<token>`. L'inspection sous Windows est assurée par un appel P/Invoke direct à `NtQueryInformationProcess(hProcess, ProcessCommandLineInformation = 60, ...)` sans bloc `unsafe` (via `Marshal.AllocHGlobal`). Découverte instantanée (0 ms), sans charge CPU, mise en cache avec invalidation automatique lors d'une erreur 401 ou de connexion.
+- **Protocole ConnectRPC & calcul des quotas.** Requête POST HTTP vers `http://127.0.0.1:<port>/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary` avec entête `x-codeium-csrf-token`. Les groupes de buckets retournés fournissent `remainingFraction`. La formule appliquée `UsedFraction = Math.Clamp(1.0 - remainingFraction, 0.0, 1.0)` convertit la disponibilité en consommation.
+- **Répartition des anneaux Antigravity (`RingWindows.Antigravity`).**
+  - Anneau extérieur : `["gemini-5h", "5h"]` (quota 5 heures).
+  - Anneau médian : `["gemini-weekly", "weekly"]` (quota hebdomadaire).
+  - Anneau intérieur : `["3p-weekly", "3p-5h", "models_3p"]` (modèles tiers hebdomadaires).
+- **Symbole Gemini et couleur de marque.**
+  - `Assets/gemini.svg` : tracé officiel de l'étincelle à 4 pointes Gemini (`viewBox="0 0 24 24"`).
+  - `BrandGeometry.ForProvider(providerId)` : renvoie `GeminiMark` (étoile) ou `AnthropicMark` (marque Claude), gelées.
+  - La pilule bascule dynamiquement sa géométrie et sa couleur d'état `Done` : `#1A73E8` (bleu Google) pour Antigravity (sauf en thème Monochrome qui conserve `#B0B0B0`).
+- **Mode démo & vérification en conditions réelles.**
+  - Mode démo enrichi (`--demo`) : simulation réaliste d'Antigravity (5h à 65 %, Weekly à 29 %, 3P à 0 %).
+  - Test en conditions réelles validé directement contre le processus local `agy.exe` en cours d'exécution (PID 38924), avec extraction du token et lecture effective des quotas sans erreur.
+- **Tests.** 576 tests xUnit verts (287 Core, 289 Presentation), zéro avertissement de compilation (`TreatWarningsAsErrors`).
+

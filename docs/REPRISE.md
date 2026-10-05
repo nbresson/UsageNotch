@@ -7,12 +7,14 @@ l'historique.
 
 - Version `0.3.0` (`<Version>` dans `src/UsageNotch.App/UsageNotch.App.csproj`), branche `main`, poussée sur
   https://github.com/nbresson/UsageNotch.
-- Compilation sans avertissement (`TreatWarningsAsErrors`), 489 tests xUnit verts : 237 Core, 252 Presentation.
+- Compilation sans avertissement (`TreatWarningsAsErrors`), 576 tests xUnit verts : 287 Core, 289 Presentation.
 - Fonctionnel au quotidien : pilule et carte, modes Déplié / Replié / Masqué, placement multi-écran, thèmes, fenêtre de
   réglages à cinq pages, état des sessions par hooks Claude Code, retour au terminal, alertes de seuil, masquage en plein
-  écran, démarrer avec Windows, diagnostic, icône d'application.
+  écran, démarrer avec Windows, diagnostic, icône d'application, support multi-fournisseur avec bascule à chaud entre
+  Claude et Google Antigravity.
 - Tout ce que la spec prévoyait pour la première version est livré. Deux sujets qu'elle plaçait hors périmètre ont été
-  ajoutés ensuite : les alertes de seuil et le masquage en plein écran.
+  ajoutés ensuite : les alertes de seuil et le masquage en plein écran. Le suivi d'usage Google Antigravity a été ajouté
+  le 2026-10-05 (Plan 6).
 
 ## Carte de la documentation
 
@@ -22,12 +24,14 @@ l'historique.
 | `docs/superpowers/specs/2026-09-14-usagenotch-design.md` | Spec de conception d'origine (référence ; ses sections « hors périmètre » sont en partie dépassées, voir plus haut) |
 | `docs/superpowers/specs/2026-09-20-usagenotch-pill-rings-design.md` | Spec de la pilule à trois anneaux (livrée par le Plan 4) |
 | `docs/superpowers/specs/2026-09-20-usagenotch-activity-logo-design.md` | Spec du logo du fournisseur comme voyant d'activité (livrée par le Plan 5) |
+| `docs/superpowers/specs/2026-10-05-usagenotch-antigravity-provider-design.md` | Spec du suivi de l'usage Google Antigravity (livrée par le Plan 6) |
 | `docs/superpowers/plans/2026-09-14-usagenotch-core-and-hook.md` | Plan 1 : Core et hook |
 | `docs/superpowers/plans/2026-09-15-usagenotch-app.md` | Plan 2 : application WPF |
 | `docs/superpowers/plans/2026-09-15-usagenotch-settings-window.md` | Plan 3 : fenêtre de réglages |
 | `docs/superpowers/plans/2026-09-20-usagenotch-pill-rings.md` | Plan 4 : pilule à trois anneaux |
 | `docs/superpowers/plans/2026-09-20-usagenotch-activity-logo.md` | Plan 5 : logo du fournisseur comme voyant d'activité |
-| `docs/superpowers/plans/2026-09-14-usagenotch-core-and-hook-notes.md` | **Journal de bord** : contrats entre couches, arbitrages, écarts à la spec, points laissés en l'état, puis chaque chantier postérieur (performance, fluidité, alertes, plein écran, finitions, pilule à trois anneaux, logo du fournisseur) |
+| `docs/superpowers/plans/2026-10-05-usagenotch-antigravity-provider.md` | Plan 6 : suivi de l'usage Google Antigravity (livré le 2026-10-05) |
+| `docs/superpowers/plans/2026-09-14-usagenotch-core-and-hook-notes.md` | **Journal de bord** : contrats entre couches, arbitrages, écarts à la spec, points laissés en l'état, puis chaque chantier postérieur (performance, fluidité, alertes, plein écran, finitions, pilule à trois anneaux, logo du fournisseur, fournisseur Google Antigravity) |
 
 Les plans décrivent l'intention au moment de leur écriture ; le code et le journal de bord font foi quand ils divergent.
 
@@ -98,8 +102,7 @@ src\UsageNotch.App\bin\Debug\net10.0-windows\UsageNotch.App.exe --demo
 récepteur sans attendre les requêtes en cours. Détail et raisons dans le journal de bord.
 
 **Extensions possibles** (chacune demande sa propre conception, puis un plan) :
-- autres fournisseurs d'usage (Codex, Cursor…) : l'interface `IUsageProvider` existe, la carte et la pilule supposent
-  aujourd'hui un seul fournisseur ;
+- autres fournisseurs d'usage (Codex, Cursor…) : l'infrastructure multi-fournisseur `RoutingUsageProvider` et le sélecteur sont en place ;
 - suivi de l'application desktop Claude, qui n'utilise pas les hooks (surveillance des transcriptions) ;
 - tests d'interface automatisés (FlaUI) pour remplacer les vérifications manuelles ;
 - mise à jour automatique, interface multilingue (peu utiles pour un outil personnel).
@@ -110,14 +113,9 @@ récepteur sans attendre les requêtes en cours. Détail et raisons dans le jour
    `docs/superpowers/specs/2026-09-20-usagenotch-pill-rings-design.md` et
    `docs/superpowers/plans/2026-09-20-usagenotch-pill-rings.md`.
 
-2. ~~**Logo du fournisseur au centre des anneaux.**~~ **Livré partiellement le 2026-09-20**, voir
-   `docs/superpowers/specs/2026-09-20-usagenotch-activity-logo-design.md` et
-   `docs/superpowers/plans/2026-09-20-usagenotch-activity-logo.md`. Le centre de la pile porte désormais un glyphe
-   dont la couleur dit l'état de la session, et le trou central est passé de 12 à 24 DIP — la contrainte de place qui
-   avait fait refuser l'idée en l'état est donc levée. **Reste entier :** le choix dynamique de la marque elle-même. La pilule affiche
-   aujourd'hui toujours celle d'Anthropic, transcrite une fois dans `BrandGeometry` ; rien ne la sélectionne selon le
-   fournisseur actif. Cette partie reste rattachée à l'extension multi-fournisseurs ci-dessus, qui tranchera d'abord
-   la question dont elle dépend — une pilule par fournisseur, ou une seule à bascule ? Tant que la réponse manque, on
-   ne sait pas comment l'identité doit changer sur la pilule. La carte affiche déjà le nom du fournisseur, que
-   `CardPresenter.Build` reçoit en `displayName` ; le dépôt reste public sous licence MIT, embarquer plusieurs marques
-   déposées dans le binaire n'est pas anodin.
+2. ~~**Logo du fournisseur au centre des anneaux.**~~ **Livré intégralement le 2026-10-05**, voir
+   `docs/superpowers/specs/2026-10-05-usagenotch-antigravity-provider-design.md` et
+   `docs/superpowers/plans/2026-10-05-usagenotch-antigravity-provider.md`. Le centre de la pile porte un glyphe
+   dont la couleur dit l'état de la session et dont la géométrie bascule dynamiquement (`BrandGeometry.ForProvider`)
+   entre la marque Anthropic et l'étoile Gemini selon le fournisseur sélectionné dans les réglages.
+
