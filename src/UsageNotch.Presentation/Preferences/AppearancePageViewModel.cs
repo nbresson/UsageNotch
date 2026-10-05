@@ -68,6 +68,31 @@ public sealed class AppearancePageViewModel : ObservableObject, IDisposable
 
     public bool IsOpenAiActive => Provider is "all" or "claude_openai" or "antigravity_openai" or "openai";
 
+    public IReadOnlyList<Choice<string>> OpenAiModes => Choices.OpenAiModes;
+
+    public string OpenAiMode
+    {
+        get => _draft.Value.OpenAiMode;
+        set
+        {
+            if (value == OpenAiMode) return;
+            _draft.Edit(s => s with { OpenAiMode = value });
+        }
+    }
+
+    public bool IsOpenAiSubscriptionMode => OpenAiMode == "subscription";
+    public bool IsOpenAiApiMode => OpenAiMode == "api";
+
+    public string OpenAiSessionToken
+    {
+        get => _draft.Value.OpenAiSessionToken;
+        set
+        {
+            if (value == OpenAiSessionToken) return;
+            _draft.Edit(s => s with { OpenAiSessionToken = value });
+        }
+    }
+
     public string OpenAiApiKey
     {
         get => _draft.Value.OpenAiApiKey;

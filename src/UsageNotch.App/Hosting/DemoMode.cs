@@ -11,10 +11,11 @@ public sealed class DemoUsageProvider : IUsageProvider
     private readonly SettingsStore? _settings;
     private readonly TimeProvider _time;
 
-    public DemoUsageProvider(string providerId, TimeProvider time)
+    public DemoUsageProvider(string providerId, TimeProvider time, SettingsStore? settings = null)
     {
         _fixedId = providerId;
         _time = time;
+        _settings = settings;
     }
 
     public DemoUsageProvider(SettingsStore settings, TimeProvider time)
@@ -50,12 +51,19 @@ public sealed class DemoUsageProvider : IUsageProvider
                 new("gemini-weekly", "Modèles Gemini (hebdomadaire)", 0.29, now.AddDays(4)),
                 new("3p-weekly", "Modèles tiers (hebdomadaire)", 0.0, now.AddDays(6)),
             ],
-            "openai" =>
-            [
-                new("monthly_cost", "Budget mensuel (8.40 $ / 20 $)", 0.42, now.AddDays(18)),
-                new("daily_cost", "Consommation du jour (0.36 $)", 0.18, now.AddHours(14)),
-                new("reasoning_models", "Modèles raisonnement o1/o3 (6.50 $)", 0.65, now.AddDays(18)),
-            ],
+            "openai" => _settings?.Current.OpenAiMode == "api"
+                ?
+                [
+                    new("monthly_cost", "Budget mensuel (8.40 $ / 20 $)", 0.42, now.AddDays(18)),
+                    new("daily_cost", "Consommation du jour (0.36 $)", 0.18, now.AddHours(14)),
+                    new("reasoning_models", "Modèles raisonnement o1/o3 (6.50 $)", 0.65, now.AddDays(18)),
+                ]
+                :
+                [
+                    new("session", "Session 5h", 0.28, now.AddHours(3).AddMinutes(45)),
+                    new("weekly", "Quota hebdomadaire", 0.54, now.AddDays(5)),
+                    new("reasoning_models", "Modèles raisonnement (o1/o3)", 0.15, now.AddHours(3).AddMinutes(45)),
+                ],
             _ =>
             [
                 new("session", "Session en cours", 0.73, now.AddMinutes(51)),

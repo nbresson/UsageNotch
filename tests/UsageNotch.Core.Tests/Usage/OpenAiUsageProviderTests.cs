@@ -20,7 +20,7 @@ public class OpenAiUsageProviderTests
         }
     }
 
-    private const string SuccessBody = """
+    private const string ApiSuccessBody = """
     {
       "data": [
         {
@@ -32,34 +32,63 @@ public class OpenAiUsageProviderTests
     }
     """;
 
+    private const string SubscriptionSuccessBody = """
+    {
+      "plan_type": "plus",
+      "rate_limit": {
+        "primary_window": {
+          "used_percent": 30.0,
+          "limit_window_seconds": 18000,
+          "reset_after_seconds": 3600
+        },
+        "secondary_window": {
+          "used_percent": 50.0,
+          "limit_window_seconds": 604800,
+          "reset_after_seconds": 72000
+        }
+      }
+    }
+    """;
+
     private static (OpenAiUsageProvider Provider, StubHandler Handler, SettingsStore Store) Build(
         TempDir dir,
         Func<HttpRequestMessage, HttpResponseMessage> respond,
+        string mode = "api",
         string? apiKey = "sk-test-key",
-        double budget = 50.0)
+        double budget = 50.0,
+        string? sessionToken = null,
+        string? accountId = null)
     {
         var handler = new StubHandler(respond);
         var time = new FakeTimeProvider(new DateTimeOffset(2026, 10, 5, 14, 0, 0, TimeSpan.Zero));
         var store = new SettingsStore(dir.File("settings.json"), NullLogger<SettingsStore>.Instance);
-        if (apiKey != null || budget != 20.0)
+
+        store.Save(store.Current with
         {
-            store.Save(store.Current with { OpenAiApiKey = apiKey ?? "", OpenAiMonthlyBudget = budget });
-        }
-        var reader = new OpenAiCredentialReader(store);
-        var provider = new OpenAiUsageProvider(new HttpClient(handler), reader, store, time, NullLogger<OpenAiUsageProvider>.Instance);
+            OpenAiMode = mode,
+            OpenAiApiKey = apiKey ?? "",
+            OpenAiMonthlyBudget = budget,
+            OpenAiSessionToken = sessionToken ?? "",
+            OpenAiAccountId = accountId ?? ""
+        });
+
+        var credReader = new OpenAiCredentialReader(store);
+        var subReader = new OpenAiSubscriptionCredentialReader(store, codexHomeOverride: dir.Path);
+        var provider = new OpenAiUsageProvider(new HttpClient(handler), credReader, subReader, store, time, NullLogger<OpenAiUsageProvider>.Instance);
         return (provider, handler, store);
     }
 
     private static HttpResponseMessage Json(HttpStatusCode code, string body) =>
         new(code) { Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json") };
 
+    #region API Mode Tests
+
     [Fact]
-    public async Task Returns_NeedsAuth_without_network_call_when_no_api_key()
+    public async Task ApiMode_Returns_NeedsAuth_without_network_call_when_no_api_key()
     {
         using var dir = new TempDir();
-        var (provider, handler, _) = Build(dir, _ => Json(HttpStatusCode.OK, SuccessBody), apiKey: null);
+        var (provider, handler, _) = Build(dir, _ => Json(HttpStatusCode.OK, ApiSuccessBody), mode: "api", apiKey: null);
 
-        // Ensure env var is also not set
         var prevEnv = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
         try
         {
@@ -77,10 +106,10 @@ public class OpenAiUsageProviderTests
     }
 
     [Fact]
-    public async Task Sends_Bearer_token_and_parses_success_response()
+    public async Task ApiMode_Sends_Bearer_token_and_parses_success_response()
     {
         using var dir = new TempDir();
-        var (provider, handler, _) = Build(dir, _ => Json(HttpStatusCode.OK, SuccessBody), apiKey: "sk-my-secret-key");
+        var (provider, handler, _) = Build(dir, _ => Json(HttpStatusCode.OK, ApiSuccessBody), mode: "api", apiKey: "sk-my-secret-key");
 
         var result = await provider.FetchAsync(CancellationToken.None);
 
@@ -97,10 +126,10 @@ public class OpenAiUsageProviderTests
     }
 
     [Fact]
-    public async Task Returns_NeedsAuth_on_401_unauthorized()
+    public async Task ApiMode_Returns_NeedsAuth_on_401_unauthorized()
     {
         using var dir = new TempDir();
-        var (provider, _, _) = Build(dir, _ => Json(HttpStatusCode.Unauthorized, "{}"));
+        var (provider, _, _) = Build(dir, _ => Json(HttpStatusCode.Unauthorized, "{}"), mode: "api");
 
         var result = await provider.FetchAsync(CancellationToken.None);
 
@@ -109,10 +138,10 @@ public class OpenAiUsageProviderTests
     }
 
     [Fact]
-    public async Task Returns_NeedsAuth_on_403_forbidden_requiring_admin()
+    public async Task ApiMode_Returns_NeedsAuth_on_403_forbidden_requiring_admin()
     {
         using var dir = new TempDir();
-        var (provider, _, _) = Build(dir, _ => Json(HttpStatusCode.Forbidden, "{}"));
+        var (provider, _, _) = Build(dir, _ => Json(HttpStatusCode.Forbidden, "{}"), mode: "api");
 
         var result = await provider.FetchAsync(CancellationToken.None);
 
@@ -121,7 +150,7 @@ public class OpenAiUsageProviderTests
     }
 
     [Fact]
-    public async Task Returns_RateLimited_on_429_too_many_requests()
+    public async Task ApiMode_Returns_RateLimited_on_429_too_many_requests()
     {
         using var dir = new TempDir();
         var (provider, _, _) = Build(dir, _ =>
@@ -129,7 +158,7 @@ public class OpenAiUsageProviderTests
             var res = Json(HttpStatusCode.TooManyRequests, "{}");
             res.Headers.RetryAfter = new System.Net.Http.Headers.RetryConditionHeaderValue(TimeSpan.FromSeconds(45));
             return res;
-        });
+        }, mode: "api");
 
         var result = await provider.FetchAsync(CancellationToken.None);
 
@@ -138,14 +167,113 @@ public class OpenAiUsageProviderTests
     }
 
     [Fact]
-    public async Task Returns_Failed_on_500_server_error()
+    public async Task ApiMode_Returns_Failed_on_500_server_error()
     {
         using var dir = new TempDir();
-        var (provider, _, _) = Build(dir, _ => Json(HttpStatusCode.InternalServerError, "Error"));
+        var (provider, _, _) = Build(dir, _ => Json(HttpStatusCode.InternalServerError, "Error"), mode: "api");
 
         var result = await provider.FetchAsync(CancellationToken.None);
 
         result.Should().BeOfType<FetchResult.Failed>()
             .Which.Note.Should().Contain("500");
     }
+
+    #endregion
+
+    #region Subscription Mode Tests
+
+    [Fact]
+    public async Task SubscriptionMode_Returns_NeedsAuth_without_network_call_when_no_token()
+    {
+        using var dir = new TempDir();
+        var (provider, handler, _) = Build(dir, _ => Json(HttpStatusCode.OK, SubscriptionSuccessBody), mode: "subscription", sessionToken: null);
+
+        var result = await provider.FetchAsync(CancellationToken.None);
+
+        result.Should().BeOfType<FetchResult.NeedsAuth>()
+            .Which.Note.Should().Contain("Aucun token de session OpenAI/ChatGPT trouvé");
+        handler.Requests.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task SubscriptionMode_Sends_token_and_account_id_and_parses_success()
+    {
+        using var dir = new TempDir();
+        var (provider, handler, _) = Build(
+            dir,
+            _ => Json(HttpStatusCode.OK, SubscriptionSuccessBody),
+            mode: "subscription",
+            sessionToken: "sess-token-abc",
+            accountId: "org-account-123");
+
+        var result = await provider.FetchAsync(CancellationToken.None);
+
+        result.Should().BeOfType<FetchResult.Success>();
+        var success = (FetchResult.Success)result;
+        success.Windows.Should().HaveCount(3);
+        success.Windows.First(w => w.Id == "session").UsedFraction.Should().BeApproximately(0.30, 0.001);
+        success.Windows.First(w => w.Id == "weekly").UsedFraction.Should().BeApproximately(0.50, 0.001);
+
+        handler.Requests.Should().HaveCount(1);
+        var req = handler.Requests[0];
+        req.RequestUri!.ToString().Should().Be(OpenAiUsageProvider.EndpointSubscription);
+        req.Headers.Authorization!.Scheme.Should().Be("Bearer");
+        req.Headers.Authorization!.Parameter.Should().Be("sess-token-abc");
+        req.Headers.GetValues("ChatGPT-Account-Id").Should().Contain("org-account-123");
+    }
+
+    [Fact]
+    public async Task SubscriptionMode_Returns_NeedsAuth_on_401()
+    {
+        using var dir = new TempDir();
+        var (provider, _, _) = Build(
+            dir,
+            _ => Json(HttpStatusCode.Unauthorized, "{}"),
+            mode: "subscription",
+            sessionToken: "expired-token");
+
+        var result = await provider.FetchAsync(CancellationToken.None);
+
+        result.Should().BeOfType<FetchResult.NeedsAuth>()
+            .Which.Note.Should().Contain("expirée ou invalide");
+    }
+
+    [Fact]
+    public async Task SubscriptionMode_Returns_RateLimited_on_429()
+    {
+        using var dir = new TempDir();
+        var (provider, _, _) = Build(
+            dir,
+            _ =>
+            {
+                var res = Json(HttpStatusCode.TooManyRequests, "{}");
+                res.Headers.RetryAfter = new System.Net.Http.Headers.RetryConditionHeaderValue(TimeSpan.FromSeconds(30));
+                return res;
+            },
+            mode: "subscription",
+            sessionToken: "valid-token");
+
+        var result = await provider.FetchAsync(CancellationToken.None);
+
+        result.Should().BeOfType<FetchResult.RateLimited>()
+            .Which.RetryAfter.Should().Be(TimeSpan.FromSeconds(30));
+    }
+
+    [Fact]
+    public async Task SubscriptionMode_Returns_Failed_on_500()
+    {
+        using var dir = new TempDir();
+        var (provider, _, _) = Build(
+            dir,
+            _ => Json(HttpStatusCode.InternalServerError, "Error"),
+            mode: "subscription",
+            sessionToken: "valid-token");
+
+        var result = await provider.FetchAsync(CancellationToken.None);
+
+        result.Should().BeOfType<FetchResult.Failed>()
+            .Which.Note.Should().Contain("500");
+    }
+
+    #endregion
 }

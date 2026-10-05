@@ -18,9 +18,9 @@ public static class RingWindows
 
     public static readonly IReadOnlyList<IReadOnlyList<string>> Antigravity = [Gemini5h, GeminiWeekly, ThirdParty];
 
-    public static readonly IReadOnlyList<string> MonthlyCost = ["monthly_cost", "monthly", "budget"];
-    public static readonly IReadOnlyList<string> DailyCost = ["daily_cost", "daily", "day"];
-    public static readonly IReadOnlyList<string> ReasoningModels = ["reasoning_models", "o1_o3", "reasoning"];
+    public static readonly IReadOnlyList<string> MonthlyCost = ["session", "five_hour", "primary_window", "monthly_cost", "monthly", "budget"];
+    public static readonly IReadOnlyList<string> DailyCost = ["weekly", "weekly_all", "seven_day", "secondary_window", "daily_cost", "daily", "day"];
+    public static readonly IReadOnlyList<string> ReasoningModels = ["reasoning_models", "o1_o3", "reasoning", "codex-spark", "additional_limits"];
 
     public static readonly IReadOnlyList<IReadOnlyList<string>> OpenAi = [MonthlyCost, DailyCost, ReasoningModels];
 }

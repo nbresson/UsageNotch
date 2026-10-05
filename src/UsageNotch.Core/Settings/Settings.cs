@@ -49,6 +49,12 @@ public sealed record Settings
     public bool DebugLogging { get; init; }
     /// <summary>false = le hook ne relance pas l'application (mis à false par Quitter, remis à true au démarrage manuel).</summary>
     public bool AutoLaunch { get; init; } = true;
+    /// <summary>Mode de fonctionnement du fournisseur OpenAI : « subscription » (ChatGPT Plus/Team/Pro/Codex) ou « api » (clé API et coûts en $).</summary>
+    public string OpenAiMode { get; init; } = "subscription";
+    /// <summary>Token d'accès OAuth/session ChatGPT manuel optionnel (si vide, ~/.codex/auth.json est utilisé en mode abonnement).</summary>
+    public string OpenAiSessionToken { get; init; } = "";
+    /// <summary>Identifiant de compte ChatGPT optionnel (en-tête ChatGPT-Account-Id).</summary>
+    public string OpenAiAccountId { get; init; } = "";
     /// <summary>Clé d'API OpenAI optionnelle (si vide, la variable d'environnement OPENAI_API_KEY est consultée).</summary>
     public string OpenAiApiKey { get; init; } = "";
     /// <summary>Budget mensuel OpenAI de référence en dollars pour le calcul des ratios (défaut : 20.0 $).</summary>
@@ -78,6 +84,9 @@ public sealed record Settings
     {
         Version = CurrentVersion,
         Provider = Provider is "all" or "both" or "claude_openai" or "antigravity_openai" or "claude" or "antigravity" or "openai" ? Provider : DefaultProvider,
+        OpenAiMode = OpenAiMode is "api" ? "api" : "subscription",
+        OpenAiSessionToken = OpenAiSessionToken?.Trim() ?? "",
+        OpenAiAccountId = OpenAiAccountId?.Trim() ?? "",
         OpenAiApiKey = OpenAiApiKey?.Trim() ?? "",
         OpenAiMonthlyBudget = OpenAiMonthlyBudget > 0 ? OpenAiMonthlyBudget : 20.0,
         // « Pourcentage seul » a été retiré des choix : le membre survit dans l'enum pour que la relecture
