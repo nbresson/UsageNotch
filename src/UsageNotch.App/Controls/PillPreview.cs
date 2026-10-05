@@ -71,7 +71,7 @@ public sealed class PillPreview : ContentControl
     {
         var vertical = model.Edge is ScreenEdge.Right or ScreenEdge.Left;
         var thickness = PillMetrics.Thickness * model.Scale;
-        var length = PillMetrics.WindowLength * model.Scale;
+        var length = PillMetrics.WindowLengthFor(model.Provider, model.Edge, model.CellContent) * model.Scale;
         var fillet = PillMetrics.Fillet * model.Scale;
 
         var shapes = new StackPanel
@@ -79,10 +79,11 @@ public sealed class PillPreview : ContentControl
             Orientation = vertical ? Orientation.Horizontal : Orientation.Vertical,
             HorizontalAlignment = HorizontalAlignment.Center,
         };
-        shapes.Children.Add(BuildPill(model, sample.Cell, thickness, length, fillet, vertical));
+        shapes.Children.Add(BuildPill(model, sample, thickness, length, fillet, vertical));
         if (model.Visibility == VisibilityMode.Folded)
         {
-            var band = BuildBand(model, sample.Cell, thickness, length, fillet, vertical);
+            var bandColor = sample.Pill?.BandColor ?? sample.Cell.BandColor;
+            var band = BuildBand(model, bandColor, thickness, length, fillet, vertical);
             band.Margin = vertical ? new Thickness(BandGap, 0, 0, 0) : new Thickness(0, BandGap, 0, 0);
             shapes.Children.Add(band);
         }
@@ -102,7 +103,7 @@ public sealed class PillPreview : ContentControl
         return column;
     }
 
-    private static Canvas BuildPill(PreviewModel model, CellModel cell, double thickness, double length, double fillet, bool vertical)
+    private static Canvas BuildPill(PreviewModel model, PreviewSample sample, double thickness, double length, double fillet, bool vertical)
     {
         var theme = model.Theme;
         var canvas = new Canvas { Width = vertical ? thickness : length, Height = vertical ? length : thickness };
@@ -116,32 +117,61 @@ public sealed class PillPreview : ContentControl
         });
 
         var bodyRect = PillShapeBuilder.Body(model.Edge, thickness, length, fillet);
-        var body = new Grid { Width = bodyRect.Width, Height = bodyRect.Height, Opacity = cell.Dimmed ? 0.5 : 1.0 };
+        var body = new Grid { Width = bodyRect.Width, Height = bodyRect.Height };
         Canvas.SetLeft(body, bodyRect.X);
         Canvas.SetTop(body, bodyRect.Y);
 
-        var stack = new StackPanel
+        var bodyStack = new StackPanel
         {
             Orientation = vertical ? Orientation.Vertical : Orientation.Horizontal,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             LayoutTransform = new ScaleTransform(model.Scale, model.Scale),
         };
-        stack.Children.Add(BuildRing(cell, vertical));
-        if (cell.ShowPercent)
+
+        var cells = sample.Pill?.Cells ?? [sample.Cell];
+        for (var i = 0; i < cells.Count; i++)
         {
-            stack.Children.Add(new TextBlock
+            if (i > 0)
             {
-                Text = cell.PercentText,
-                FontFamily = new FontFamily("Segoe UI"),
-                FontSize = 14,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = HexBrushConverter.ToBrush(cell.TextColor),
+                var divider = new Rectangle
+                {
+                    Fill = HexBrushConverter.ToBrush(theme.RingTrack),
+                    Width = vertical ? 24 : 1,
+                    Height = vertical ? 1 : 24,
+                    Margin = vertical ? new Thickness(0, 5.5, 0, 5.5) : new Thickness(5.5, 0, 5.5, 0),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                };
+                bodyStack.Children.Add(divider);
+            }
+
+            var cell = cells[i];
+            var cellStack = new StackPanel
+            {
+                Orientation = vertical ? Orientation.Vertical : Orientation.Horizontal,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
-            });
+                Opacity = cell.Dimmed ? 0.5 : 1.0,
+            };
+            cellStack.Children.Add(BuildRing(cell, vertical));
+            if (cell.ShowPercent)
+            {
+                cellStack.Children.Add(new TextBlock
+                {
+                    Text = cell.PercentText,
+                    FontFamily = new FontFamily("Segoe UI"),
+                    FontSize = 14,
+                    FontWeight = FontWeights.SemiBold,
+                    Foreground = HexBrushConverter.ToBrush(cell.TextColor),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                });
+            }
+            bodyStack.Children.Add(cellStack);
         }
-        body.Children.Add(stack);
+
+        body.Children.Add(bodyStack);
         canvas.Children.Add(body);
         canvas.Children.Add(EdgeLine(model.Edge, canvas.Width, canvas.Height));
         return canvas;
@@ -186,11 +216,11 @@ public sealed class PillPreview : ContentControl
         return host;
     }
 
-    private static Canvas BuildBand(PreviewModel model, CellModel cell, double thickness, double length, double fillet, bool vertical)
+    private static Canvas BuildBand(PreviewModel model, string bandColorHex, double thickness, double length, double fillet, bool vertical)
     {
         var canvas = new Canvas { Width = vertical ? thickness : length, Height = vertical ? length : thickness };
         var band = PillShapeBuilder.Band(model.Edge, thickness, length, model.FoldedThicknessPx, fillet);
-        var rect = new Rectangle { Width = band.Width, Height = band.Height, Fill = HexBrushConverter.ToBrush(cell.BandColor) };
+        var rect = new Rectangle { Width = band.Width, Height = band.Height, Fill = HexBrushConverter.ToBrush(bandColorHex) };
         Canvas.SetLeft(rect, band.X);
         Canvas.SetTop(rect, band.Y);
         canvas.Children.Add(rect);

@@ -15,7 +15,7 @@ public sealed class NotchPlacer(MonitorService monitors)
         var monitor = PillPlacement.Choose(monitors.GetMonitors(), s.MonitorDeviceId);
         var factor = s.Scale * monitor.Scale;
         var thickness = (int)Math.Round(PillMetrics.Thickness * factor);
-        var length = (int)Math.Round(PillMetrics.WindowLength * factor);
+        var length = (int)Math.Round(PillMetrics.WindowLengthFor(s.Provider, s.Edge, s.CellContent) * factor);
         var rect = PillPlacement.PillRect(monitor.Bounds, s.Edge, s.PositionFor(s.Edge), length, thickness);
         return new PlacementResult(monitor, rect);
     }

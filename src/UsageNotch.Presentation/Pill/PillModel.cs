@@ -14,6 +14,8 @@ public sealed record PillModel(
     ScreenEdge Edge = ScreenEdge.Top)
 {
     public CellModel PrimaryCell => Cells.Count > 0 ? Cells[0] : throw new InvalidOperationException("La pilule ne contient aucune cellule.");
+    public CellModel Cell1 => PrimaryCell;
+    public CellModel? Cell2 => Cells.Count > 1 ? Cells[1] : null;
     public CellModel? CellClaude => Cells.FirstOrDefault(c => c.ProviderId == "claude");
     public CellModel? CellAntigravity => Cells.FirstOrDefault(c => c.ProviderId == "antigravity");
     public bool IsDual => Cells.Count > 1;

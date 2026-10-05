@@ -28,8 +28,10 @@ public partial class PillWindow : Window
     private bool _closed;
     private bool _dragging;
     private bool _reapplyPending;
-    private bool _spinRunning;
-    private bool _pulseRunning;
+    private bool _spin1Running;
+    private bool _pulse1Running;
+    private bool _spin2Running;
+    private bool _pulse2Running;
     private bool _bandPulseRunning;
     private double _dragFraction;
     private double _thicknessDip = PillMetrics.Thickness;
@@ -83,8 +85,6 @@ public partial class PillWindow : Window
             case NativeMethods.WM_DISPLAYCHANGE:
             case NativeMethods.WM_SETTINGCHANGE:
             case NativeMethods.WM_DPICHANGED:
-                // WPF traite d'abord le message (mise à l'échelle), puis on replace la pilule. Une seule demande en attente ;
-                // pendant un glisser, on ne déplace rien : l'enregistrement au relâchement replace la pilule.
                 if (_reapplyPending) break;
                 _reapplyPending = true;
                 Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
@@ -101,7 +101,6 @@ public partial class PillWindow : Window
     {
         if (!_initialized)
         {
-            // Démarré en mode Masqué : la fenêtre n'a jamais été montrée ; la montrer déclenche SourceInitialized.
             if (e.PropertyName is nameof(NotchViewModel.Settings) or nameof(NotchViewModel.FullscreenActive)
                 && _vm.Settings.Visibility != VisibilityMode.Hidden && !_vm.FullscreenActive)
             {
@@ -119,12 +118,20 @@ public partial class PillWindow : Window
             case nameof(NotchViewModel.Unfolded):
                 UpdateFold(animated: true);
                 break;
+            case nameof(NotchViewModel.Pill):
             case nameof(NotchViewModel.Cell):
-                BodyStack.Opacity = _vm.Cell.Dimmed ? 0.5 : 1.0;
+                UpdateCellOpacities();
                 UpdateBrandGeometry();
                 UpdateAnimations();
                 break;
         }
+    }
+
+    private void UpdateCellOpacities()
+    {
+        if (_vm.Pill is null) return;
+        Cell1Stack.Opacity = (_vm.Pill.Cells.Count > 0 && _vm.Pill.Cells[0].Dimmed) ? 0.5 : 1.0;
+        Cell2Stack.Opacity = (_vm.Pill.Cells.Count > 1 && _vm.Pill.Cells[1].Dimmed) ? 0.5 : 1.0;
     }
 
     /// <summary>Recalcule forme, contenu et position à partir des réglages courants.</summary>
@@ -133,7 +140,6 @@ public partial class PillWindow : Window
         if (!_initialized || _closed) return;
         var s = _vm.Settings;
 
-        // Mode Masqué, ou application en plein écran sur l'écran de la pilule : aucune surface à l'écran.
         if (s.Visibility == VisibilityMode.Hidden || _vm.FullscreenActive)
         {
             Hide();
@@ -145,7 +151,7 @@ public partial class PillWindow : Window
 
         var scale = s.Scale;
         _thicknessDip = PillMetrics.Thickness * scale;
-        var length = PillMetrics.WindowLength * scale;
+        var length = PillMetrics.WindowLengthFor(s.Provider, s.Edge, s.CellContent) * scale;
         var fillet = PillMetrics.Fillet * scale;
         var vertical = s.Edge is ScreenEdge.Right or ScreenEdge.Left;
 
@@ -160,14 +166,35 @@ public partial class PillWindow : Window
         Body.Height = body.Height;
         BodyScale.ScaleX = scale;
         BodyScale.ScaleY = scale;
-        BodyStack.Orientation = vertical ? Orientation.Vertical : Orientation.Horizontal;
-        RingHost.Margin = vertical ? new Thickness(0, 0, 0, 4) : new Thickness(0, 0, 6, 0);
-        BodyStack.Opacity = _vm.Cell.Dimmed ? 0.5 : 1.0;
 
-        // Pendant SourceInitialized, Show() est déjà en cours : ne pas le rappeler.
+        var isDual = _vm.Pill?.IsDual == true;
+        CellDivider.Visibility = isDual ? Visibility.Visible : Visibility.Collapsed;
+        Cell2Stack.Visibility = isDual ? Visibility.Visible : Visibility.Collapsed;
+
+        BodyStack.Orientation = vertical ? Orientation.Vertical : Orientation.Horizontal;
+        Cell1Stack.Orientation = vertical ? Orientation.Vertical : Orientation.Horizontal;
+        Cell2Stack.Orientation = vertical ? Orientation.Vertical : Orientation.Horizontal;
+
+        if (vertical)
+        {
+            RingHost1.Margin = new Thickness(0, 0, 0, 4);
+            RingHost2.Margin = new Thickness(0, 0, 0, 4);
+            CellDivider.Width = 24;
+            CellDivider.Height = 1;
+            CellDivider.Margin = new Thickness(0, 5.5, 0, 5.5);
+        }
+        else
+        {
+            RingHost1.Margin = new Thickness(0, 0, 6, 0);
+            RingHost2.Margin = new Thickness(0, 0, 6, 0);
+            CellDivider.Width = 1;
+            CellDivider.Height = 24;
+            CellDivider.Margin = new Thickness(5.5, 0, 5.5, 0);
+        }
+
+        UpdateCellOpacities();
+
         if (!fromSourceInitialized && !IsVisible) Show();
-        // SetWindowPos déclenche une mise en page synchrone de la racine si la taille change (bords haut et bas) : elle
-        // agencerait les enfants des Canvas avec leur ancienne taille (pilule rognée). On termine d'abord la mise en page.
         UpdateLayout();
         WindowStyles.MoveResize(Handle, placement.PillRect);
         UpdateFold(animated: false);
@@ -215,19 +242,28 @@ public partial class PillWindow : Window
         Slide.BeginAnimation(TranslateTransform.YProperty, y);
     }
 
-    /// <summary>
-    /// Démarre ou arrête les animations en boucle selon ce qui est réellement affiché : une animation Forever sur une
-    /// cible masquée consomme du processeur en permanence. Un storyboard déjà lancé n'est jamais relancé.
-    /// </summary>
     private void UpdateAnimations()
     {
-        var activity = _vm.Cell.Activity;
-        // La pile est toujours dessinée : seule compte la visibilité réelle de la fenêtre et du calque.
         var ringShown = IsVisible && PillLayer.Visibility == Visibility.Visible;
-        SetStoryboard("Spin", ref _spinRunning, ringShown && activity == ActivityKind.Running);
-        SetStoryboard("Pulse", ref _pulseRunning, ringShown && activity == ActivityKind.Attention);
+        var act1 = _vm.Pill?.Cell1?.Activity ?? ActivityKind.None;
+        SetStoryboard("Spin1", ref _spin1Running, ringShown && act1 == ActivityKind.Running);
+        SetStoryboard("Pulse1", ref _pulse1Running, ringShown && act1 == ActivityKind.Attention);
+
+        if (_vm.Pill?.IsDual == true && _vm.Pill.Cell2 is not null)
+        {
+            var act2 = _vm.Pill.Cell2.Activity;
+            SetStoryboard("Spin2", ref _spin2Running, ringShown && act2 == ActivityKind.Running);
+            SetStoryboard("Pulse2", ref _pulse2Running, ringShown && act2 == ActivityKind.Attention);
+        }
+        else
+        {
+            SetStoryboard("Spin2", ref _spin2Running, false);
+            SetStoryboard("Pulse2", ref _pulse2Running, false);
+        }
+
+        var hasAttention = _vm.Pill?.Cells.Any(c => c.Activity == ActivityKind.Attention) ?? false;
         SetStoryboard("BandPulse", ref _bandPulseRunning,
-            IsVisible && BandPath.Visibility == Visibility.Visible && activity == ActivityKind.Attention);
+            IsVisible && BandPath.Visibility == Visibility.Visible && hasAttention);
     }
 
     private void SetStoryboard(string key, ref bool running, bool desired)
@@ -262,8 +298,6 @@ public partial class PillWindow : Window
     {
         if (_dragging)
         {
-            // Relâcher la capture d'abord (IsMouseOver redevient exact) ; cela déclenche LostMouseCapture → EndDrag.
-            // L'appel explicite ne fait rien si c'est déjà fait : la position n'est enregistrée qu'une fois.
             ReleaseMouseCapture();
             EndDrag();
             e.Handled = true;
@@ -273,7 +307,6 @@ public partial class PillWindow : Window
         e.Handled = true;
     }
 
-    /// <summary>Termine un glisser (relâchement ou capture perdue : Alt+Tab, UAC, menu) et enregistre la position une seule fois.</summary>
     private void EndDrag()
     {
         if (!_dragging) return;
@@ -288,9 +321,16 @@ public partial class PillWindow : Window
 
     private void UpdateBrandGeometry()
     {
-        var geometry = BrandGeometry.ForProvider(_vm.Cell?.ProviderId ?? "claude");
-        LogoMuted.Data = geometry;
-        LogoTint.Data = geometry;
+        var geom1 = BrandGeometry.ForProvider(_vm.Pill?.Cell1?.ProviderId ?? "claude");
+        LogoMuted1.Data = geom1;
+        LogoTint1.Data = geom1;
+
+        if (_vm.Pill?.IsDual == true && _vm.Pill.Cell2 is not null)
+        {
+            var geom2 = BrandGeometry.ForProvider(_vm.Pill.Cell2.ProviderId);
+            LogoMuted2.Data = geom2;
+            LogoTint2.Data = geom2;
+        }
     }
 
     protected override void OnClosed(EventArgs e)
