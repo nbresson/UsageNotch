@@ -3,7 +3,7 @@ namespace UsageNotch.Presentation.Pill;
 /// <summary>
 /// Tout ce que la cellule dessine. <see cref="Rings"/> porte toujours trois anneaux, de l'extérieur vers
 /// l'intérieur. Couleurs en <c>#RRGGBB</c>. <see cref="ActivityMutedColor"/> est la version grise que croise
-/// la pulsation de l'état « en attente ».
+/// la pulsation de l'état « en attente ». <see cref="ProviderId"/> indique le fournisseur actif.
 /// </summary>
 public sealed record CellModel(
     IReadOnlyList<RingModel> Rings,
@@ -16,4 +16,5 @@ public sealed record CellModel(
     ActivityKind Activity,
     string ActivityColor,
     string ActivityMutedColor,
-    string BandColor);
+    string BandColor,
+    string ProviderId = "claude");

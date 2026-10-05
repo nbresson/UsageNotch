@@ -113,4 +113,20 @@ public class CardPresenterTests
         card.Sessions[0].DotColor.Should().NotBe(Theme.LogoDone);
         PillPresenter.ActivityColor(ActivityKind.Done, Theme).Should().Be(Theme.LogoDone);
     }
+
+    [Fact]
+    public void Display_name_and_labels_adapt_to_provider()
+    {
+        var card = CardPresenter.Build(Ok(
+            new LimitWindow("gemini-5h", "Modèles Gemini (5 h)", 0.35, Now.AddHours(4))),
+            "Google Antigravity",
+            [],
+            Theme,
+            Now,
+            TimeZoneInfo.Utc);
+
+        card.Title.Should().Be("Google Antigravity");
+        card.Windows.Should().HaveCount(1);
+        card.Windows[0].Label.Should().Be("Modèles Gemini (5 h)");
+    }
 }

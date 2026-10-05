@@ -275,4 +275,31 @@ public class AppearancePageViewModelTests
 
         count.Should().Be(0);
     }
+
+    [Fact]
+    public void The_provider_is_offered_and_saved()
+    {
+        var (f, vm, _, _) = Create();
+        using var _f = f;
+
+        vm.Providers.Should().BeSameAs(Choices.Providers);
+        vm.ProviderChoices.Should().BeSameAs(Choices.Providers);
+        vm.Provider.Should().Be("claude");
+
+        vm.Provider = "antigravity";
+
+        vm.Provider.Should().Be("antigravity");
+        f.Draft.Value.Provider.Should().Be("antigravity");
+    }
+
+    [Fact]
+    public void Changing_the_provider_does_not_switch_to_the_custom_theme()
+    {
+        var (f, vm, _, _) = Create();
+        using var _f = f;
+
+        vm.Provider = "antigravity";
+
+        vm.Preset.Should().Be(ThemePreset.Codenotch);
+    }
 }

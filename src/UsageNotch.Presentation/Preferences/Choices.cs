@@ -57,4 +57,12 @@ public static class Choices
     ];
 
     public static string SoundLabel(string name) => Sounds.FirstOrDefault(s => s.Value == name)?.Label ?? name;
+
+    public static IReadOnlyList<Choice<string>> Providers { get; } =
+    [
+        new("claude", "Claude (Anthropic)"),
+        new("antigravity", "Google Antigravity"),
+    ];
+
+    public static string ProviderLabel(string name) => Providers.FirstOrDefault(p => p.Value == name)?.Label ?? name;
 }

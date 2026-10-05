@@ -46,11 +46,25 @@ public sealed class AppearancePageViewModel : ObservableObject, IDisposable
 
     public IReadOnlyList<Choice<ThemePreset>> Presets => Choices.ThemePresets;
 
+    public IReadOnlyList<Choice<string>> Providers => Choices.Providers;
+
+    public IReadOnlyList<Choice<string>> ProviderChoices => Choices.Providers;
+
     public IReadOnlyList<Choice<CellContent>> CellContents => Choices.CellContents;
 
     public IReadOnlyList<Choice<RingColoring>> RingColorings => Choices.RingColorings;
 
     public IReadOnlyList<ColorSlot> Colors { get; }
+
+    public string Provider
+    {
+        get => _draft.Value.Provider;
+        set
+        {
+            if (value == Provider) return;
+            _draft.Edit(s => s with { Provider = value });
+        }
+    }
 
     /// <summary>Le thème affiché : celui du préréglage choisi, avec l'accent système lu maintenant.</summary>
     public Theme Theme => EffectiveTheme(_draft.Value, _accent.AccentHex);

@@ -261,4 +261,22 @@ public class PillPresenterTests
 
         Cell(Snap(SnapshotStatus.Ok, 0.1, 1.0, 1.0)).Exhausted.Should().BeFalse();
     }
+
+    [Fact]
+    public void Antigravity_finished_state_uses_google_blue_unless_monochrome()
+    {
+        PillPresenter.ActivityColor(ActivityKind.Done, Theme, "antigravity").Should().Be("#1A73E8");
+        PillPresenter.ActivityColor(ActivityKind.Done, Theme.Monochrome, "antigravity").Should().Be(Theme.Monochrome.LogoDone);
+        PillPresenter.ActivityColor(ActivityKind.Done, Theme, "claude").Should().Be(Theme.LogoDone);
+    }
+
+    [Fact]
+    public void Cell_carries_provider_id()
+    {
+        var claudeCell = PillPresenter.Cell(Snap(SnapshotStatus.Ok, 0.5), RingWindows.Claude, SessionState.Idle, Theme, CellContent.RingAndPercent, RingColoring.PerRing, Now, "claude");
+        claudeCell.ProviderId.Should().Be("claude");
+
+        var agyCell = PillPresenter.Cell(Snap(SnapshotStatus.Ok, 0.5), RingWindows.Antigravity, SessionState.Idle, Theme, CellContent.RingAndPercent, RingColoring.PerRing, Now, "antigravity");
+        agyCell.ProviderId.Should().Be("antigravity");
+    }
 }

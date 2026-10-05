@@ -45,4 +45,14 @@ public class ChoicesTests
         Choices.SoundLabel("Hand").Should().Be("Arrêt critique");
         Choices.SoundLabel("Tada").Should().Be("Tada");
     }
+
+    [Fact]
+    public void Providers_are_listed_with_french_labels()
+    {
+        Choices.Providers.Select(c => c.Value).Should().Equal("claude", "antigravity");
+        Choices.Providers.Select(c => c.Label).Should().Equal("Claude (Anthropic)", "Google Antigravity");
+        Choices.ProviderLabel("claude").Should().Be("Claude (Anthropic)");
+        Choices.ProviderLabel("antigravity").Should().Be("Google Antigravity");
+        Choices.ProviderLabel("unknown").Should().Be("unknown");
+    }
 }
