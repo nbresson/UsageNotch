@@ -47,6 +47,8 @@ public static class AppHost
         s.AddSingleton<AntigravityProcessDiscovery>();
         s.AddSingleton<ClaudeUsageProvider>();
         s.AddSingleton<AntigravityUsageProvider>();
+        s.AddSingleton<OpenAiCredentialReader>();
+        s.AddSingleton<OpenAiUsageProvider>();
         if (args.Demo)
         {
             s.AddSingleton<IReadOnlyList<IUsageProvider>>(sp =>
@@ -56,6 +58,7 @@ public static class AppHost
                 [
                     new DemoUsageProvider("claude", time),
                     new DemoUsageProvider("antigravity", time),
+                    new DemoUsageProvider("openai", time),
                 ];
             });
             s.AddSingleton<IUsageProvider>(sp =>
@@ -63,9 +66,15 @@ public static class AppHost
                 var providers = sp.GetRequiredService<IReadOnlyList<IUsageProvider>>();
                 var claudeDemo = providers[0];
                 var agyDemo = providers[1];
+                var openAiDemo = providers[2];
                 return new RoutingUsageProvider(
                     sp.GetRequiredService<SettingsStore>(),
-                    id => id == "antigravity" ? agyDemo : claudeDemo);
+                    id => id switch
+                    {
+                        "antigravity" => agyDemo,
+                        "openai" => openAiDemo,
+                        _ => claudeDemo,
+                    });
             });
         }
         else
@@ -74,12 +83,14 @@ public static class AppHost
             [
                 sp.GetRequiredService<ClaudeUsageProvider>(),
                 sp.GetRequiredService<AntigravityUsageProvider>(),
+                sp.GetRequiredService<OpenAiUsageProvider>(),
             ]);
             s.AddSingleton<IUsageProvider>(sp => new RoutingUsageProvider(
                 sp.GetRequiredService<SettingsStore>(),
                 id => id switch
                 {
                     "antigravity" => sp.GetRequiredService<AntigravityUsageProvider>(),
+                    "openai" => sp.GetRequiredService<OpenAiUsageProvider>(),
                     _ => sp.GetRequiredService<ClaudeUsageProvider>(),
                 }));
         }

@@ -19,6 +19,11 @@ public class RingWindowsTests
         RingWindows.Claude[0].Should().Equal("session", "five_hour");
         RingWindows.Claude[1].Should().Equal("weekly_all", "seven_day", "weekly");
         RingWindows.Claude[2].Should().Equal("weekly_scoped", "weekly_opus", "seven_day_opus");
+
+        RingWindows.OpenAi.Should().HaveCount(3);
+        RingWindows.OpenAi[0].Should().Equal("monthly_cost", "monthly", "budget");
+        RingWindows.OpenAi[1].Should().Equal("daily_cost", "daily", "day");
+        RingWindows.OpenAi[2].Should().Equal("reasoning_models", "o1_o3", "reasoning");
     }
 
     [Fact]

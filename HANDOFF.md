@@ -27,11 +27,16 @@
 
 - **Version en développement** : `0.6.0-dev` (branche `main`).
 - **Dernière release officielle** : [v0.5.0](https://github.com/nbresson/UsageNotch/releases/tag/v0.5.0) publiée le 2026-10-05.
-- **Tests** : **601 tests xUnit verts** (295 Core, 306 Presentation), durée totale d'exécution < 2 s.
+- **Tests** : **642 tests xUnit verts** (313 Core, 329 Presentation), durée totale d'exécution < 2 s.
 - **Dernières fonctionnalités majeures livrées** :
-  1. **Fournisseur Google Antigravity** : détection automatique du processus `agy.exe`, découverte du port d'écoute et du jeton SQLite/process, interrogation des quotas Gemini 5 h, hebdomadaire et modèles tiers.
-  2. **Capsule double unifiée (Option A)** : affichage simultané des quotas Claude et Antigravity dans une seule pilule dynamique avec séparateur de 12 DIP, carte de détail élargie à 320 DIP multi-sections avec horodatages de réinitialisation distincts, et choix dans les réglages (`"both"`, `"claude"`, `"antigravity"`).
-  3. **Robustesse zone de notification** : gestion tolérante de l'initialisation de l'icône de barre des tâches (`TrayIconService`) évitant les crashs en environnement restreint.
+  1. **Fournisseur OpenAI & Capsule Triple Unifiée** :
+     - Suivi officiel des coûts & quotas OpenAI (`/v1/organization/costs` ou clé d'API / `OPENAI_API_KEY`) avec trois anneaux : Budget mensuel, Consommation du jour, et Modèles de raisonnement (o1 / o3).
+     - Support complet de la capsule triple unifiée (Claude + Google Antigravity + OpenAI côte à côte) et combinaisons modulaires au choix : `"all"`, `"both"`, `"claude_openai"`, `"antigravity_openai"`, `"claude"`, `"antigravity"`, `"openai"`.
+     - Intégration du logo vectoriel officiel `OpenAiMark` (`openai-light.svg`) au centre des anneaux avec animations d'activité (`Spin3`, `Pulse3`).
+     - Carte de détail multi-sections jusqu'à 3 sections et configuration dédiée dans les préférences (clé d'API, curseur de budget mensuel).
+  2. **Fournisseur Google Antigravity** : détection automatique du processus `agy.exe`, découverte du port d'écoute et du jeton SQLite/process, interrogation des quotas Gemini 5 h, hebdomadaire et modèles tiers.
+  3. **Capsule double unifiée** : affichage simultané des quotas Claude et Antigravity dans une seule pilule dynamique avec séparateur.
+  4. **Robustesse zone de notification** : gestion tolérante de l'initialisation de l'icône de barre des tâches (`TrayIconService`) évitant les crashs en environnement restreint.
 
 ---
 
@@ -120,9 +125,9 @@ dotnet build -c Release UsageNotch.sln
 
 1. **Scoping des storyboards WPF dans `PillWindow`** :
    - Dans WPF, les storyboards déclarés dans `Window.Resources` ne peuvent pas cibler des éléments générés dynamiquement dans un `ItemsControl`.
-   - La pilule utilise donc deux stacks explicites (`Cell1Stack` et `Cell2Stack`) et des storyboards pairs (`Spin1`/`Spin2`, `Pulse1`/`Pulse2`).
+   - La pilule utilise donc trois stacks explicites (`Cell1Stack`, `Cell2Stack`, `Cell3Stack`), deux séparateurs (`CellDivider`, `CellDivider2`) et des storyboards triplés (`Spin1/2/3`, `Pulse1/2/3`).
 2. **Dimensionnement de la pilule** :
-   - Ne jamais coder en dur la longueur de la fenêtre ou du corps de la pilule. Toujours passer par `PillMetrics.WindowLengthFor(provider, edge, content)` et `PillMetrics.BodyLengthFor(provider, edge, content)`.
+   - Ne jamais coder en dur la longueur de la fenêtre ou du corps de la pilule. Toujours passer par `PillMetrics.WindowLengthFor(provider, edge, content)` et `PillMetrics.BodyLengthFor(provider, edge, content)` qui supportent dynamiquement 1, 2 ou 3 cellules.
    - Épaisseurs standard : 32 DIP (corps), 48 DIP (fenêtre avec marge d'ombrage et congés).
 3. **Consommation CPU des fenêtres transparentes** :
    - Les fenêtres WPF en couches (`AllowsTransparency = true`) effectuent leur composition logicielle en mémoire.
@@ -142,18 +147,15 @@ dotnet build -c Release UsageNotch.sln
 | `README.md` | Présentation générale du projet pour l'utilisateur final. |
 | `HANDOFF.md` *(ce fichier)* | Guide de reprise rapide et synthèse technique. |
 | `docs/REPRISE.md` | Historique de pause et journal de bord de l'architecture initiale. |
-| `docs/superpowers/specs/` | Spécifications fonctionnelles de conception (conception d'origine, anneaux, logos, Antigravity, capsule double). |
+| `docs/superpowers/specs/` | Spécifications fonctionnelles de conception (conception d'origine, anneaux, logos, Antigravity, capsule double, OpenAI). |
 | `docs/superpowers/plans/` | Plans d'implémentation détaillés étape par étape. |
 
 ---
 
 ## 7. Pistes de travail futures (Backlog)
 
-- **Fournisseur OpenAI (Indicateurs de consommation des modèles OpenAI)** :
-  - Implémentation de `OpenAiUsageProvider : IUsageProvider` pour remonter les quotas et métriques de consommation des modèles OpenAI (crédits/budget, taux d'utilisation, quotas de tokens TPM/RPM ou fenêtres d'usage selon le type de compte/abonnement API, ChatGPT Plus/Team/Enterprise ou Codex).
-  - Définition des trois fenêtres d'usage (`LimitWindow`) adaptées aux modèles OpenAI (ex. quota court terme, hebdomadaire/mensuel, ou modèles spécifiques comme GPT-4o / o1 / o3-mini).
-  - Intégration du logo vectoriel OpenAI (actif SVG `src/UsageNotch.App/Assets/openai-light.svg` déjà présent dans le projet) dans `BrandGeometry.cs` pour le voyant d'activité au centre des anneaux.
-  - Ajout d'une section dédiée OpenAI dans la carte de détail multi-sections et enrichissement du sélecteur de fournisseurs (`Choices.cs`, `SettingsStore`).
 - **Packaging & Déploiement** : script d'installation MSIX ou installateur InnoSetup pour faciliter la mise à jour par l'utilisateur.
-- **Notifications avancées** : réglage fin des seuils d'alerte par fournisseur (ex. alerte spécifique pour la limite 5h de Gemini distincte de la session Claude).
+- **Notifications avancées** : réglage fin des seuils d'alerte par fournisseur (ex. alerte spécifique pour la limite 5h de Gemini distincte de la session Claude ou du budget OpenAI).
+- **Indicateurs de consommation supplémentaires pour OpenAI** : support de métriques temps réel additionnelles (ex. requêtes TPM/RPM si l'API organisation les expose par clé).
+- **Historique et graphiques de consommation** : vue chronologique dans une sous-page des réglages pour analyser l'évolution de la consommation au fil des jours.
 

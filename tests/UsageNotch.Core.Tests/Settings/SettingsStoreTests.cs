@@ -391,11 +391,39 @@ public class SettingsStoreTests
     [InlineData("unknown", "both")]
     [InlineData("", "both")]
     [InlineData("both", "both")]
+    [InlineData("all", "all")]
+    [InlineData("claude_openai", "claude_openai")]
+    [InlineData("antigravity_openai", "antigravity_openai")]
     [InlineData("antigravity", "antigravity")]
     [InlineData("claude", "claude")]
+    [InlineData("openai", "openai")]
     public void Provider_is_clamped_to_known_providers(string input, string expected)
     {
         var s = new UsageNotch.Core.Settings.Settings { Provider = input }.Clamp();
         s.Provider.Should().Be(expected);
+    }
+
+    [Fact]
+    public void OpenAi_settings_round_trip_and_clamp()
+    {
+        using var dir = new TempDir();
+        var store = Build(dir);
+        var s = new UsageNotch.Core.Settings.Settings
+        {
+            OpenAiApiKey = "sk-test-12345",
+            OpenAiMonthlyBudget = 50.0,
+            Provider = "all",
+        };
+
+        store.Save(s);
+        var loaded = Build(dir).Load();
+
+        loaded.OpenAiApiKey.Should().Be("sk-test-12345");
+        loaded.OpenAiMonthlyBudget.Should().Be(50.0);
+        loaded.Provider.Should().Be("all");
+
+        var clamped = (loaded with { OpenAiApiKey = "  sk-trimmed  ", OpenAiMonthlyBudget = -5 }).Clamp();
+        clamped.OpenAiApiKey.Should().Be("sk-trimmed");
+        clamped.OpenAiMonthlyBudget.Should().Be(20.0);
     }
 }

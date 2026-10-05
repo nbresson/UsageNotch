@@ -49,6 +49,10 @@ public sealed record Settings
     public bool DebugLogging { get; init; }
     /// <summary>false = le hook ne relance pas l'application (mis à false par Quitter, remis à true au démarrage manuel).</summary>
     public bool AutoLaunch { get; init; } = true;
+    /// <summary>Clé d'API OpenAI optionnelle (si vide, la variable d'environnement OPENAI_API_KEY est consultée).</summary>
+    public string OpenAiApiKey { get; init; } = "";
+    /// <summary>Budget mensuel OpenAI de référence en dollars pour le calcul des ratios (défaut : 20.0 $).</summary>
+    public double OpenAiMonthlyBudget { get; init; } = 20.0;
 
     public double PositionFor(ScreenEdge edge) => edge switch
     {
@@ -73,7 +77,9 @@ public sealed record Settings
     public Settings Clamp() => this with
     {
         Version = CurrentVersion,
-        Provider = Provider is "both" or "claude" or "antigravity" ? Provider : DefaultProvider,
+        Provider = Provider is "all" or "both" or "claude_openai" or "antigravity_openai" or "claude" or "antigravity" or "openai" ? Provider : DefaultProvider,
+        OpenAiApiKey = OpenAiApiKey?.Trim() ?? "",
+        OpenAiMonthlyBudget = OpenAiMonthlyBudget > 0 ? OpenAiMonthlyBudget : 20.0,
         // « Pourcentage seul » a été retiré des choix : le membre survit dans l'enum pour que la relecture
         // d'un fichier de version 1 ne lève pas et ne condamne pas tout le fichier.
         CellContent = CellContent == CellContent.PercentOnly ? CellContent.RingAndPercent : CellContent,

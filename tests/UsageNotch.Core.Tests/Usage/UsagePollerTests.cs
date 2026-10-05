@@ -250,6 +250,75 @@ public class UsagePollerTests
     }
 
     [Fact]
+    public async Task All_mode_polls_all_three_providers()
+    {
+        using var dir = new TempDir();
+        var time = new FakeTimeProvider(Now);
+        var claude = new FakeProvider("claude", "Claude");
+        var antigravity = new FakeProvider("antigravity", "Google Antigravity");
+        var openai = new FakeProvider("openai", "OpenAI");
+        var store = new UsageStore(dir.File("usage.json"), time, NullLogger<UsageStore>.Instance);
+        var activity = new FakeActivity();
+        var settingsStore = new SettingsStore(dir.File("settings.json"), NullLogger<SettingsStore>.Instance);
+        settingsStore.Load();
+        settingsStore.Save(settingsStore.Current with { Provider = "all" });
+
+        var poller = new UsagePoller([claude, antigravity, openai], store, activity, time, NullLogger<UsagePoller>.Instance, settingsStore);
+
+        await poller.TickAsync(CancellationToken.None);
+
+        claude.Calls.Should().Be(1);
+        antigravity.Calls.Should().Be(1);
+        openai.Calls.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Claude_openai_mode_polls_only_claude_and_openai()
+    {
+        using var dir = new TempDir();
+        var time = new FakeTimeProvider(Now);
+        var claude = new FakeProvider("claude", "Claude");
+        var antigravity = new FakeProvider("antigravity", "Google Antigravity");
+        var openai = new FakeProvider("openai", "OpenAI");
+        var store = new UsageStore(dir.File("usage.json"), time, NullLogger<UsageStore>.Instance);
+        var activity = new FakeActivity();
+        var settingsStore = new SettingsStore(dir.File("settings.json"), NullLogger<SettingsStore>.Instance);
+        settingsStore.Load();
+        settingsStore.Save(settingsStore.Current with { Provider = "claude_openai" });
+
+        var poller = new UsagePoller([claude, antigravity, openai], store, activity, time, NullLogger<UsagePoller>.Instance, settingsStore);
+
+        await poller.TickAsync(CancellationToken.None);
+
+        claude.Calls.Should().Be(1);
+        antigravity.Calls.Should().Be(0);
+        openai.Calls.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Openai_only_mode_polls_only_openai()
+    {
+        using var dir = new TempDir();
+        var time = new FakeTimeProvider(Now);
+        var claude = new FakeProvider("claude", "Claude");
+        var antigravity = new FakeProvider("antigravity", "Google Antigravity");
+        var openai = new FakeProvider("openai", "OpenAI");
+        var store = new UsageStore(dir.File("usage.json"), time, NullLogger<UsageStore>.Instance);
+        var activity = new FakeActivity();
+        var settingsStore = new SettingsStore(dir.File("settings.json"), NullLogger<SettingsStore>.Instance);
+        settingsStore.Load();
+        settingsStore.Save(settingsStore.Current with { Provider = "openai" });
+
+        var poller = new UsagePoller([claude, antigravity, openai], store, activity, time, NullLogger<UsagePoller>.Instance, settingsStore);
+
+        await poller.TickAsync(CancellationToken.None);
+
+        claude.Calls.Should().Be(0);
+        antigravity.Calls.Should().Be(0);
+        openai.Calls.Should().Be(1);
+    }
+
+    [Fact]
     public async Task Backoff_is_isolated_between_providers()
     {
         using var dir = new TempDir();

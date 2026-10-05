@@ -22,12 +22,31 @@ public static class PillMetrics
     /// <summary>Longueur de la fenêtre le long du bord : le corps plus les deux congés qui le soudent au bord.</summary>
     public static double WindowLength => BodyLength + 2 * Fillet;
 
-    /// <summary>Longueur du corps selon le mode de fournisseur (simple ou double), le bord d'écran et le contenu.</summary>
+    /// <summary>Nombre de cellules affichées sur la pilule selon le mode de fournisseur.</summary>
+    public static int CellCountFor(string provider) => provider switch
+    {
+        "all" => 3,
+        "both" or "claude_openai" or "antigravity_openai" => 2,
+        _ => 1
+    };
+
+    /// <summary>Longueur du corps selon le mode de fournisseur (simple, double ou triple), le bord d'écran et le contenu.</summary>
     public static double BodyLengthFor(string provider, ScreenEdge edge, CellContent content)
     {
-        if (provider != "both") return BodyLength;
-        if (content == CellContent.RingOnly) return 124;
-        return edge is ScreenEdge.Right or ScreenEdge.Left ? 168 : 196;
+        var count = CellCountFor(provider);
+        if (count == 3)
+        {
+            if (content == CellContent.RingOnly) return 192;
+            return edge is ScreenEdge.Right or ScreenEdge.Left ? 258 : 300;
+        }
+
+        if (count == 2)
+        {
+            if (content == CellContent.RingOnly) return 124;
+            return edge is ScreenEdge.Right or ScreenEdge.Left ? 168 : 196;
+        }
+
+        return BodyLength;
     }
 
     /// <summary>Longueur totale de fenêtre le long du bord (corps + congés) selon les paramètres.</summary>

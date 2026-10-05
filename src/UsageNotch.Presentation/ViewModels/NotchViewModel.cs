@@ -178,50 +178,46 @@ public sealed class NotchViewModel : ObservableObject, IDisposable
         UpdateFullscreen();
         Theme = theme;
 
+        var mode = settings.Provider;
+        IReadOnlyList<string> activeProviderIds = mode switch
+        {
+            "all" => ["claude", "antigravity", "openai"],
+            "both" => ["claude", "antigravity"],
+            "claude_openai" => ["claude", "openai"],
+            "antigravity_openai" => ["antigravity", "openai"],
+            "antigravity" => ["antigravity"],
+            "openai" => ["openai"],
+            _ => ["claude"]
+        };
+
         var cells = new List<CellModel>();
         var sections = new List<CardSection>();
+        var trayParts = new List<string>();
 
-        if (settings.Provider == "both")
+        foreach (var pid in activeProviderIds)
         {
-            var snapClaude = _usage.SnapshotFor("claude");
-            var cellClaude = PillPresenter.Cell(snapClaude, RingWindows.Claude, _sessions.Aggregate, theme, settings.CellContent, settings.Coloring, now, "claude");
-            cells.Add(cellClaude);
-            sections.Add(CardPresenter.Section(snapClaude, "Claude (Anthropic)", theme, now, _zone, "claude"));
+            var snap = _usage.SnapshotFor(pid);
+            var (displayName, rings, shortName) = pid switch
+            {
+                "antigravity" => ("Google Antigravity", RingWindows.Antigravity, "Antigravity"),
+                "openai" => ("OpenAI", RingWindows.OpenAi, "OpenAI"),
+                _ => (activeProviderIds.Count > 1 ? "Claude (Anthropic)" : _provider.DisplayName, RingWindows.Claude, "Claude")
+            };
 
-            var snapAg = _usage.SnapshotFor("antigravity");
-            var cellAg = PillPresenter.Cell(snapAg, RingWindows.Antigravity, SessionState.Idle, theme, settings.CellContent, settings.Coloring, now, "antigravity");
-            cells.Add(cellAg);
-            sections.Add(CardPresenter.Section(snapAg, "Google Antigravity", theme, now, _zone, "antigravity"));
+            var activity = (pid == "claude" || activeProviderIds.Count == 1) ? _sessions.Aggregate : SessionState.Idle;
 
-            Pill = PillPresenter.Pill(cells, settings.Edge, settings.CellContent, theme, "both");
-            Cell = Pill.PrimaryCell;
-            Card = CardPresenter.Build(sections, _sessions.Snapshot(), theme, isDual: true);
-            TrayText = $"UsageNotch — Claude {cellClaude.PercentText} · Antigravity {cellAg.PercentText}";
+            var cell = PillPresenter.Cell(snap, rings, activity, theme, settings.CellContent, settings.Coloring, now, pid);
+            cells.Add(cell);
+            sections.Add(CardPresenter.Section(snap, displayName, theme, now, _zone, pid));
+            trayParts.Add($"{shortName} {cell.PercentText}");
         }
-        else if (settings.Provider == "antigravity")
-        {
-            var snapAg = _usage.SnapshotFor("antigravity");
-            var cellAg = PillPresenter.Cell(snapAg, RingWindows.Antigravity, _sessions.Aggregate, theme, settings.CellContent, settings.Coloring, now, "antigravity");
-            cells.Add(cellAg);
-            sections.Add(CardPresenter.Section(snapAg, "Google Antigravity", theme, now, _zone, "antigravity"));
 
-            Pill = PillPresenter.Pill(cells, settings.Edge, settings.CellContent, theme, "antigravity");
-            Cell = Pill.PrimaryCell;
-            Card = CardPresenter.Build(sections, _sessions.Snapshot(), theme, isDual: false);
-            TrayText = $"UsageNotch — Google Antigravity {Cell.PercentText}";
-        }
-        else
-        {
-            var snapClaude = _usage.SnapshotFor("claude");
-            var cellClaude = PillPresenter.Cell(snapClaude, _provider.RingWindowIds, _sessions.Aggregate, theme, settings.CellContent, settings.Coloring, now, _provider.Id);
-            cells.Add(cellClaude);
-            sections.Add(CardPresenter.Section(snapClaude, _provider.DisplayName, theme, now, _zone, _provider.Id));
-
-            Pill = PillPresenter.Pill(cells, settings.Edge, settings.CellContent, theme, "claude");
-            Cell = Pill.PrimaryCell;
-            Card = CardPresenter.Build(sections, _sessions.Snapshot(), theme, isDual: false);
-            TrayText = $"UsageNotch — {_provider.DisplayName} {Cell.PercentText}";
-        }
+        Pill = PillPresenter.Pill(cells, settings.Edge, settings.CellContent, theme, mode);
+        Cell = Pill.PrimaryCell;
+        Card = CardPresenter.Build(sections, _sessions.Snapshot(), theme, isDual: sections.Count > 1);
+        TrayText = activeProviderIds.Count == 1
+            ? $"UsageNotch — {sections[0].Title} {Cell.PercentText}"
+            : $"UsageNotch — {string.Join(" · ", trayParts)}";
     }
 
     private void UpdateFullscreen()

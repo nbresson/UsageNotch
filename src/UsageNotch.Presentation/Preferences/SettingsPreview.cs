@@ -41,29 +41,41 @@ public static class SettingsPreview
     private static PreviewSample Sample(
         string caption, double fraction, SessionState state, Theme theme, CellContent content, RingColoring coloring, string provider, ScreenEdge edge)
     {
-        if (provider == "both")
+        IReadOnlyList<string> activeProviderIds = provider switch
         {
-            var claudeSnap = CreateSnapshot(fraction, isAntigravity: false);
-            var agySnap = CreateSnapshot(fraction * 0.9, isAntigravity: true);
+            "all" => ["claude", "antigravity", "openai"],
+            "both" => ["claude", "antigravity"],
+            "claude_openai" => ["claude", "openai"],
+            "antigravity_openai" => ["antigravity", "openai"],
+            "antigravity" => ["antigravity"],
+            "openai" => ["openai"],
+            _ => ["claude"]
+        };
 
-            var claudeCell = PillPresenter.Cell(claudeSnap, RingWindows.Claude, state, theme, content, coloring, SampleTime, "claude");
-            var agyCell = PillPresenter.Cell(agySnap, RingWindows.Antigravity, SessionState.Idle, theme, content, coloring, SampleTime, "antigravity");
-
-            var pill = PillPresenter.Pill([claudeCell, agyCell], edge, content, theme, "both");
-            return new PreviewSample(caption, claudeCell, pill);
+        var cells = new List<CellModel>();
+        for (int i = 0; i < activeProviderIds.Count; i++)
+        {
+            var pid = activeProviderIds[i];
+            var f = fraction * (1.0 - i * 0.1);
+            var snap = CreateSnapshot(f, pid);
+            var rings = pid switch
+            {
+                "antigravity" => RingWindows.Antigravity,
+                "openai" => RingWindows.OpenAi,
+                _ => RingWindows.Claude
+            };
+            var s = i == 0 ? state : SessionState.Idle;
+            cells.Add(PillPresenter.Cell(snap, rings, s, theme, content, coloring, SampleTime, pid));
         }
 
-        var isAg = provider == "antigravity";
-        var singleSnap = CreateSnapshot(fraction, isAg);
-        var rings = isAg ? RingWindows.Antigravity : RingWindows.Claude;
-        var cell = PillPresenter.Cell(singleSnap, rings, state, theme, content, coloring, SampleTime, provider);
-        var singlePill = PillPresenter.Pill([cell], edge, content, theme, provider);
-        return new PreviewSample(caption, cell, singlePill);
+        var pill = PillPresenter.Pill(cells, edge, content, theme, provider);
+        return new PreviewSample(caption, cells[0], pill);
     }
 
-    private static UsageSnapshot CreateSnapshot(double fraction, bool isAntigravity) =>
-        isAntigravity
-            ? new UsageSnapshot(
+    private static UsageSnapshot CreateSnapshot(double fraction, string providerId) =>
+        providerId switch
+        {
+            "antigravity" => new UsageSnapshot(
                 SnapshotStatus.Ok,
                 [
                     new LimitWindow("gemini-5h", "Modèles Gemini (5 h)", fraction, SampleTime.AddHours(3)),
@@ -72,8 +84,18 @@ public static class SettingsPreview
                 ],
                 SampleTime,
                 "",
-                null)
-            : new UsageSnapshot(
+                null),
+            "openai" => new UsageSnapshot(
+                SnapshotStatus.Ok,
+                [
+                    new LimitWindow("monthly_cost", "Budget mensuel ($12.00 / $20)", fraction, SampleTime.AddDays(15)),
+                    new LimitWindow("daily_cost", "Consommation du jour ($1.50)", fraction * 0.6, SampleTime.AddHours(6)),
+                    new LimitWindow("reasoning_models", "Modèles raisonnement o1/o3 ($4.00)", fraction * 0.3, SampleTime.AddDays(15)),
+                ],
+                SampleTime,
+                "",
+                null),
+            _ => new UsageSnapshot(
                 SnapshotStatus.Ok,
                 [
                     new LimitWindow("session", "Session en cours", fraction, SampleTime.AddHours(3)),
@@ -82,5 +104,6 @@ public static class SettingsPreview
                 ],
                 SampleTime,
                 "",
-                null);
+                null)
+        };
 }

@@ -17,4 +17,10 @@ public static class RingWindows
     public static readonly IReadOnlyList<string> ThirdParty = ["3p-weekly", "3p-5h", "models_3p"];
 
     public static readonly IReadOnlyList<IReadOnlyList<string>> Antigravity = [Gemini5h, GeminiWeekly, ThirdParty];
+
+    public static readonly IReadOnlyList<string> MonthlyCost = ["monthly_cost", "monthly", "budget"];
+    public static readonly IReadOnlyList<string> DailyCost = ["daily_cost", "daily", "day"];
+    public static readonly IReadOnlyList<string> ReasoningModels = ["reasoning_models", "o1_o3", "reasoning"];
+
+    public static readonly IReadOnlyList<IReadOnlyList<string>> OpenAi = [MonthlyCost, DailyCost, ReasoningModels];
 }
