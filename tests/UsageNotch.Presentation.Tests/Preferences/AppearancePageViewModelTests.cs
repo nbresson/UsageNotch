@@ -302,4 +302,38 @@ public class AppearancePageViewModelTests
 
         vm.Preset.Should().Be(ThemePreset.Codenotch);
     }
+
+    [Fact]
+    public void OpenAi_settings_and_activation_flag_are_reflected_and_saved()
+    {
+        var (f, vm, _, _) = Create();
+        using var _f = f;
+
+        // Default provider is "both" (Claude + Antigravity), so OpenAI is not active
+        vm.IsOpenAiActive.Should().BeFalse();
+
+        vm.Provider = "all";
+        vm.IsOpenAiActive.Should().BeTrue();
+
+        vm.Provider = "claude_openai";
+        vm.IsOpenAiActive.Should().BeTrue();
+
+        vm.Provider = "antigravity_openai";
+        vm.IsOpenAiActive.Should().BeTrue();
+
+        vm.Provider = "openai";
+        vm.IsOpenAiActive.Should().BeTrue();
+
+        vm.Provider = "claude";
+        vm.IsOpenAiActive.Should().BeFalse();
+
+        vm.OpenAiApiKey = "sk-custom-test-key";
+        vm.OpenAiApiKey.Should().Be("sk-custom-test-key");
+        f.Draft.Value.OpenAiApiKey.Should().Be("sk-custom-test-key");
+
+        vm.OpenAiMonthlyBudget = 75.0;
+        vm.OpenAiMonthlyBudget.Should().Be(75.0);
+        vm.OpenAiMonthlyBudgetText.Should().Be("75 $");
+        f.Draft.Value.OpenAiMonthlyBudget.Should().Be(75.0);
+    }
 }

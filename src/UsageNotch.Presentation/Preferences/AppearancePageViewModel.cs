@@ -66,6 +66,30 @@ public sealed class AppearancePageViewModel : ObservableObject, IDisposable
         }
     }
 
+    public bool IsOpenAiActive => Provider is "all" or "claude_openai" or "antigravity_openai" or "openai";
+
+    public string OpenAiApiKey
+    {
+        get => _draft.Value.OpenAiApiKey;
+        set
+        {
+            if (value == OpenAiApiKey) return;
+            _draft.Edit(s => s with { OpenAiApiKey = value });
+        }
+    }
+
+    public double OpenAiMonthlyBudget
+    {
+        get => _draft.Value.OpenAiMonthlyBudget;
+        set
+        {
+            if (Same(value, OpenAiMonthlyBudget)) return;
+            _draft.Edit(s => s with { OpenAiMonthlyBudget = value });
+        }
+    }
+
+    public string OpenAiMonthlyBudgetText => $"{OpenAiMonthlyBudget:0} $";
+
     /// <summary>Le thème affiché : celui du préréglage choisi, avec l'accent système lu maintenant.</summary>
     public Theme Theme => EffectiveTheme(_draft.Value, _accent.AccentHex);
 

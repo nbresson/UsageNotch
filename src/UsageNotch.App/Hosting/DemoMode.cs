@@ -23,29 +23,46 @@ public sealed class DemoUsageProvider : IUsageProvider
         _time = time;
     }
 
-    public string Id => _fixedId ?? (_settings?.Current.Provider == "antigravity" ? "antigravity" : "claude");
+    public string Id => _fixedId ?? (_settings?.Current.Provider == "antigravity" ? "antigravity" : (_settings?.Current.Provider == "openai" ? "openai" : "claude"));
 
-    public string DisplayName => Id == "antigravity" ? "Google Antigravity" : "Claude";
+    public string DisplayName => Id switch
+    {
+        "antigravity" => "Google Antigravity",
+        "openai" => "OpenAI",
+        _ => "Claude",
+    };
 
-    public IReadOnlyList<IReadOnlyList<string>> RingWindowIds =>
-        Id == "antigravity" ? RingWindows.Antigravity : RingWindows.Claude;
+    public IReadOnlyList<IReadOnlyList<string>> RingWindowIds => Id switch
+    {
+        "antigravity" => RingWindows.Antigravity,
+        "openai" => RingWindows.OpenAi,
+        _ => RingWindows.Claude,
+    };
 
     public Task<FetchResult> FetchAsync(CancellationToken ct)
     {
         var now = _time.GetUtcNow();
-        IReadOnlyList<LimitWindow> windows = Id == "antigravity"
-            ?
+        IReadOnlyList<LimitWindow> windows = Id switch
+        {
+            "antigravity" =>
             [
                 new("gemini-5h", "Modèles Gemini (5 h)", 0.65, now.AddHours(3).AddMinutes(12)),
                 new("gemini-weekly", "Modèles Gemini (hebdomadaire)", 0.29, now.AddDays(4)),
                 new("3p-weekly", "Modèles tiers (hebdomadaire)", 0.0, now.AddDays(6)),
-            ]
-            :
+            ],
+            "openai" =>
+            [
+                new("monthly_cost", "Budget mensuel (8.40 $ / 20 $)", 0.42, now.AddDays(18)),
+                new("daily_cost", "Consommation du jour (0.36 $)", 0.18, now.AddHours(14)),
+                new("reasoning_models", "Modèles raisonnement o1/o3 (6.50 $)", 0.65, now.AddDays(18)),
+            ],
+            _ =>
             [
                 new("session", "Session en cours", 0.73, now.AddMinutes(51)),
                 new("weekly_all", "Hebdomadaire (tous modèles)", 0.21, now.AddDays(3)),
                 new("weekly_scoped", "Hebdomadaire (par modèle)", 0.52, now.AddDays(3)),
-            ];
+            ]
+        };
         return Task.FromResult<FetchResult>(new FetchResult.Success(windows));
     }
 }
