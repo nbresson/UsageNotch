@@ -49,10 +49,11 @@ public class ChoicesTests
     [Fact]
     public void Providers_are_listed_with_french_labels()
     {
-        Choices.Providers.Select(c => c.Value).Should().Equal("claude", "antigravity");
-        Choices.Providers.Select(c => c.Label).Should().Equal("Claude (Anthropic)", "Google Antigravity");
-        Choices.ProviderLabel("claude").Should().Be("Claude (Anthropic)");
-        Choices.ProviderLabel("antigravity").Should().Be("Google Antigravity");
+        Choices.Providers.Select(c => c.Value).Should().Equal("both", "claude", "antigravity");
+        Choices.Providers.Select(c => c.Label).Should().Equal("Les deux (capsule double)", "Claude uniquement", "Google Antigravity uniquement");
+        Choices.ProviderLabel("both").Should().Be("Les deux (capsule double)");
+        Choices.ProviderLabel("claude").Should().Be("Claude uniquement");
+        Choices.ProviderLabel("antigravity").Should().Be("Google Antigravity uniquement");
         Choices.ProviderLabel("unknown").Should().Be("unknown");
     }
 }
