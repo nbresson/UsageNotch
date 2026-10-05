@@ -44,16 +44,31 @@ public static class AppHost
         s.AddSingleton(sp => new UsageStore(paths.UsageFile, sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<UsageStore>>()));
         s.AddSingleton(sp => new ClaudeCredentialReader(ClaudeCredentialReader.DefaultDirectory, sp.GetRequiredService<TimeProvider>()));
         s.AddSingleton(_ => new HttpClient { Timeout = ClaudeUsageProvider.Timeout });
+        s.AddSingleton<AntigravityProcessDiscovery>();
+        s.AddSingleton<ClaudeUsageProvider>();
+        s.AddSingleton<AntigravityUsageProvider>();
         if (args.Demo)
         {
             s.AddSingleton<IUsageProvider, DemoUsageProvider>();
         }
         else
         {
-            s.AddSingleton<IUsageProvider, ClaudeUsageProvider>();
+            s.AddSingleton<IUsageProvider>(sp => new RoutingUsageProvider(
+                sp.GetRequiredService<SettingsStore>(),
+                id => id switch
+                {
+                    "antigravity" => sp.GetRequiredService<AntigravityUsageProvider>(),
+                    _ => sp.GetRequiredService<ClaudeUsageProvider>(),
+                }));
         }
 
-        s.AddSingleton<UsagePoller>();
+        s.AddSingleton(sp => new UsagePoller(
+            sp.GetRequiredService<IUsageProvider>(),
+            sp.GetRequiredService<UsageStore>(),
+            sp.GetRequiredService<ISessionActivity>(),
+            sp.GetRequiredService<TimeProvider>(),
+            sp.GetRequiredService<ILogger<UsagePoller>>(),
+            sp.GetRequiredService<SettingsStore>()));
         s.AddHostedService(sp => sp.GetRequiredService<UsagePoller>());
         s.AddHostedService<SessionSweeper>();
         s.AddSingleton(sp => new HookListener(settings.Current.Port, sp.GetRequiredService<SessionStore>(), sp.GetRequiredService<ILogger<HookListener>>()));
