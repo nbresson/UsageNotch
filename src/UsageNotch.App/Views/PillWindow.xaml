@@ -24,6 +24,12 @@
     <Storyboard x:Key="Pulse2" RepeatBehavior="Forever" AutoReverse="True" Timeline.DesiredFrameRate="20">
       <DoubleAnimation Storyboard.TargetName="LogoTint2" Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:1" />
     </Storyboard>
+    <Storyboard x:Key="Spin3" RepeatBehavior="Forever" Timeline.DesiredFrameRate="30">
+      <DoubleAnimation Storyboard.TargetName="SpinRotate3" Storyboard.TargetProperty="Angle" From="0" To="360" Duration="0:0:1.2" />
+    </Storyboard>
+    <Storyboard x:Key="Pulse3" RepeatBehavior="Forever" AutoReverse="True" Timeline.DesiredFrameRate="20">
+      <DoubleAnimation Storyboard.TargetName="LogoTint3" Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:1" />
+    </Storyboard>
     <Storyboard x:Key="BandPulse" RepeatBehavior="Forever" AutoReverse="True" Timeline.DesiredFrameRate="20">
       <DoubleAnimation Storyboard.TargetName="BandPath" Storyboard.TargetProperty="Opacity" From="0.4" To="1" Duration="0:0:1" />
     </Storyboard>
@@ -123,6 +129,43 @@
             </Grid>
 
             <TextBlock x:Name="PercentText2" FontFamily="Segoe UI" FontSize="14" FontWeight="SemiBold"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Text="{Binding PercentText}"
+                       Foreground="{Binding TextColor, Converter={StaticResource Hex}}"
+                       Visibility="{Binding ShowPercent, Converter={StaticResource BoolVis}}" />
+          </StackPanel>
+
+          <!-- Séparateur entre cellules 2 et 3 (visible uniquement en mode triple) -->
+          <Rectangle x:Name="CellDivider2" Visibility="Collapsed"
+                     Fill="{Binding Theme.RingTrack, Converter={StaticResource Hex}}" />
+
+          <!-- Cellule 3 (OpenAI en mode triple) -->
+          <StackPanel x:Name="Cell3Stack" DataContext="{Binding Pill.Cell3}" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Grid x:Name="RingHost3" Width="56" Height="56" Margin="0,0,0,4">
+              <controls:ProgressRing Width="56" Height="56" RingThickness="4"
+                                     TargetFraction="{Binding Rings[0].Fraction}"
+                                     RingBrush="{Binding Rings[0].Color, Converter={StaticResource Hex}}"
+                                     TrackBrush="{Binding Rings[0].TrackColor, Converter={StaticResource Hex}}" />
+              <controls:ProgressRing Width="44" Height="44" RingThickness="4"
+                                     TargetFraction="{Binding Rings[1].Fraction}"
+                                     RingBrush="{Binding Rings[1].Color, Converter={StaticResource Hex}}"
+                                     TrackBrush="{Binding Rings[1].TrackColor, Converter={StaticResource Hex}}" />
+              <controls:ProgressRing Width="32" Height="32" RingThickness="4"
+                                     TargetFraction="{Binding Rings[2].Fraction}"
+                                     RingBrush="{Binding Rings[2].Color, Converter={StaticResource Hex}}"
+                                     TrackBrush="{Binding Rings[2].TrackColor, Converter={StaticResource Hex}}" />
+              <Grid x:Name="LogoHost3" Width="20" Height="20" RenderTransformOrigin="0.5,0.5">
+                <Grid.RenderTransform>
+                  <RotateTransform x:Name="SpinRotate3" />
+                </Grid.RenderTransform>
+                <Path x:Name="LogoMuted3" Stretch="Uniform"
+                      Fill="{Binding ActivityMutedColor, Converter={StaticResource Hex}}" />
+                <Path x:Name="LogoTint3" Stretch="Uniform"
+                      Fill="{Binding ActivityColor, Converter={StaticResource Hex}}" />
+              </Grid>
+            </Grid>
+
+            <TextBlock x:Name="PercentText3" FontFamily="Segoe UI" FontSize="14" FontWeight="SemiBold"
                        HorizontalAlignment="Center" VerticalAlignment="Center"
                        Text="{Binding PercentText}"
                        Foreground="{Binding TextColor, Converter={StaticResource Hex}}"
