@@ -11,14 +11,14 @@ public class UsagePollerTests
     private static readonly DateTimeOffset Now = new(2026, 9, 14, 12, 0, 0, TimeSpan.Zero);
     private static readonly LimitWindow Session = new("session", "Session en cours", 0.5, Now.AddHours(1));
 
-    private sealed class FakeProvider : IUsageProvider
+    private sealed class FakeProvider(string id = "claude", string displayName = "Claude") : IUsageProvider
     {
         public Queue<FetchResult> Results { get; } = new();
         public int Calls { get; private set; }
         public bool ThrowOnFirstCall { get; set; }
-        public string Id => "claude";
-        public string DisplayName => "Claude";
-        public IReadOnlyList<IReadOnlyList<string>> RingWindowIds => RingWindows.Claude;
+        public string Id => id;
+        public string DisplayName => displayName;
+        public IReadOnlyList<IReadOnlyList<string>> RingWindowIds => id == "antigravity" ? RingWindows.Antigravity : RingWindows.Claude;
         public Task<FetchResult> FetchAsync(CancellationToken ct)
         {
             Calls++;
@@ -203,6 +203,82 @@ public class UsagePollerTests
         {
             await poller.StopAsync(CancellationToken.None);
         }
+    }
+
+    [Fact]
+    public async Task Both_mode_polls_both_providers()
+    {
+        using var dir = new TempDir();
+        var time = new FakeTimeProvider(Now);
+        var claude = new FakeProvider("claude", "Claude");
+        var antigravity = new FakeProvider("antigravity", "Google Antigravity");
+        var store = new UsageStore(dir.File("usage.json"), time, NullLogger<UsageStore>.Instance);
+        var activity = new FakeActivity();
+        var settingsStore = new SettingsStore(dir.File("settings.json"), NullLogger<SettingsStore>.Instance);
+        settingsStore.Load();
+        settingsStore.Save(settingsStore.Current with { Provider = "both" });
+
+        var poller = new UsagePoller([claude, antigravity], store, activity, time, NullLogger<UsagePoller>.Instance, settingsStore);
+
+        await poller.TickAsync(CancellationToken.None);
+
+        claude.Calls.Should().Be(1);
+        antigravity.Calls.Should().Be(1);
+        store.SnapshotFor("claude").Status.Should().Be(SnapshotStatus.Ok);
+        store.SnapshotFor("antigravity").Status.Should().Be(SnapshotStatus.Ok);
+    }
+
+    [Fact]
+    public async Task Claude_only_mode_polls_only_claude()
+    {
+        using var dir = new TempDir();
+        var time = new FakeTimeProvider(Now);
+        var claude = new FakeProvider("claude", "Claude");
+        var antigravity = new FakeProvider("antigravity", "Google Antigravity");
+        var store = new UsageStore(dir.File("usage.json"), time, NullLogger<UsageStore>.Instance);
+        var activity = new FakeActivity();
+        var settingsStore = new SettingsStore(dir.File("settings.json"), NullLogger<SettingsStore>.Instance);
+        settingsStore.Load();
+        settingsStore.Save(settingsStore.Current with { Provider = "claude" });
+
+        var poller = new UsagePoller([claude, antigravity], store, activity, time, NullLogger<UsagePoller>.Instance, settingsStore);
+
+        await poller.TickAsync(CancellationToken.None);
+
+        claude.Calls.Should().Be(1);
+        antigravity.Calls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Backoff_is_isolated_between_providers()
+    {
+        using var dir = new TempDir();
+        var time = new FakeTimeProvider(Now);
+        var claude = new FakeProvider("claude", "Claude");
+        var antigravity = new FakeProvider("antigravity", "Google Antigravity");
+        var store = new UsageStore(dir.File("usage.json"), time, NullLogger<UsageStore>.Instance);
+        var activity = new FakeActivity();
+        var settingsStore = new SettingsStore(dir.File("settings.json"), NullLogger<SettingsStore>.Instance);
+        settingsStore.Load();
+        settingsStore.Save(settingsStore.Current with { Provider = "both" });
+
+        // Claude returns RateLimited; Antigravity succeeds
+        claude.Results.Enqueue(new FetchResult.RateLimited(TimeSpan.Zero));
+        var poller = new UsagePoller([claude, antigravity], store, activity, time, NullLogger<UsagePoller>.Instance, settingsStore);
+
+        await poller.TickAsync(CancellationToken.None);
+
+        claude.Calls.Should().Be(1);
+        antigravity.Calls.Should().Be(1);
+        store.IsInBackoffFor("claude").Should().BeTrue();
+        store.IsInBackoffFor("antigravity").Should().BeFalse();
+
+        // Advance 30s: Claude is still in backoff, Antigravity should still be polled
+        time.Advance(TimeSpan.FromSeconds(30));
+        await poller.TickAsync(CancellationToken.None);
+
+        claude.Calls.Should().Be(1, "Claude est toujours en backoff");
+        antigravity.Calls.Should().Be(2, "Antigravity n'est pas bloqué par le backoff de Claude");
     }
 
     private static Task WaitUntil(Func<bool> condition) => WaitUntil(condition, static () => { });
