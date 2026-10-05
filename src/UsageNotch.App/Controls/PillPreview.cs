@@ -179,7 +179,7 @@ public sealed class PillPreview : ContentControl
             Width = PillMetrics.LogoSize,
             Height = PillMetrics.LogoSize,
             Stretch = Stretch.Uniform,
-            Data = BrandGeometry.Mark,
+            Data = BrandGeometry.ForProvider(cell.ProviderId),
             Fill = HexBrushConverter.ToBrush(cell.ActivityColor),
         });
 

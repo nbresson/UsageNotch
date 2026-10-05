@@ -21,6 +21,12 @@
               SelectedValue="{Binding Preset}" />
     <TextBlock Text="{x:Static pref:AppearancePageViewModel.CustomHint}" Style="{StaticResource NoteText}" />
 
+    <TextBlock Text="Fournisseur d'usage" Style="{StaticResource SectionTitle}" />
+    <ComboBox AutomationProperties.AutomationId="Provider" AutomationProperties.Name="Fournisseur d'usage"
+              ItemsSource="{Binding Providers}" DisplayMemberPath="Label" SelectedValuePath="Value"
+              SelectedValue="{Binding Provider}" />
+    <TextBlock Text="Sélectionne le service dont l'usage et les quotas sont affichés sur la pilule et la carte." Style="{StaticResource NoteText}" />
+
     <TextBlock Text="Couleurs" Style="{StaticResource SectionTitle}" />
     <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
       <TextBlock Text="Coloration des anneaux" Width="180" Style="{StaticResource FieldLabel}" />

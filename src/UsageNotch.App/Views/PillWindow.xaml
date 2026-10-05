@@ -70,7 +70,7 @@
               <Grid.RenderTransform>
                 <RotateTransform x:Name="SpinRotate" />
               </Grid.RenderTransform>
-              <Path Data="{x:Static controls:BrandGeometry.Mark}" Stretch="Uniform"
+              <Path x:Name="LogoMuted" Data="{x:Static controls:BrandGeometry.Mark}" Stretch="Uniform"
                     Fill="{Binding Cell.ActivityMutedColor, Converter={StaticResource Hex}}" />
               <Path x:Name="LogoTint" Data="{x:Static controls:BrandGeometry.Mark}" Stretch="Uniform"
                     Fill="{Binding Cell.ActivityColor, Converter={StaticResource Hex}}" />
