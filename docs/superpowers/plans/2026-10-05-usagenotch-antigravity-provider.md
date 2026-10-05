@@ -1,6 +1,6 @@
 # Suivi de l'usage Google Antigravity — Plan d'implémentation
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal :** ajouter à UsageNotch la surveillance des quotas de **Google Antigravity** aux côtés de Claude, avec détection locale automatique du hub `agy.exe`, mapping sur les trois anneaux, choix du fournisseur dans les réglages et logo Gemini dynamique au centre de la pilule.
 
@@ -79,13 +79,13 @@ Référence de départ : **538 tests verts** (255 Core, 283 Presentation), zéro
 
 ## Task 0 : Branche et référence
 
-- [ ] **Step 1 : Créer la branche de travail**
+- [x] **Step 1 : Créer la branche de travail**
 
 ```powershell
 git switch -c feat/antigravity-provider
 ```
 
-- [ ] **Step 2 : Vérifier la référence de départ**
+- [x] **Step 2 : Vérifier la référence de départ**
 
 Exécuter :
 ```powershell
@@ -108,7 +108,7 @@ Attendu : 0 avertissement, **538 tests verts** (255 Core, 283 Presentation).
 - Formule d'usage : `usedPercent = Math.Clamp((1.0 - remainingFraction) * 100.0, 0.0, 100.0)`.
 - Horodatages : `resetTime` converti en `DateTimeOffset`.
 
-- [ ] **Step 1 : Écrire les tests unitaires du parser**
+- [x] **Step 1 : Écrire les tests unitaires du parser**
 
 Créer `tests/UsageNotch.Core.Tests/Usage/AntigravityUsageParserTests.cs` testant :
 1. Décodage d'un payload complet avec les groupes `"Gemini Models"` et `"Claude and GPT models"`.
@@ -117,15 +117,15 @@ Créer `tests/UsageNotch.Core.Tests/Usage/AntigravityUsageParserTests.cs` testan
 4. Gestion d'un payload vide ou mal formé (renvoie liste vide sans lever d'exception non gérée).
 5. Gestion d'un bucket avec `remainingFraction` manquant ou hors bornes (clamp 0..100).
 
-- [ ] **Step 2 : Implémenter `AntigravityUsageParser`**
+- [x] **Step 2 : Implémenter `AntigravityUsageParser`**
 
 Créer `src/UsageNotch.Core/Usage/AntigravityUsageParser.cs` avec `System.Text.Json` haute performance.
 
-- [ ] **Step 3 : Valider les tests**
+- [x] **Step 3 : Valider les tests**
 
 Exécuter `dotnet test --filter "AntigravityUsageParserTests"`.
 
-- [ ] **Step 4 : Commit**
+- [x] **Step 4 : Commit**
 
 ```powershell
 git add src/UsageNotch.Core/Usage/AntigravityUsageParser.cs tests/UsageNotch.Core.Tests/Usage/AntigravityUsageParserTests.cs
@@ -147,7 +147,7 @@ git commit -m "feat(core): parse Antigravity RetrieveUserQuotaSummary response"
 - Fournit une méthode `InvalidateCache()` pour forcer la ré-inspection en cas de 401 ou d'erreur réseau.
 - Interface abstraite pour l'obtention des lignes de commande afin de permettre le test unitaire sans processus réel.
 
-- [ ] **Step 1 : Écrire les tests unitaires de découverte**
+- [x] **Step 1 : Écrire les tests unitaires de découverte**
 
 Créer `tests/UsageNotch.Core.Tests/Usage/AntigravityProcessDiscoveryTests.cs` :
 1. Extraction correcte depuis une ligne de commande standard `"C:\...\agy.exe" --app_data_dir=antigravity --hub --hub-port=37588 --csrf_token=c47a09fb50f044359d9b8c7ba430adcd`.
@@ -155,15 +155,15 @@ Créer `tests/UsageNotch.Core.Tests/Usage/AntigravityProcessDiscoveryTests.cs` :
 3. Ligne de commande sans token ou sans port (renvoie `null`).
 4. Utilisation du cache au second appel, et réévaluation après `InvalidateCache()`.
 
-- [ ] **Step 2 : Implémenter `AntigravityProcessDiscovery`**
+- [x] **Step 2 : Implémenter `AntigravityProcessDiscovery`**
 
 Implémenter l'extracteur et le résolveur de ligne de commande dans `src/UsageNotch.Core/Usage/AntigravityProcessDiscovery.cs`.
 
-- [ ] **Step 3 : Valider les tests**
+- [x] **Step 3 : Valider les tests**
 
 Exécuter `dotnet test --filter "AntigravityProcessDiscoveryTests"`.
 
-- [ ] **Step 4 : Commit**
+- [x] **Step 4 : Commit**
 
 ```powershell
 git add src/UsageNotch.Core/Usage/AntigravityProcessDiscovery.cs tests/UsageNotch.Core.Tests/Usage/AntigravityProcessDiscoveryTests.cs
@@ -194,7 +194,7 @@ git commit -m "feat(core): discover Antigravity hub port and csrf token from pro
     - Si HTTP 401 => invalide le cache et renvoie `FetchResult.Failed("Session Antigravity expirée")`
     - Si connexion refusée => invalide le cache et renvoie `FetchResult.Failed("Connexion impossible au hub Antigravity")`
 
-- [ ] **Step 1 : Écrire les tests unitaires du fournisseur**
+- [x] **Step 1 : Écrire les tests unitaires du fournisseur**
 
 Créer `tests/UsageNotch.Core.Tests/Usage/AntigravityUsageProviderTests.cs` avec un `HttpMessageHandler` mocké :
 1. Réponse 200 valide => `FetchResult.Success` avec les 3 fenêtres.
@@ -202,15 +202,15 @@ Créer `tests/UsageNotch.Core.Tests/Usage/AntigravityUsageProviderTests.cs` avec
 3. Réponse 401 => `FetchResult.Failed` et invalidation du cache.
 4. `HttpRequestException` => invalidation du cache.
 
-- [ ] **Step 2 : Implémenter `RingWindows.Antigravity` et `AntigravityUsageProvider`**
+- [x] **Step 2 : Implémenter `RingWindows.Antigravity` et `AntigravityUsageProvider`**
 
 Ajouter `Antigravity` dans `RingWindows.cs` et créer `AntigravityUsageProvider.cs`.
 
-- [ ] **Step 3 : Valider les tests**
+- [x] **Step 3 : Valider les tests**
 
 Exécuter `dotnet test --filter "AntigravityUsageProviderTests"`.
 
-- [ ] **Step 4 : Commit**
+- [x] **Step 4 : Commit**
 
 ```powershell
 git add src/UsageNotch.Core/Usage/RingWindows.cs src/UsageNotch.Core/Usage/AntigravityUsageProvider.cs tests/UsageNotch.Core.Tests/Usage/AntigravityUsageProviderTests.cs
@@ -231,22 +231,22 @@ git commit -m "feat(core): implement AntigravityUsageProvider and ring window de
 - `Settings.Clamp()` valide que `Provider` est `"claude"` ou `"antigravity"`, sinon repli sur `"claude"`.
 - Rétro-compatibilité : un fichier sans clé `provider` donne `"claude"`.
 
-- [ ] **Step 1 : Écrire les tests unitaires de `Settings`**
+- [x] **Step 1 : Écrire les tests unitaires de `Settings`**
 
 Ajouter dans `tests/UsageNotch.Core.Tests/Settings/SettingsTests.cs` :
 1. Valeur par défaut `"claude"`.
 2. Sérialisation et désérialisation de `"antigravity"`.
 3. Valeur inconnue `"unknown"` remappée vers `"claude"` par `Clamp()`.
 
-- [ ] **Step 2 : Implémenter dans `Settings.cs`**
+- [x] **Step 2 : Implémenter dans `Settings.cs`**
 
 Ajouter la propriété et mettre à jour `Clamp()`.
 
-- [ ] **Step 3 : Valider les tests**
+- [x] **Step 3 : Valider les tests**
 
 Exécuter `dotnet test --filter "SettingsTests"`.
 
-- [ ] **Step 4 : Commit**
+- [x] **Step 4 : Commit**
 
 ```powershell
 git add src/UsageNotch.Core/Settings/Settings.cs tests/UsageNotch.Core.Tests/Settings/SettingsTests.cs
@@ -273,21 +273,21 @@ git commit -m "feat(core): add provider selection to settings with claude defaul
 - `PillPresenter.ActivityColor` : pour `ActivityKind.Done`, renvoie la couleur de marque correspondant au provider (`#D97757` pour Claude, `#1A73E8` pour Antigravity).
 - `CardPresenter.Build` affiche le nom du fournisseur courant dans l'en-tête de la carte.
 
-- [ ] **Step 1 : Écrire les tests Presentation**
+- [x] **Step 1 : Écrire les tests Presentation**
 
 1. `AppearancePageViewModelTests` : modifier `Provider` met à jour le brouillon et notifie.
 2. `PillPresenterTests` : `CellModel.ProviderId` reflète le provider passé ; `ActivityColor(Done)` respecte le provider.
 3. `CardPresenterTests` : en-tête et libellés adaptés au fournisseur passé.
 
-- [ ] **Step 2 : Implémenter les modifications Presentation**
+- [x] **Step 2 : Implémenter les modifications Presentation**
 
 Mettre à jour `Choices`, `AppearancePageViewModel`, `CellModel`, `PillPresenter` et `CardPresenter`.
 
-- [ ] **Step 3 : Valider les tests**
+- [x] **Step 3 : Valider les tests**
 
 Exécuter `dotnet test tests/UsageNotch.Presentation.Tests`.
 
-- [ ] **Step 4 : Commit**
+- [x] **Step 4 : Commit**
 
 ```powershell
 git add src/UsageNotch.Presentation/ tests/UsageNotch.Presentation.Tests/
@@ -311,26 +311,26 @@ git commit -m "feat(presentation): support provider selection and Antigravity ca
 - `PillWindow` et `PillPreview` mettent à jour la géométrie du `Path` central en fonction du fournisseur actif.
 - `AppearancePage.xaml` intègre la `ComboBox` « Fournisseur d'usage ».
 
-- [ ] **Step 1 : Créer `Assets/gemini.svg` et enrichir `BrandGeometry`**
+- [x] **Step 1 : Créer `Assets/gemini.svg` et enrichir `BrandGeometry`**
 
 Transcrire le path Gemini en `Geometry` statique gelée dans `BrandGeometry.cs`.
 
-- [ ] **Step 2 : Mettre à jour `PillWindow` et `PillPreview`**
+- [x] **Step 2 : Mettre à jour `PillWindow` et `PillPreview`**
 
 Lier la géométrie affichée au `ProviderId` de la cellule.
 
-- [ ] **Step 3 : Ajouter le sélecteur dans `AppearancePage.xaml`**
+- [x] **Step 3 : Ajouter le sélecteur dans `AppearancePage.xaml`**
 
 Ajouter le bloc de réglage « Fournisseur d'usage » sous la section Thème/Général.
 
-- [ ] **Step 4 : Vérifier la compilation**
+- [x] **Step 4 : Vérifier la compilation**
 
 ```powershell
 dotnet build UsageNotch.sln
 dotnet test
 ```
 
-- [ ] **Step 5 : Commit**
+- [x] **Step 5 : Commit**
 
 ```powershell
 git add src/UsageNotch.App/
@@ -351,22 +351,22 @@ git commit -m "feat(app): add Gemini mark geometry and provider selector in sett
 - Au changement de `Settings.Provider`, le `UsagePoller` bascule vers le nouveau provider et déclenche un rafraîchissement immédiat.
 - En mode `--demo`, simulation de données réalistes pour Antigravity (5h à 65 %, Weekly à 29 %, 3P à 0 %).
 
-- [ ] **Step 1 : Implémenter la sélection et la bascule dans `AppHost` / `UsagePoller`**
+- [x] **Step 1 : Implémenter la sélection et la bascule dans `AppHost` / `UsagePoller`**
 
 Permettre au poller d'interroger le fournisseur actif désigné par `Settings.Provider`.
 
-- [ ] **Step 2 : Mettre à jour `DemoMode.cs`**
+- [x] **Step 2 : Mettre à jour `DemoMode.cs`**
 
 Fournir les snapshots de démo adaptés selon le fournisseur actif.
 
-- [ ] **Step 3 : Vérifier la compilation et les tests**
+- [x] **Step 3 : Vérifier la compilation et les tests**
 
 ```powershell
 dotnet build UsageNotch.sln
 dotnet test
 ```
 
-- [ ] **Step 4 : Commit**
+- [x] **Step 4 : Commit**
 
 ```powershell
 git add src/UsageNotch.App/Hosting/ src/UsageNotch.Core/Usage/
@@ -377,7 +377,7 @@ git commit -m "feat(app): wire active provider switching and demo mode support"
 
 ## Task 8 : Vérification à l'exécution et documentation
 
-- [ ] **Step 1 : Exécuter l'application en mode démo**
+- [x] **Step 1 : Exécuter l'application en mode démo**
 
 ```powershell
 src\UsageNotch.App\bin\Debug\net10.0-windows\UsageNotch.App.exe --demo
@@ -390,16 +390,16 @@ Vérifier :
   - La couleur de marque passe au bleu Gemini.
   - La carte affiche « Usage Google Antigravity » avec les libellés de fenêtres 5h et Weekly.
 
-- [ ] **Step 2 : Exécuter l'application en conditions réelles**
+- [x] **Step 2 : Exécuter l'application en conditions réelles**
 
 Lancer l'application avec Antigravity ouvert sur la machine et vérifier que les quotas réels sont lus sans erreur depuis le hub local `agy.exe`.
 
-- [ ] **Step 3 : Mettre à jour la documentation et le journal de bord**
+- [x] **Step 3 : Mettre à jour la documentation et le journal de bord**
 
 - Documenter l'exécution dans `docs/superpowers/plans/2026-09-14-usagenotch-core-and-hook-notes.md`.
 - Mettre à jour `docs/REPRISE.md` (passer la spec et le plan en « réalisés », mettre à jour le nombre de tests).
 
-- [ ] **Step 4 : Commit de clôture et fusion**
+- [x] **Step 4 : Commit de clôture et fusion**
 
 ```powershell
 git add docs/
