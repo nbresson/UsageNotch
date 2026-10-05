@@ -4,20 +4,36 @@ using UsageNotch.Core.Usage;
 
 namespace UsageNotch.App.Hosting;
 
-/// <summary>Fournisseur de démo simulant les quotas de Claude ou d'Antigravity selon les réglages.</summary>
-public sealed class DemoUsageProvider(SettingsStore settings, TimeProvider time) : IUsageProvider
+/// <summary>Fournisseur de démo simulant les quotas de Claude ou d'Antigravity selon son identifiant.</summary>
+public sealed class DemoUsageProvider : IUsageProvider
 {
-    public string Id => settings.Current.Provider;
+    private readonly string? _fixedId;
+    private readonly SettingsStore? _settings;
+    private readonly TimeProvider _time;
 
-    public string DisplayName => settings.Current.Provider == "antigravity" ? "Google Antigravity" : "Claude";
+    public DemoUsageProvider(string providerId, TimeProvider time)
+    {
+        _fixedId = providerId;
+        _time = time;
+    }
+
+    public DemoUsageProvider(SettingsStore settings, TimeProvider time)
+    {
+        _settings = settings;
+        _time = time;
+    }
+
+    public string Id => _fixedId ?? (_settings?.Current.Provider == "antigravity" ? "antigravity" : "claude");
+
+    public string DisplayName => Id == "antigravity" ? "Google Antigravity" : "Claude";
 
     public IReadOnlyList<IReadOnlyList<string>> RingWindowIds =>
-        settings.Current.Provider == "antigravity" ? RingWindows.Antigravity : RingWindows.Claude;
+        Id == "antigravity" ? RingWindows.Antigravity : RingWindows.Claude;
 
     public Task<FetchResult> FetchAsync(CancellationToken ct)
     {
-        var now = time.GetUtcNow();
-        IReadOnlyList<LimitWindow> windows = settings.Current.Provider == "antigravity"
+        var now = _time.GetUtcNow();
+        IReadOnlyList<LimitWindow> windows = Id == "antigravity"
             ?
             [
                 new("gemini-5h", "Modèles Gemini (5 h)", 0.65, now.AddHours(3).AddMinutes(12)),

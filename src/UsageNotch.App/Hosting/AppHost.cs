@@ -49,10 +49,32 @@ public static class AppHost
         s.AddSingleton<AntigravityUsageProvider>();
         if (args.Demo)
         {
-            s.AddSingleton<IUsageProvider, DemoUsageProvider>();
+            s.AddSingleton<IReadOnlyList<IUsageProvider>>(sp =>
+            {
+                var time = sp.GetRequiredService<TimeProvider>();
+                return
+                [
+                    new DemoUsageProvider("claude", time),
+                    new DemoUsageProvider("antigravity", time),
+                ];
+            });
+            s.AddSingleton<IUsageProvider>(sp =>
+            {
+                var providers = sp.GetRequiredService<IReadOnlyList<IUsageProvider>>();
+                var claudeDemo = providers[0];
+                var agyDemo = providers[1];
+                return new RoutingUsageProvider(
+                    sp.GetRequiredService<SettingsStore>(),
+                    id => id == "antigravity" ? agyDemo : claudeDemo);
+            });
         }
         else
         {
+            s.AddSingleton<IReadOnlyList<IUsageProvider>>(sp =>
+            [
+                sp.GetRequiredService<ClaudeUsageProvider>(),
+                sp.GetRequiredService<AntigravityUsageProvider>(),
+            ]);
             s.AddSingleton<IUsageProvider>(sp => new RoutingUsageProvider(
                 sp.GetRequiredService<SettingsStore>(),
                 id => id switch
@@ -63,7 +85,7 @@ public static class AppHost
         }
 
         s.AddSingleton(sp => new UsagePoller(
-            sp.GetRequiredService<IUsageProvider>(),
+            sp.GetRequiredService<IReadOnlyList<IUsageProvider>>(),
             sp.GetRequiredService<UsageStore>(),
             sp.GetRequiredService<ISessionActivity>(),
             sp.GetRequiredService<TimeProvider>(),
