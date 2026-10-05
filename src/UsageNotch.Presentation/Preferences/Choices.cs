@@ -60,8 +60,9 @@ public static class Choices
 
     public static IReadOnlyList<Choice<string>> Providers { get; } =
     [
-        new("claude", "Claude (Anthropic)"),
-        new("antigravity", "Google Antigravity"),
+        new("both", "Les deux (capsule double)"),
+        new("claude", "Claude uniquement"),
+        new("antigravity", "Google Antigravity uniquement"),
     ];
 
     public static string ProviderLabel(string name) => Providers.FirstOrDefault(p => p.Value == name)?.Label ?? name;

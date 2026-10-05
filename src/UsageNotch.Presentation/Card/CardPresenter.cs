@@ -10,14 +10,14 @@ public static class CardPresenter
 {
     public const int MaxSessions = 5;
 
-    /// <summary>Les sessions arrivent déjà triées par SessionStore.Snapshot() (état puis début décroissant).</summary>
-    public static CardModel Build(
+    /// <summary>Construit une section de carte pour un fournisseur donné.</summary>
+    public static CardSection Section(
         UsageSnapshot snapshot,
         string displayName,
-        IReadOnlyList<Session> sessions,
         Theme theme,
         DateTimeOffset now,
-        TimeZoneInfo zone)
+        TimeZoneInfo zone,
+        string providerId = "claude")
     {
         var waiting = PillPresenter.IsWaitingForFirstReading(snapshot);
 
@@ -33,13 +33,38 @@ public static class CardPresenter
             ? snapshot.Note
             : waiting ? "En attente de la première lecture…" : null;
 
+        return new CardSection(providerId, displayName, subtitle, windows, note);
+    }
+
+    /// <summary>Construit le modèle de carte complet à partir d'une liste de sections et des sessions actives.</summary>
+    public static CardModel Build(
+        IReadOnlyList<CardSection> sections,
+        IReadOnlyList<Session> sessions,
+        Theme theme,
+        bool isDual = false)
+    {
         var rows = sessions
             .Where(s => s.State != SessionState.Idle)
             .Take(MaxSessions)
             .Select(s => SessionRowOf(s, theme))
             .ToList();
 
-        return new CardModel(displayName, subtitle, windows, note, rows);
+        var header = isDual ? "Usage & Quotas" : null;
+        return new CardModel(sections, rows, header);
+    }
+
+    /// <summary>Surcharge pour un fournisseur unique (rétro-compatibilité).</summary>
+    public static CardModel Build(
+        UsageSnapshot snapshot,
+        string displayName,
+        IReadOnlyList<Session> sessions,
+        Theme theme,
+        DateTimeOffset now,
+        TimeZoneInfo zone,
+        string providerId = "claude")
+    {
+        var section = Section(snapshot, displayName, theme, now, zone, providerId);
+        return Build([section], sessions, theme, isDual: false);
     }
 
     private static WindowRow Row(LimitWindow w, Theme theme, DateTimeOffset now, TimeZoneInfo zone)

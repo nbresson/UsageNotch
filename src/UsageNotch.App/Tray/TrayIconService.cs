@@ -38,7 +38,14 @@ public sealed class TrayIconService(
         };
         SetIcon(RenderIcon(vm.Cell));
         _icon.TrayLeftMouseUp += (_, _) => openSettings();
-        _icon.ForceCreate(enablesEfficiencyMode: false);
+        try
+        {
+            _icon.ForceCreate(enablesEfficiencyMode: false);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Impossible d'initialiser l'icône de la barre des tâches");
+        }
         ApplyVisibility();
         vm.PropertyChanged += OnViewModelChanged;
     }

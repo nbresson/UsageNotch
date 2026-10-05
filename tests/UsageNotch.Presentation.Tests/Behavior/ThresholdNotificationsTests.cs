@@ -114,4 +114,18 @@ public sealed class ThresholdNotificationsTests : IDisposable
 
         _notifier.Shown.Should().BeEmpty();
     }
+
+    [Fact]
+    public void Both_providers_trigger_notifications_in_dual_mode()
+    {
+        _settings.Save(_settings.Current with { Provider = "both" });
+        _notifications.Start();
+
+        _usage.Apply("claude", new FetchResult.Success([new LimitWindow("session", "Session Claude", 0.85, Now.AddHours(1))]));
+        _usage.Apply("antigravity", new FetchResult.Success([new LimitWindow("gemini-5h", "Modèles Gemini (5 h)", 0.90, Now.AddHours(2))]));
+
+        _notifier.Shown.Should().HaveCount(2);
+        _notifier.Shown[0].Title.Should().StartWith("Session Claude : 85");
+        _notifier.Shown[1].Title.Should().StartWith("Modèles Gemini (5 h) : 90");
+    }
 }

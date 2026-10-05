@@ -82,4 +82,23 @@ public static class PillPresenter
     /// <summary>Le snapshot vide du démarrage : aucune lecture, aucune note, jamais lu.</summary>
     public static bool IsWaitingForFirstReading(UsageSnapshot snapshot) =>
         snapshot.Windows.Count == 0 && snapshot.Note.Length == 0 && snapshot.FetchedAt == DateTimeOffset.MinValue;
+
+    /// <summary>Assemble les cellules en modèle composite de pilule et calcule les dimensions et la couleur de bande repliée.</summary>
+    public static PillModel Pill(
+        IReadOnlyList<CellModel> cells,
+        ScreenEdge edge,
+        CellContent content,
+        Theme theme,
+        string providerMode = "claude")
+    {
+        var bodyLength = PillMetrics.BodyLengthFor(providerMode, edge, content);
+        var windowLength = PillMetrics.WindowLengthFor(providerMode, edge, content);
+
+        var hasAttention = cells.Any(c => c.Activity == ActivityKind.Attention);
+        var bandColor = hasAttention
+            ? theme.Attention
+            : cells.Count > 0 ? cells[0].BandColor : theme.RingTrack;
+
+        return new PillModel(cells, bodyLength, windowLength, bandColor, edge);
+    }
 }

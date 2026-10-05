@@ -10,6 +10,7 @@
   <Window.Resources>
     <conv:HexBrushConverter x:Key="Hex" />
     <conv:NotNullVisibilityConverter x:Key="NotNull" />
+    <BooleanToVisibilityConverter x:Key="BoolVis" />
     <SolidColorBrush x:Key="Secondary" Color="#9A9A9A" />
     <Style x:Key="GhostButton" TargetType="Button">
       <Setter Property="Focusable" Value="False" />
@@ -47,78 +48,99 @@
             HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,-10,0"
             Fill="{Binding Theme.PillBackground, Converter={StaticResource Hex}}" />
 
-      <Border Width="300" CornerRadius="14" Padding="16" BorderThickness="1"
+      <Border Width="320" CornerRadius="14" Padding="16" BorderThickness="1"
               Background="{Binding Theme.PillBackground, Converter={StaticResource Hex}}"
               BorderBrush="{Binding Theme.PillBorder, Converter={StaticResource Hex}}">
         <StackPanel>
-          <TextBlock Text="{Binding Card.Title}" FontSize="15" FontWeight="SemiBold"
-                     Foreground="{Binding Theme.Text, Converter={StaticResource Hex}}" />
-          <TextBlock Text="{Binding Card.Subtitle}" FontSize="11" Margin="0,2,0,0"
-                     Foreground="{StaticResource Secondary}"
-                     Visibility="{Binding Card.Subtitle, Converter={StaticResource NotNull}}" />
+          <!-- En-tête global en mode double -->
+          <TextBlock Text="{Binding Card.HeaderTitle}" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,10"
+                     Foreground="{Binding Theme.Text, Converter={StaticResource Hex}}"
+                     Visibility="{Binding Card.HeaderTitle, Converter={StaticResource NotNull}}" />
 
-          <ItemsControl ItemsSource="{Binding Card.Windows}" Margin="0,12,0,0">
+          <!-- Sections des fournisseurs (1 en mode simple, 2 en mode double) -->
+          <ItemsControl ItemsSource="{Binding Card.Sections}">
             <ItemsControl.ItemTemplate>
               <DataTemplate>
-                <StackPanel Margin="0,0,0,12">
-                  <TextBlock Text="{Binding Label}" FontSize="12" TextTrimming="CharacterEllipsis"
-                             Foreground="{Binding DataContext.Theme.Text, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Hex}}" />
-                  <Grid Height="4" Margin="0,6,0,4">
-                    <Border CornerRadius="2"
-                            Background="{Binding DataContext.Theme.RingTrack, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Hex}}" />
-                    <Border CornerRadius="2" RenderTransformOrigin="0,0.5"
-                            Background="{Binding BarColor, Converter={StaticResource Hex}}">
-                      <Border.RenderTransform>
-                        <ScaleTransform ScaleX="{Binding Fraction}" ScaleY="1" />
-                      </Border.RenderTransform>
-                    </Border>
-                  </Grid>
-                  <DockPanel>
-                    <TextBlock DockPanel.Dock="Right" Text="{Binding ResetText}" FontSize="11"
-                               Foreground="{StaticResource Secondary}" />
-                    <TextBlock Text="{Binding UsedText}" FontSize="11" Foreground="{StaticResource Secondary}" />
+                <StackPanel Margin="0,0,0,8">
+                  <DockPanel LastChildFill="True">
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding Subtitle}" FontSize="11"
+                               Foreground="{StaticResource Secondary}"
+                               Visibility="{Binding Subtitle, Converter={StaticResource NotNull}}" />
+                    <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{Binding DataContext.Theme.Text, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Hex}}" />
                   </DockPanel>
+
+                  <ItemsControl ItemsSource="{Binding Windows}" Margin="0,8,0,0">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <StackPanel Margin="0,0,0,10">
+                          <TextBlock Text="{Binding Label}" FontSize="12" TextTrimming="CharacterEllipsis"
+                                     Foreground="{Binding DataContext.Theme.Text, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Hex}}" />
+                          <Grid Height="4" Margin="0,5,0,3">
+                            <Border CornerRadius="2"
+                                    Background="{Binding DataContext.Theme.RingTrack, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Hex}}" />
+                            <Border CornerRadius="2" RenderTransformOrigin="0,0.5"
+                                    Background="{Binding BarColor, Converter={StaticResource Hex}}">
+                              <Border.RenderTransform>
+                                <ScaleTransform ScaleX="{Binding Fraction}" ScaleY="1" />
+                              </Border.RenderTransform>
+                            </Border>
+                          </Grid>
+                          <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding ResetText}" FontSize="11"
+                                       Foreground="{StaticResource Secondary}" />
+                            <TextBlock Text="{Binding UsedText}" FontSize="11" Foreground="{StaticResource Secondary}" />
+                          </DockPanel>
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+
+                  <TextBlock Text="{Binding Note}" FontSize="11" TextWrapping="Wrap" Margin="0,2,0,4"
+                             Foreground="{StaticResource Secondary}"
+                             Visibility="{Binding Note, Converter={StaticResource NotNull}}" />
                 </StackPanel>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
 
-          <TextBlock Text="{Binding Card.Note}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8"
-                     Foreground="{StaticResource Secondary}"
-                     Visibility="{Binding Card.Note, Converter={StaticResource NotNull}}" />
-
-          <ItemsControl ItemsSource="{Binding Card.Sessions}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate>
-                <Border x:Name="Row" Background="Transparent" CornerRadius="8" Padding="6,4" Cursor="Hand">
-                  <Border.InputBindings>
-                    <MouseBinding Gesture="LeftClick"
-                                  Command="{Binding DataContext.FocusSessionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                  CommandParameter="{Binding SessionId}" />
-                  </Border.InputBindings>
-                  <DockPanel LastChildFill="True">
-                    <Button DockPanel.Dock="Right" Content="✕" ToolTip="Retirer cette session"
-                            Style="{StaticResource GhostButton}"
-                            Command="{Binding DataContext.DismissSessionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                            CommandParameter="{Binding SessionId}" />
-                    <Ellipse DockPanel.Dock="Left" Width="8" Height="8" Margin="0,0,8,0" VerticalAlignment="Center"
-                             Fill="{Binding DotColor, Converter={StaticResource Hex}}" />
-                    <StackPanel>
-                      <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
-                                 Foreground="{Binding DataContext.Theme.Text, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Hex}}" />
-                      <TextBlock Text="{Binding Detail}" FontSize="11" TextTrimming="CharacterEllipsis"
-                                 Foreground="{StaticResource Secondary}" />
-                    </StackPanel>
-                  </DockPanel>
-                </Border>
-                <DataTemplate.Triggers>
-                  <Trigger SourceName="Row" Property="IsMouseOver" Value="True">
-                    <Setter TargetName="Row" Property="Background" Value="#1FFFFFFF" />
-                  </Trigger>
-                </DataTemplate.Triggers>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
+          <!-- Sessions actives (si présentes) -->
+          <StackPanel Visibility="{Binding Card.HasSessions, Converter={StaticResource BoolVis}}">
+            <TextBlock Text="SESSIONS ACTIVES" FontSize="11" FontWeight="SemiBold" Margin="0,4,0,6"
+                       Foreground="{StaticResource Secondary}" />
+            <ItemsControl ItemsSource="{Binding Card.Sessions}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border x:Name="Row" Background="Transparent" CornerRadius="8" Padding="6,4" Cursor="Hand">
+                    <Border.InputBindings>
+                      <MouseBinding Gesture="LeftClick"
+                                    Command="{Binding DataContext.FocusSessionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    CommandParameter="{Binding SessionId}" />
+                    </Border.InputBindings>
+                    <DockPanel LastChildFill="True">
+                      <Button DockPanel.Dock="Right" Content="✕" ToolTip="Retirer cette session"
+                              Style="{StaticResource GhostButton}"
+                              Command="{Binding DataContext.DismissSessionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                              CommandParameter="{Binding SessionId}" />
+                      <Ellipse DockPanel.Dock="Left" Width="8" Height="8" Margin="0,0,8,0" VerticalAlignment="Center"
+                               Fill="{Binding DotColor, Converter={StaticResource Hex}}" />
+                      <StackPanel>
+                        <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                   Foreground="{Binding DataContext.Theme.Text, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource Hex}}" />
+                        <TextBlock Text="{Binding Detail}" FontSize="11" TextTrimming="CharacterEllipsis"
+                                   Foreground="{StaticResource Secondary}" />
+                      </StackPanel>
+                    </DockPanel>
+                  </Border>
+                  <DataTemplate.Triggers>
+                    <Trigger SourceName="Row" Property="IsMouseOver" Value="True">
+                      <Setter TargetName="Row" Property="Background" Value="#1FFFFFFF" />
+                    </Trigger>
+                  </DataTemplate.Triggers>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
         </StackPanel>
       </Border>
     </Grid>

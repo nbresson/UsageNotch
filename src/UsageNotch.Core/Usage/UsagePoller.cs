@@ -5,23 +5,50 @@ using CoreSettings = UsageNotch.Core.Settings.Settings;
 
 namespace UsageNotch.Core.Usage;
 
-/// <summary>Appelle le fournisseur toutes les 60 s pendant une session active, toutes les 5 min sinon ; jamais pendant un backoff sauf rafraîchissement forcé.</summary>
+/// <summary>Appelle les fournisseurs d'usage toutes les 60 s pendant une session active, toutes les 5 min sinon ; jamais pendant un backoff sauf rafraîchissement forcé.</summary>
 public sealed class UsagePoller : BackgroundService
 {
     public static readonly TimeSpan ActiveInterval = TimeSpan.FromSeconds(60);
     public static readonly TimeSpan IdleInterval = TimeSpan.FromMinutes(5);
 
-    private readonly IUsageProvider provider;
-    private readonly UsageStore store;
-    private readonly ISessionActivity activity;
-    private readonly TimeProvider time;
-    private readonly ILogger<UsagePoller> logger;
-    private readonly SettingsStore? settings;
-    private readonly BackoffPolicy _backoff = new();
+    private readonly IReadOnlyList<IUsageProvider> _providers;
+    private readonly UsageStore _store;
+    private readonly ISessionActivity _activity;
+    private readonly TimeProvider _time;
+    private readonly ILogger<UsagePoller> _logger;
+    private readonly SettingsStore? _settings;
+    private readonly Dictionary<string, BackoffPolicy> _backoffs = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _wakeGate = new();
     private volatile bool _forced;
     private CancellationTokenSource? _wake;
     private string _currentProvider;
+
+    public UsagePoller(
+        IReadOnlyList<IUsageProvider> providers,
+        UsageStore store,
+        ISessionActivity activity,
+        TimeProvider time,
+        ILogger<UsagePoller> logger,
+        SettingsStore? settings = null)
+    {
+        _providers = providers;
+        _store = store;
+        _activity = activity;
+        _time = time;
+        _logger = logger;
+        _settings = settings;
+        _currentProvider = settings?.Current.Provider ?? (providers.Count > 0 ? providers[0].Id : "claude");
+
+        foreach (var p in providers)
+        {
+            _backoffs[p.Id] = new BackoffPolicy();
+        }
+
+        if (settings is not null)
+        {
+            settings.Changed += OnSettingsChanged;
+        }
+    }
 
     public UsagePoller(
         IUsageProvider provider,
@@ -30,19 +57,8 @@ public sealed class UsagePoller : BackgroundService
         TimeProvider time,
         ILogger<UsagePoller> logger,
         SettingsStore? settings = null)
+        : this([provider], store, activity, time, logger, settings)
     {
-        this.provider = provider;
-        this.store = store;
-        this.activity = activity;
-        this.time = time;
-        this.logger = logger;
-        this.settings = settings;
-        _currentProvider = settings?.Current.Provider ?? provider.Id;
-
-        if (settings is not null)
-        {
-            settings.Changed += OnSettingsChanged;
-        }
     }
 
     private void OnSettingsChanged(CoreSettings s)
@@ -58,15 +74,15 @@ public sealed class UsagePoller : BackgroundService
     public void RequestRefresh()
     {
         _forced = true;
-        store.ClearBackoff();
+        _store.ClearBackoff();
         lock (_wakeGate) { _ = _wake?.CancelAsync(); }
     }
 
-    public TimeSpan NextInterval() => activity.HasActiveSession ? ActiveInterval : IdleInterval;
+    public TimeSpan NextInterval() => _activity.HasActiveSession ? ActiveInterval : IdleInterval;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        store.Load();
+        _store.Load();
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -79,7 +95,7 @@ public sealed class UsagePoller : BackgroundService
             }
             catch (Exception e)
             {
-                logger.LogError(e, "Échec du cycle d'usage, nouvel essai au prochain cycle");
+                _logger.LogError(e, "Échec du cycle d'usage, nouvel essai au prochain cycle");
             }
             await WaitAsync(NextInterval(), stoppingToken);
         }
@@ -87,33 +103,85 @@ public sealed class UsagePoller : BackgroundService
 
     internal async Task TickAsync(CancellationToken ct)
     {
-        if (store.IsInBackoff && !_forced) return;
+        var forced = _forced;
         _forced = false;
 
-        var result = await provider.FetchAsync(ct);
-        switch (result)
+        var active = GetActiveProviders();
+        foreach (var provider in active)
         {
-            case FetchResult.Success:
-                _backoff.Reset();
-                store.Apply(result);
-                break;
-            case FetchResult.RateLimited limited:
-                store.Apply(result, _backoff.Next(limited.RetryAfter));
-                break;
-            default:
-                store.Apply(result);
-                break;
+            if (_store.IsInBackoffFor(provider.Id) && !forced)
+            {
+                continue;
+            }
+
+            try
+            {
+                var result = await provider.FetchAsync(ct);
+                var backoff = GetBackoff(provider.Id);
+
+                switch (result)
+                {
+                    case FetchResult.Success:
+                        backoff.Reset();
+                        _store.Apply(provider.Id, result);
+                        break;
+                    case FetchResult.RateLimited limited:
+                        _store.Apply(provider.Id, result, backoff.Next(limited.RetryAfter));
+                        break;
+                    default:
+                        _store.Apply(provider.Id, result);
+                        break;
+                }
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erreur lors de la lecture du fournisseur {ProviderId}", provider.Id);
+                _store.Apply(provider.Id, new FetchResult.Failed("Erreur inattendue"));
+            }
         }
+    }
+
+    private IReadOnlyList<IUsageProvider> GetActiveProviders()
+    {
+        if (_settings is null || _providers.Count <= 1) return _providers;
+        var mode = _settings.Current.Provider;
+        if (mode == "both")
+        {
+            return _providers;
+        }
+
+        var filtered = _providers.Where(p => string.Equals(p.Id, mode, StringComparison.OrdinalIgnoreCase)).ToList();
+        return filtered.Count > 0 ? filtered : _providers;
+    }
+
+    private BackoffPolicy GetBackoff(string providerId)
+    {
+        if (!_backoffs.TryGetValue(providerId, out var policy))
+        {
+            policy = new BackoffPolicy();
+            _backoffs[providerId] = policy;
+        }
+        return policy;
     }
 
     private async Task WaitAsync(TimeSpan delay, CancellationToken ct)
     {
         if (_forced) return;
 
-        // Pendant un backoff, se réveiller dès son échéance plutôt qu'au prochain intervalle.
-        if (store.Current.BackoffUntil is { } until)
+        // Pendant un backoff, se réveiller dès son échéance la plus proche plutôt qu'au prochain intervalle.
+        var active = GetActiveProviders();
+        var earliestUntil = active
+            .Select(p => _store.SnapshotFor(p.Id).BackoffUntil)
+            .Where(until => until is not null)
+            .Min();
+
+        if (earliestUntil is { } until)
         {
-            var remaining = until - time.GetUtcNow() + TimeSpan.FromSeconds(1);
+            var remaining = until - _time.GetUtcNow() + TimeSpan.FromSeconds(1);
             if (remaining > TimeSpan.Zero && remaining < delay) delay = remaining;
         }
 
@@ -126,7 +194,7 @@ public sealed class UsagePoller : BackgroundService
         }
         try
         {
-            await Task.Delay(delay, time, linked.Token);
+            await Task.Delay(delay, _time, linked.Token);
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
@@ -140,9 +208,9 @@ public sealed class UsagePoller : BackgroundService
 
     public override void Dispose()
     {
-        if (settings is not null)
+        if (_settings is not null)
         {
-            settings.Changed -= OnSettingsChanged;
+            _settings.Changed -= OnSettingsChanged;
         }
         base.Dispose();
     }

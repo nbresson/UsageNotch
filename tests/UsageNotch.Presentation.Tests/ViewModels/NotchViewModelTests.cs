@@ -60,6 +60,7 @@ public sealed class NotchViewModelTests : IDisposable
         _sessions = new SessionStore(_time);
         _settings = new SettingsStore(_dir.File("settings.json"), NullLogger<SettingsStore>.Instance, _time);
         _settings.Load();
+        _settings.Save(_settings.Current with { Provider = "claude" });
         _hover = new HoverController(_time);
         _vm = new NotchViewModel(_usage, _sessions, _settings, new FakeProvider(), () => _refreshes++, _hover,
             new ImmediateDispatcher(), _focus, _sound, _accent, _time, TimeZoneInfo.Utc);
@@ -296,5 +297,27 @@ public sealed class NotchViewModelTests : IDisposable
         _vm.Dispose();
         _usage.Apply(new FetchResult.Success([Session(0.5, Start.AddHours(1))]));
         _vm.Cell.PercentText.Should().Be("…");
+    }
+
+    [Fact]
+    public void Both_provider_mode_creates_dual_pill_and_dual_card()
+    {
+        _settings.Save(_settings.Current with { Provider = "both" });
+
+        _usage.Apply("claude", new FetchResult.Success([Session(0.73, Start.AddMinutes(51))]));
+        _usage.Apply("antigravity", new FetchResult.Success([new LimitWindow("gemini-5h", "Modèles Gemini (5 h)", 0.65, Start.AddHours(3))]));
+
+        _vm.Pill.IsDual.Should().BeTrue();
+        _vm.Pill.CellClaude.Should().NotBeNull();
+        _vm.Pill.CellClaude!.PercentText.Should().Be("73" + FrenchText.Nbsp + "%");
+        _vm.Pill.CellAntigravity.Should().NotBeNull();
+        _vm.Pill.CellAntigravity!.PercentText.Should().Be("65" + FrenchText.Nbsp + "%");
+
+        _vm.Card.Sections.Should().HaveCount(2);
+        _vm.Card.HeaderTitle.Should().Be("Usage & Quotas");
+        _vm.Card.Sections[0].Title.Should().Be("Claude (Anthropic)");
+        _vm.Card.Sections[1].Title.Should().Be("Google Antigravity");
+
+        _vm.TrayText.Should().Contain("Claude 73").And.Contain("Antigravity 65");
     }
 }

@@ -279,4 +279,39 @@ public class PillPresenterTests
         var agyCell = PillPresenter.Cell(Snap(SnapshotStatus.Ok, 0.5), RingWindows.Antigravity, SessionState.Idle, Theme, CellContent.RingAndPercent, RingColoring.PerRing, Now, "antigravity");
         agyCell.ProviderId.Should().Be("antigravity");
     }
+
+    [Fact]
+    public void Pill_dimensions_and_band_color_follow_single_and_dual_modes()
+    {
+        var claudeCell = Cell(Snap(SnapshotStatus.Ok, 0.5));
+        var singlePill = PillPresenter.Pill([claudeCell], ScreenEdge.Top, CellContent.RingAndPercent, Theme, "claude");
+        singlePill.IsDual.Should().BeFalse();
+        singlePill.BodyLength.Should().Be(104);
+        singlePill.WindowLength.Should().Be(136);
+        singlePill.BandColor.Should().Be(claudeCell.BandColor);
+
+        var agyCell = PillPresenter.Cell(Snap(SnapshotStatus.Ok, 0.4), RingWindows.Antigravity, SessionState.Idle, Theme, CellContent.RingAndPercent, RingColoring.PerRing, Now, "antigravity");
+        var dualHorizontal = PillPresenter.Pill([claudeCell, agyCell], ScreenEdge.Top, CellContent.RingAndPercent, Theme, "both");
+        dualHorizontal.IsDual.Should().BeTrue();
+        dualHorizontal.BodyLength.Should().Be(196);
+        dualHorizontal.WindowLength.Should().Be(228);
+
+        var dualVertical = PillPresenter.Pill([claudeCell, agyCell], ScreenEdge.Right, CellContent.RingAndPercent, Theme, "both");
+        dualVertical.BodyLength.Should().Be(168);
+        dualVertical.WindowLength.Should().Be(200);
+
+        var dualRingOnly = PillPresenter.Pill([claudeCell, agyCell], ScreenEdge.Top, CellContent.RingOnly, Theme, "both");
+        dualRingOnly.BodyLength.Should().Be(124);
+        dualRingOnly.WindowLength.Should().Be(156);
+    }
+
+    [Fact]
+    public void Pill_band_color_prioritizes_attention_state()
+    {
+        var claudeNormal = Cell(Snap(SnapshotStatus.Ok, 0.5));
+        var agyAttention = PillPresenter.Cell(Snap(SnapshotStatus.Ok, 0.4), RingWindows.Antigravity, SessionState.Attention, Theme, CellContent.RingAndPercent, RingColoring.PerRing, Now, "antigravity");
+
+        var pill = PillPresenter.Pill([claudeNormal, agyAttention], ScreenEdge.Top, CellContent.RingAndPercent, Theme, "both");
+        pill.BandColor.Should().Be(Theme.Attention);
+    }
 }

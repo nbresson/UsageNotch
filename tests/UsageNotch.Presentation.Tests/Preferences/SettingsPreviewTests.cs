@@ -84,4 +84,18 @@ public class SettingsPreviewTests
         model.Visibility.Should().Be(VisibilityMode.Folded);
         model.FoldedThicknessPx.Should().Be(7);
     }
+
+    [Fact]
+    public void Dual_provider_preview_builds_dual_pill()
+    {
+        var settings = new Settings { Provider = "both", Edge = ScreenEdge.Top };
+        var model = SettingsPreview.Build(settings, accentHex: null);
+
+        model.Provider.Should().Be("both");
+        model.Samples.Should().HaveCount(3);
+        model.Samples.Should().OnlyContain(s => s.Pill != null && s.Pill.IsDual);
+        model.Samples[0].Pill!.Cells.Should().HaveCount(2);
+        model.Samples[0].Pill!.Cells[0].ProviderId.Should().Be("claude");
+        model.Samples[0].Pill!.Cells[1].ProviderId.Should().Be("antigravity");
+    }
 }
