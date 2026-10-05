@@ -284,7 +284,7 @@ public class AppearancePageViewModelTests
 
         vm.Providers.Should().BeSameAs(Choices.Providers);
         vm.ProviderChoices.Should().BeSameAs(Choices.Providers);
-        vm.Provider.Should().Be("claude");
+        vm.Provider.Should().Be("both");
 
         vm.Provider = "antigravity";
 

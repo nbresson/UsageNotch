@@ -179,4 +179,70 @@ public class UsageStoreTests
         store.Apply(new FetchResult.Success([Session]));
         Directory.GetFiles(dir.Path).Should().ContainSingle().Which.Should().EndWith("usage.json");
     }
+
+    [Fact]
+    public void Multiple_providers_are_stored_independently_and_persisted()
+    {
+        using var dir = new TempDir();
+        var (store, time) = Build(dir);
+        var geminiWindow = new LimitWindow("gemini-5h", "Modèles Gemini (5 h)", 0.65, Now.AddHours(3));
+
+        store.Apply("claude", new FetchResult.Success([Session]));
+        store.Apply("antigravity", new FetchResult.Success([geminiWindow]));
+
+        store.SnapshotFor("claude").Windows.Should().ContainSingle(w => w.Id == "session");
+        store.SnapshotFor("antigravity").Windows.Should().ContainSingle(w => w.Id == "gemini-5h");
+        store.Snapshots.Should().HaveCount(2);
+
+        // Reload from disk
+        var (second, _) = Build(dir);
+        second.Load();
+
+        second.SnapshotFor("claude").Windows.Should().ContainSingle(w => w.Id == "session");
+        second.SnapshotFor("claude").Status.Should().Be(SnapshotStatus.Stale);
+        second.SnapshotFor("antigravity").Windows.Should().ContainSingle(w => w.Id == "gemini-5h");
+        second.SnapshotFor("antigravity").Status.Should().Be(SnapshotStatus.Stale);
+    }
+
+    [Fact]
+    public void Legacy_single_object_usage_file_is_loaded_as_claude_snapshot()
+    {
+        using var dir = new TempDir();
+        var legacyJson = """
+        {
+          "status": "Ok",
+          "windows": [
+            { "id": "session", "label": "Session en cours", "usedFraction": 0.5, "resetsAt": "2026-09-14T14:00:00+00:00" }
+          ],
+          "fetchedAt": "2026-09-14T12:00:00+00:00",
+          "note": ""
+        }
+        """;
+        File.WriteAllText(dir.File("usage.json"), legacyJson);
+
+        var (store, _) = Build(dir);
+        store.Load();
+
+        store.SnapshotFor("claude").Windows.Should().ContainSingle(w => w.Id == "session");
+        store.SnapshotFor("claude").Status.Should().Be(SnapshotStatus.Stale);
+        store.Current.Windows.Should().ContainSingle(w => w.Id == "session");
+    }
+
+    [Fact]
+    public void IsInBackoff_is_per_provider_and_global()
+    {
+        using var dir = new TempDir();
+        var (store, time) = Build(dir);
+
+        store.Apply("claude", new FetchResult.RateLimited(TimeSpan.Zero), backoffWait: TimeSpan.FromSeconds(60));
+        store.Apply("antigravity", new FetchResult.Success([Session]));
+
+        store.IsInBackoffFor("claude").Should().BeTrue();
+        store.IsInBackoffFor("antigravity").Should().BeFalse();
+        store.IsInBackoff.Should().BeTrue("au moins un fournisseur est en backoff");
+
+        time.Advance(TimeSpan.FromSeconds(61));
+        store.IsInBackoffFor("claude").Should().BeFalse();
+        store.IsInBackoff.Should().BeFalse();
+    }
 }

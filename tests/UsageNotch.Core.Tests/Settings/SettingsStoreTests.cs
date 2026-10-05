@@ -355,10 +355,10 @@ public class SettingsStoreTests
     }
 
     [Fact]
-    public void Provider_defaults_to_claude()
+    public void Provider_defaults_to_both()
     {
         var s = new UsageNotch.Core.Settings.Settings();
-        s.Provider.Should().Be("claude");
+        s.Provider.Should().Be("both");
     }
 
     [Fact]
@@ -374,9 +374,23 @@ public class SettingsStoreTests
         loaded.Provider.Should().Be("antigravity");
     }
 
+    [Fact]
+    public void Provider_round_trips_both()
+    {
+        using var dir = new TempDir();
+        var store = Build(dir);
+        var s = new UsageNotch.Core.Settings.Settings { Provider = "both" };
+
+        store.Save(s);
+        var loaded = Build(dir).Load();
+
+        loaded.Provider.Should().Be("both");
+    }
+
     [Theory]
-    [InlineData("unknown", "claude")]
-    [InlineData("", "claude")]
+    [InlineData("unknown", "both")]
+    [InlineData("", "both")]
+    [InlineData("both", "both")]
     [InlineData("antigravity", "antigravity")]
     [InlineData("claude", "claude")]
     public void Provider_is_clamped_to_known_providers(string input, string expected)
