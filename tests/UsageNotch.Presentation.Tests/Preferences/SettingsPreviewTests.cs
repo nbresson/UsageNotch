@@ -98,4 +98,19 @@ public class SettingsPreviewTests
         model.Samples[0].Pill!.Cells[0].ProviderId.Should().Be("claude");
         model.Samples[0].Pill!.Cells[1].ProviderId.Should().Be("antigravity");
     }
+
+    [Fact]
+    public void Triple_provider_preview_builds_triple_pill()
+    {
+        var settings = new Settings { Provider = "all", Edge = ScreenEdge.Top };
+        var model = SettingsPreview.Build(settings, accentHex: null);
+
+        model.Provider.Should().Be("all");
+        model.Samples.Should().HaveCount(3);
+        model.Samples.Should().OnlyContain(s => s.Pill != null && s.Pill.IsTriple);
+        model.Samples[0].Pill!.Cells.Should().HaveCount(3);
+        model.Samples[0].Pill!.Cells[0].ProviderId.Should().Be("claude");
+        model.Samples[0].Pill!.Cells[1].ProviderId.Should().Be("antigravity");
+        model.Samples[0].Pill!.Cells[2].ProviderId.Should().Be("openai");
+    }
 }

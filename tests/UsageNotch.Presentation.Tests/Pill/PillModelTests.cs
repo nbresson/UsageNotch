@@ -37,4 +37,23 @@ public class PillModelTests
         pill.CellClaude.Should().BeSameAs(claude);
         pill.CellAntigravity.Should().BeSameAs(antigravity);
     }
+
+    [Fact]
+    public void Triple_cell_pill_identifies_all_three_cells()
+    {
+        var claude = DummyCell("claude");
+        var antigravity = DummyCell("antigravity");
+        var openai = DummyCell("openai");
+        var pill = new PillModel([claude, antigravity, openai], 300, 332, "#123456", ScreenEdge.Top);
+
+        pill.IsDual.Should().BeTrue();
+        pill.IsTriple.Should().BeTrue();
+        pill.PrimaryCell.Should().BeSameAs(claude);
+        pill.Cell1.Should().BeSameAs(claude);
+        pill.Cell2.Should().BeSameAs(antigravity);
+        pill.Cell3.Should().BeSameAs(openai);
+        pill.CellClaude.Should().BeSameAs(claude);
+        pill.CellAntigravity.Should().BeSameAs(antigravity);
+        pill.CellOpenAi.Should().BeSameAs(openai);
+    }
 }

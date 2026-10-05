@@ -49,11 +49,23 @@ public class ChoicesTests
     [Fact]
     public void Providers_are_listed_with_french_labels()
     {
-        Choices.Providers.Select(c => c.Value).Should().Equal("both", "claude", "antigravity");
-        Choices.Providers.Select(c => c.Label).Should().Equal("Les deux (capsule double)", "Claude uniquement", "Google Antigravity uniquement");
-        Choices.ProviderLabel("both").Should().Be("Les deux (capsule double)");
+        Choices.Providers.Select(c => c.Value).Should().Equal(
+            "all", "both", "claude_openai", "antigravity_openai", "claude", "antigravity", "openai");
+        Choices.Providers.Select(c => c.Label).Should().Equal(
+            "Tous (capsule triple)",
+            "Claude et Google Antigravity",
+            "Claude et OpenAI",
+            "Google Antigravity et OpenAI",
+            "Claude uniquement",
+            "Google Antigravity uniquement",
+            "OpenAI uniquement");
+        Choices.ProviderLabel("all").Should().Be("Tous (capsule triple)");
+        Choices.ProviderLabel("both").Should().Be("Claude et Google Antigravity");
+        Choices.ProviderLabel("claude_openai").Should().Be("Claude et OpenAI");
+        Choices.ProviderLabel("antigravity_openai").Should().Be("Google Antigravity et OpenAI");
         Choices.ProviderLabel("claude").Should().Be("Claude uniquement");
         Choices.ProviderLabel("antigravity").Should().Be("Google Antigravity uniquement");
+        Choices.ProviderLabel("openai").Should().Be("OpenAI uniquement");
         Choices.ProviderLabel("unknown").Should().Be("unknown");
     }
 }

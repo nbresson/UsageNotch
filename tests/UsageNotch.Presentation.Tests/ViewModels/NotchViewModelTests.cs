@@ -320,4 +320,74 @@ public sealed class NotchViewModelTests : IDisposable
 
         _vm.TrayText.Should().Contain("Claude 73").And.Contain("Antigravity 65");
     }
+
+    [Fact]
+    public void All_provider_mode_creates_triple_pill_and_triple_card()
+    {
+        _settings.Save(_settings.Current with { Provider = "all" });
+
+        _usage.Apply("claude", new FetchResult.Success([Session(0.73, Start.AddMinutes(51))]));
+        _usage.Apply("antigravity", new FetchResult.Success([new LimitWindow("gemini-5h", "Modèles Gemini (5 h)", 0.65, Start.AddHours(3))]));
+        _usage.Apply("openai", new FetchResult.Success([new LimitWindow("monthly_cost", "Budget mensuel ($10 / $20)", 0.50, Start.AddDays(15))]));
+
+        _vm.Pill.IsDual.Should().BeTrue();
+        _vm.Pill.IsTriple.Should().BeTrue();
+        _vm.Pill.Cells.Should().HaveCount(3);
+        _vm.Pill.CellClaude.Should().NotBeNull();
+        _vm.Pill.CellClaude!.PercentText.Should().Be("73" + FrenchText.Nbsp + "%");
+        _vm.Pill.CellAntigravity.Should().NotBeNull();
+        _vm.Pill.CellAntigravity!.PercentText.Should().Be("65" + FrenchText.Nbsp + "%");
+        _vm.Pill.CellOpenAi.Should().NotBeNull();
+        _vm.Pill.CellOpenAi!.PercentText.Should().Be("50" + FrenchText.Nbsp + "%");
+
+        _vm.Card.Sections.Should().HaveCount(3);
+        _vm.Card.HeaderTitle.Should().Be("Usage & Quotas");
+        _vm.Card.Sections[0].Title.Should().Be("Claude (Anthropic)");
+        _vm.Card.Sections[1].Title.Should().Be("Google Antigravity");
+        _vm.Card.Sections[2].Title.Should().Be("OpenAI");
+
+        _vm.TrayText.Should().Contain("Claude 73").And.Contain("Antigravity 65").And.Contain("OpenAI 50");
+    }
+
+    [Fact]
+    public void Openai_only_mode_creates_single_pill_and_single_card()
+    {
+        _settings.Save(_settings.Current with { Provider = "openai" });
+        _usage.Apply("openai", new FetchResult.Success([new LimitWindow("monthly_cost", "Budget mensuel ($10 / $20)", 0.50, Start.AddDays(15))]));
+
+        _vm.Pill.IsDual.Should().BeFalse();
+        _vm.Pill.IsTriple.Should().BeFalse();
+        _vm.Pill.Cells.Should().HaveCount(1);
+        _vm.Pill.CellOpenAi.Should().NotBeNull();
+        _vm.Pill.CellOpenAi!.PercentText.Should().Be("50" + FrenchText.Nbsp + "%");
+
+        _vm.Card.Sections.Should().HaveCount(1);
+        _vm.Card.HeaderTitle.Should().BeNull();
+        _vm.Card.Sections[0].Title.Should().Be("OpenAI");
+
+        _vm.TrayText.Should().Be("UsageNotch — OpenAI 50" + FrenchText.Nbsp + "%");
+    }
+
+    [Fact]
+    public void Claude_openai_mode_creates_dual_pill_and_dual_card()
+    {
+        _settings.Save(_settings.Current with { Provider = "claude_openai" });
+
+        _usage.Apply("claude", new FetchResult.Success([Session(0.73, Start.AddMinutes(51))]));
+        _usage.Apply("openai", new FetchResult.Success([new LimitWindow("monthly_cost", "Budget mensuel ($10 / $20)", 0.50, Start.AddDays(15))]));
+
+        _vm.Pill.IsDual.Should().BeTrue();
+        _vm.Pill.IsTriple.Should().BeFalse();
+        _vm.Pill.Cells.Should().HaveCount(2);
+        _vm.Pill.CellClaude.Should().NotBeNull();
+        _vm.Pill.CellOpenAi.Should().NotBeNull();
+        _vm.Pill.CellAntigravity.Should().BeNull();
+
+        _vm.Card.Sections.Should().HaveCount(2);
+        _vm.Card.HeaderTitle.Should().Be("Usage & Quotas");
+        _vm.Card.Sections[0].Title.Should().Be("Claude (Anthropic)");
+        _vm.Card.Sections[1].Title.Should().Be("OpenAI");
+
+        _vm.TrayText.Should().Contain("Claude 73").And.Contain("OpenAI 50");
+    }
 }
