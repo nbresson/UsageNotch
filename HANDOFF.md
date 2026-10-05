@@ -149,7 +149,11 @@ dotnet build -c Release UsageNotch.sln
 
 ## 7. Pistes de travail futures (Backlog)
 
-- **Fournisseur OpenAI / Codex** : structure prête pour un 3ᵉ fournisseur (le logo SVG `src/UsageNotch.App/Assets/openai-light.svg` est déjà présent).
+- **Fournisseur OpenAI (Indicateurs de consommation des modèles OpenAI)** :
+  - Implémentation de `OpenAiUsageProvider : IUsageProvider` pour remonter les quotas et métriques de consommation des modèles OpenAI (crédits/budget, taux d'utilisation, quotas de tokens TPM/RPM ou fenêtres d'usage selon le type de compte/abonnement API, ChatGPT Plus/Team/Enterprise ou Codex).
+  - Définition des trois fenêtres d'usage (`LimitWindow`) adaptées aux modèles OpenAI (ex. quota court terme, hebdomadaire/mensuel, ou modèles spécifiques comme GPT-4o / o1 / o3-mini).
+  - Intégration du logo vectoriel OpenAI (actif SVG `src/UsageNotch.App/Assets/openai-light.svg` déjà présent dans le projet) dans `BrandGeometry.cs` pour le voyant d'activité au centre des anneaux.
+  - Ajout d'une section dédiée OpenAI dans la carte de détail multi-sections et enrichissement du sélecteur de fournisseurs (`Choices.cs`, `SettingsStore`).
 - **Packaging & Déploiement** : script d'installation MSIX ou installateur InnoSetup pour faciliter la mise à jour par l'utilisateur.
 - **Notifications avancées** : réglage fin des seuils d'alerte par fournisseur (ex. alerte spécifique pour la limite 5h de Gemini distincte de la session Claude).
 

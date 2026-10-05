@@ -120,3 +120,9 @@ récepteur sans attendre les requêtes en cours. Détail et raisons dans le jour
    dont la couleur dit l'état de la session et dont la géométrie bascule dynamiquement (`BrandGeometry.ForProvider`)
    entre la marque Anthropic et l'étoile Gemini selon le fournisseur sélectionné dans les réglages.
 
+3. **Fournisseur OpenAI : suivi de la consommation des modèles OpenAI.**
+   - Ajouter un fournisseur `OpenAiUsageProvider : IUsageProvider` pour suivre les indicateurs de consommation des modèles OpenAI (crédits/budget, taux d'utilisation ou quotas de tokens/requêtes selon le type de compte API, ChatGPT Plus/Team/Enterprise ou Codex).
+   - Réutiliser l'actif SVG existant (`src/UsageNotch.App/Assets/openai-light.svg`) pour définir la géométrie vectorielle dans `BrandGeometry` (au centre des anneaux et pour le voyant d'activité).
+   - Définir les trois fenêtres d'usage (`LimitWindow`) appropriées (ex. session/quota court terme, hebdomadaire/mensuel, ou modèles spécifiques comme GPT-4o / o1).
+   - Intégrer OpenAI au sélecteur de fournisseurs des réglages (`Choices`, `SettingsStore`) et ajouter une section dédiée dans la carte de détail.
+
