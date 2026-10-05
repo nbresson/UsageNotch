@@ -5,13 +5,13 @@ l'historique.
 
 ## État au moment de la pause
 
-- Version `0.6.0-dev` (`<Version>` dans `src/UsageNotch.App/UsageNotch.App.csproj`), branche `main`, poussée sur
-  https://github.com/nbresson/UsageNotch (release `v0.5.0` publiée le 2026-10-05).
-- Compilation sans avertissement (`TreatWarningsAsErrors`), 642 tests xUnit verts : 313 Core, 329 Presentation.
+- Version `0.6.0` (`<Version>` dans `src/UsageNotch.App/UsageNotch.App.csproj`), branche `main`, poussée sur
+  https://github.com/nbresson/UsageNotch.
+- Compilation sans avertissement (`TreatWarningsAsErrors`), 657 tests xUnit verts : 328 Core, 329 Presentation.
 - Fonctionnel au quotidien : pilule et carte, modes Déplié / Replié / Masqué, placement multi-écran, thèmes, fenêtre de
   réglages à cinq pages, état des sessions par hooks Claude Code, retour au terminal, alertes de seuil, masquage en plein
   écran, démarrer avec Windows, diagnostic, icône d'application, support multi-fournisseur avec capsule triple affichant
-  simultanément Claude, Google Antigravity et OpenAI (ou toute combinaison modulaire).
+  simultanément Claude, Google Antigravity et OpenAI (avec bascule fluide entre mode Abonnement et mode Clé API).
 - Pour une prise en main rapide et les règles d'or, voir aussi `HANDOFF.md` à la racine.
 
 ## Carte de la documentation
@@ -26,6 +26,7 @@ l'historique.
 | `docs/superpowers/specs/2026-10-05-usagenotch-antigravity-provider-design.md` | Spec du suivi de l'usage Google Antigravity (livrée par le Plan 6) |
 | `docs/superpowers/specs/2026-10-05-usagenotch-dual-provider-capsule-design.md` | Spec de la capsule double unifiée Claude + Antigravity (livrée par le Plan 7) |
 | `docs/superpowers/specs/2026-10-05-usagenotch-openai-provider-design.md` | Spec du suivi de l'usage OpenAI et capsule triple (livrée par le Plan 8) |
+| `docs/superpowers/specs/2026-10-05-usagenotch-openai-subscription-design.md` | Spec du mode abonnement OpenAI ChatGPT/Codex (livrée par le Plan 9) |
 | `docs/superpowers/plans/2026-09-14-usagenotch-core-and-hook.md` | Plan 1 : Core et hook |
 | `docs/superpowers/plans/2026-09-15-usagenotch-app.md` | Plan 2 : application WPF |
 | `docs/superpowers/plans/2026-09-15-usagenotch-settings-window.md` | Plan 3 : fenêtre de réglages |
@@ -34,7 +35,8 @@ l'historique.
 | `docs/superpowers/plans/2026-10-05-usagenotch-antigravity-provider.md` | Plan 6 : suivi de l'usage Google Antigravity (livré le 2026-10-05) |
 | `docs/superpowers/plans/2026-10-05-usagenotch-dual-provider-capsule.md` | Plan 7 : capsule double unifiée Claude + Antigravity (livré le 2026-10-05) |
 | `docs/superpowers/plans/2026-10-05-usagenotch-openai-provider.md` | Plan 8 : suivi de l'usage OpenAI et capsule triple (livré le 2026-10-05) |
-| `docs/superpowers/plans/2026-09-14-usagenotch-core-and-hook-notes.md` | **Journal de bord** : contrats entre couches, arbitrages, écarts à la spec, points laissés en l'état, puis chaque chantier postérieur (performance, fluidité, alertes, plein écran, finitions, pilule à trois anneaux, logo du fournisseur, fournisseur Google Antigravity, capsule double, fournisseur OpenAI) |
+| `docs/superpowers/plans/2026-10-05-usagenotch-openai-subscription.md` | Plan 9 : mode abonnement OpenAI ChatGPT/Codex (livré le 2026-10-06) |
+| `docs/superpowers/plans/2026-09-14-usagenotch-core-and-hook-notes.md` | **Journal de bord** : contrats entre couches, arbitrages, écarts à la spec, points laissés en l'état, puis chaque chantier postérieur (performance, fluidité, alertes, plein écran, finitions, pilule à trois anneaux, logo du fournisseur, fournisseur Google Antigravity, capsule double, fournisseur OpenAI, mode abonnement) |
 
 Les plans décrivent l'intention au moment de leur écriture ; le code et le journal de bord font foi quand ils divergent.
 

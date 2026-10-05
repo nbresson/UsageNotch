@@ -25,8 +25,7 @@
 
 ## 2. État courant du projet (au 2026-10-05)
 
-- **Version en développement** : `0.7.0-dev` (branche `main`).
-- **Dernière release officielle** : [v0.5.0](https://github.com/nbresson/UsageNotch/releases/tag/v0.5.0) publiée le 2026-10-05.
+- **Version** : `0.6.0` (branche `main`).
 - **Tests** : **657 tests xUnit verts** (328 Core, 329 Presentation), durée totale d'exécution < 2 s.
 - **Dernières fonctionnalités majeures livrées** :
   1. **Mode Abonnement OpenAI (ChatGPT Plus / Team / Pro / Codex) & Mode Clé API Hybride** :
