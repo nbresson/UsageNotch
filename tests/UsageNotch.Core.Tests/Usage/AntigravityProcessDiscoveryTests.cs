@@ -91,4 +91,16 @@ public class AntigravityProcessDiscoveryTests
         updated.CsrfToken.Should().Be("token2");
         inspector.CallCount.Should().Be(2);
     }
+
+    [Fact]
+    public void Real_system_discovery_succeeds_when_agy_is_running()
+    {
+        if (System.Diagnostics.Process.GetProcessesByName("agy").Length == 0) return;
+
+        var discovery = new AntigravityProcessDiscovery();
+        var hub = discovery.Discover();
+        hub.Should().NotBeNull();
+        hub!.Port.Should().BeGreaterThan(0);
+        hub.CsrfToken.Should().NotBeNullOrWhiteSpace();
+    }
 }

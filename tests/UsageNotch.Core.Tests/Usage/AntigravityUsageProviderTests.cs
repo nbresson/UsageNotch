@@ -133,4 +133,19 @@ public class AntigravityUsageProviderTests
         inspector.Lines = [];
         discovery.Discover().Should().BeNull(); // Le cache a été invalidé et l'inspecteur n'a plus de processus
     }
+
+    [Fact]
+    public async Task Real_antigravity_fetch_succeeds_when_agy_is_running()
+    {
+        if (System.Diagnostics.Process.GetProcessesByName("agy").Length == 0) return;
+
+        var discovery = new AntigravityProcessDiscovery();
+        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+        var provider = new AntigravityUsageProvider(client, discovery, NullLogger<AntigravityUsageProvider>.Instance);
+
+        var result = await provider.FetchAsync(CancellationToken.None);
+        result.Should().BeOfType<FetchResult.Success>();
+        var success = (FetchResult.Success)result;
+        success.Windows.Should().NotBeEmpty();
+    }
 }
