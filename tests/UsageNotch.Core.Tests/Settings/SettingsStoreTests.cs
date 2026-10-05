@@ -353,4 +353,35 @@ public class SettingsStoreTests
         Theme.ForPreset(ThemePreset.Custom, custom, null).Should().Be(custom);
         Theme.ForPreset(ThemePreset.Monochrome, custom, null).Should().Be(Theme.Monochrome);
     }
+
+    [Fact]
+    public void Provider_defaults_to_claude()
+    {
+        var s = new UsageNotch.Core.Settings.Settings();
+        s.Provider.Should().Be("claude");
+    }
+
+    [Fact]
+    public void Provider_round_trips_antigravity()
+    {
+        using var dir = new TempDir();
+        var store = Build(dir);
+        var s = new UsageNotch.Core.Settings.Settings { Provider = "antigravity" };
+
+        store.Save(s);
+        var loaded = Build(dir).Load();
+
+        loaded.Provider.Should().Be("antigravity");
+    }
+
+    [Theory]
+    [InlineData("unknown", "claude")]
+    [InlineData("", "claude")]
+    [InlineData("antigravity", "antigravity")]
+    [InlineData("claude", "claude")]
+    public void Provider_is_clamped_to_known_providers(string input, string expected)
+    {
+        var s = new UsageNotch.Core.Settings.Settings { Provider = input }.Clamp();
+        s.Provider.Should().Be(expected);
+    }
 }
