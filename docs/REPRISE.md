@@ -5,33 +5,34 @@ l'historique.
 
 ## État au moment de la pause
 
-- Version `0.3.0` (`<Version>` dans `src/UsageNotch.App/UsageNotch.App.csproj`), branche `main`, poussée sur
-  https://github.com/nbresson/UsageNotch.
-- Compilation sans avertissement (`TreatWarningsAsErrors`), 576 tests xUnit verts : 287 Core, 289 Presentation.
+- Version `0.6.0-dev` (`<Version>` dans `src/UsageNotch.App/UsageNotch.App.csproj`), branche `main`, poussée sur
+  https://github.com/nbresson/UsageNotch (release `v0.5.0` publiée le 2026-10-05).
+- Compilation sans avertissement (`TreatWarningsAsErrors`), 601 tests xUnit verts : 295 Core, 306 Presentation.
 - Fonctionnel au quotidien : pilule et carte, modes Déplié / Replié / Masqué, placement multi-écran, thèmes, fenêtre de
   réglages à cinq pages, état des sessions par hooks Claude Code, retour au terminal, alertes de seuil, masquage en plein
-  écran, démarrer avec Windows, diagnostic, icône d'application, support multi-fournisseur avec bascule à chaud entre
-  Claude et Google Antigravity.
-- Tout ce que la spec prévoyait pour la première version est livré. Deux sujets qu'elle plaçait hors périmètre ont été
-  ajoutés ensuite : les alertes de seuil et le masquage en plein écran. Le suivi d'usage Google Antigravity a été ajouté
-  le 2026-10-05 (Plan 6).
+  écran, démarrer avec Windows, diagnostic, icône d'application, support multi-fournisseur avec capsule double affichant
+  simultanément Claude et Google Antigravity.
+- Pour une prise en main rapide et les règles d'or, voir aussi `HANDOFF.md` à la racine.
 
 ## Carte de la documentation
 
 | Document | Contenu |
 |---|---|
 | `README.md` | Présentation, installation, utilisation, confidentialité, organisation du code |
+| `HANDOFF.md` | Guide de transition & reprise rapide à la racine du dépôt |
 | `docs/superpowers/specs/2026-09-14-usagenotch-design.md` | Spec de conception d'origine (référence ; ses sections « hors périmètre » sont en partie dépassées, voir plus haut) |
 | `docs/superpowers/specs/2026-09-20-usagenotch-pill-rings-design.md` | Spec de la pilule à trois anneaux (livrée par le Plan 4) |
 | `docs/superpowers/specs/2026-09-20-usagenotch-activity-logo-design.md` | Spec du logo du fournisseur comme voyant d'activité (livrée par le Plan 5) |
 | `docs/superpowers/specs/2026-10-05-usagenotch-antigravity-provider-design.md` | Spec du suivi de l'usage Google Antigravity (livrée par le Plan 6) |
+| `docs/superpowers/specs/2026-10-05-usagenotch-dual-provider-capsule-design.md` | Spec de la capsule double unifiée Claude + Antigravity (livrée par le Plan 7) |
 | `docs/superpowers/plans/2026-09-14-usagenotch-core-and-hook.md` | Plan 1 : Core et hook |
 | `docs/superpowers/plans/2026-09-15-usagenotch-app.md` | Plan 2 : application WPF |
 | `docs/superpowers/plans/2026-09-15-usagenotch-settings-window.md` | Plan 3 : fenêtre de réglages |
 | `docs/superpowers/plans/2026-09-20-usagenotch-pill-rings.md` | Plan 4 : pilule à trois anneaux |
 | `docs/superpowers/plans/2026-09-20-usagenotch-activity-logo.md` | Plan 5 : logo du fournisseur comme voyant d'activité |
 | `docs/superpowers/plans/2026-10-05-usagenotch-antigravity-provider.md` | Plan 6 : suivi de l'usage Google Antigravity (livré le 2026-10-05) |
-| `docs/superpowers/plans/2026-09-14-usagenotch-core-and-hook-notes.md` | **Journal de bord** : contrats entre couches, arbitrages, écarts à la spec, points laissés en l'état, puis chaque chantier postérieur (performance, fluidité, alertes, plein écran, finitions, pilule à trois anneaux, logo du fournisseur, fournisseur Google Antigravity) |
+| `docs/superpowers/plans/2026-10-05-usagenotch-dual-provider-capsule.md` | Plan 7 : capsule double unifiée Claude + Antigravity (livré le 2026-10-05) |
+| `docs/superpowers/plans/2026-09-14-usagenotch-core-and-hook-notes.md` | **Journal de bord** : contrats entre couches, arbitrages, écarts à la spec, points laissés en l'état, puis chaque chantier postérieur (performance, fluidité, alertes, plein écran, finitions, pilule à trois anneaux, logo du fournisseur, fournisseur Google Antigravity, capsule double) |
 
 Les plans décrivent l'intention au moment de leur écriture ; le code et le journal de bord font foi quand ils divergent.
 

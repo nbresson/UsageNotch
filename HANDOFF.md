@@ -25,7 +25,8 @@
 
 ## 2. État courant du projet (au 2026-10-05)
 
-- **Version** : `0.5.0` (branche `main`).
+- **Version en développement** : `0.6.0-dev` (branche `main`).
+- **Dernière release officielle** : [v0.5.0](https://github.com/nbresson/UsageNotch/releases/tag/v0.5.0) publiée le 2026-10-05.
 - **Tests** : **601 tests xUnit verts** (295 Core, 306 Presentation), durée totale d'exécution < 2 s.
 - **Dernières fonctionnalités majeures livrées** :
   1. **Fournisseur Google Antigravity** : détection automatique du processus `agy.exe`, découverte du port d'écoute et du jeton SQLite/process, interrogation des quotas Gemini 5 h, hebdomadaire et modèles tiers.
