@@ -21,9 +21,9 @@ public class RingWindowsTests
         RingWindows.Claude[2].Should().Equal("weekly_scoped", "weekly_opus", "seven_day_opus");
 
         RingWindows.OpenAi.Should().HaveCount(3);
-        RingWindows.OpenAi[0].Should().Equal("monthly_cost", "monthly", "budget");
-        RingWindows.OpenAi[1].Should().Equal("daily_cost", "daily", "day");
-        RingWindows.OpenAi[2].Should().Equal("reasoning_models", "o1_o3", "reasoning");
+        RingWindows.OpenAi[0].Should().Equal("session", "five_hour", "primary_window", "monthly_cost", "monthly", "budget");
+        RingWindows.OpenAi[1].Should().Equal("weekly", "weekly_all", "seven_day", "secondary_window", "daily_cost", "daily", "day");
+        RingWindows.OpenAi[2].Should().Equal("reasoning_models", "o1_o3", "reasoning", "codex-spark", "additional_limits");
     }
 
     [Fact]

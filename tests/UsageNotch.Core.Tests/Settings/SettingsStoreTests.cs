@@ -410,6 +410,9 @@ public class SettingsStoreTests
         var store = Build(dir);
         var s = new UsageNotch.Core.Settings.Settings
         {
+            OpenAiMode = "subscription",
+            OpenAiSessionToken = "sess-12345",
+            OpenAiAccountId = "org-67890",
             OpenAiApiKey = "sk-test-12345",
             OpenAiMonthlyBudget = 50.0,
             Provider = "all",
@@ -418,12 +421,29 @@ public class SettingsStoreTests
         store.Save(s);
         var loaded = Build(dir).Load();
 
+        loaded.OpenAiMode.Should().Be("subscription");
+        loaded.OpenAiSessionToken.Should().Be("sess-12345");
+        loaded.OpenAiAccountId.Should().Be("org-67890");
         loaded.OpenAiApiKey.Should().Be("sk-test-12345");
         loaded.OpenAiMonthlyBudget.Should().Be(50.0);
         loaded.Provider.Should().Be("all");
 
-        var clamped = (loaded with { OpenAiApiKey = "  sk-trimmed  ", OpenAiMonthlyBudget = -5 }).Clamp();
+        var clamped = (loaded with
+        {
+            OpenAiMode = "invalid_mode",
+            OpenAiSessionToken = "  sess-trimmed  ",
+            OpenAiAccountId = "  acc-trimmed  ",
+            OpenAiApiKey = "  sk-trimmed  ",
+            OpenAiMonthlyBudget = -5
+        }).Clamp();
+
+        clamped.OpenAiMode.Should().Be("subscription");
+        clamped.OpenAiSessionToken.Should().Be("sess-trimmed");
+        clamped.OpenAiAccountId.Should().Be("acc-trimmed");
         clamped.OpenAiApiKey.Should().Be("sk-trimmed");
         clamped.OpenAiMonthlyBudget.Should().Be(20.0);
+
+        var clampedApi = (loaded with { OpenAiMode = "api" }).Clamp();
+        clampedApi.OpenAiMode.Should().Be("api");
     }
 }

@@ -48,6 +48,7 @@ public static class AppHost
         s.AddSingleton<ClaudeUsageProvider>();
         s.AddSingleton<AntigravityUsageProvider>();
         s.AddSingleton<OpenAiCredentialReader>();
+        s.AddSingleton<OpenAiSubscriptionCredentialReader>();
         s.AddSingleton<OpenAiUsageProvider>();
         if (args.Demo)
         {
@@ -58,7 +59,7 @@ public static class AppHost
                 [
                     new DemoUsageProvider("claude", time),
                     new DemoUsageProvider("antigravity", time),
-                    new DemoUsageProvider("openai", time),
+                    new DemoUsageProvider("openai", time, sp.GetRequiredService<SettingsStore>()),
                 ];
             });
             s.AddSingleton<IUsageProvider>(sp =>

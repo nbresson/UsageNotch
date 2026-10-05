@@ -25,17 +25,19 @@
 
 ## 2. État courant du projet (au 2026-10-05)
 
-- **Version en développement** : `0.6.0-dev` (branche `main`).
+- **Version en développement** : `0.7.0-dev` (branche `main`).
 - **Dernière release officielle** : [v0.5.0](https://github.com/nbresson/UsageNotch/releases/tag/v0.5.0) publiée le 2026-10-05.
-- **Tests** : **642 tests xUnit verts** (313 Core, 329 Presentation), durée totale d'exécution < 2 s.
+- **Tests** : **657 tests xUnit verts** (328 Core, 329 Presentation), durée totale d'exécution < 2 s.
 - **Dernières fonctionnalités majeures livrées** :
-  1. **Fournisseur OpenAI & Capsule Triple Unifiée** :
-     - Suivi officiel des coûts & quotas OpenAI (`/v1/organization/costs` ou clé d'API / `OPENAI_API_KEY`) avec trois anneaux : Budget mensuel, Consommation du jour, et Modèles de raisonnement (o1 / o3).
+  1. **Mode Abonnement OpenAI (ChatGPT Plus / Team / Pro / Codex) & Mode Clé API Hybride** :
+     - Deux modes au choix dans les réglages OpenAI :
+       - **Mode Abonnement** (défaut) : suivi des quotas glissants de requêtes via `https://chatgpt.com/backend-api/wham/usage` avec détection automatique du jeton OAuth dans `~/.codex/auth.json` (ou `$CODEX_HOME/auth.json`) et champ manuel optionnel dans les réglages. Les 3 anneaux affichent : Session 5h (`primary_window`, affiché dans la capsule), Quota hebdomadaire (`secondary_window`), et Modèles de raisonnement (`additional_rate_limits`, ex. o1/o3/Spark).
+       - **Mode Clé API** : suivi des dépenses et budget mensuel en dollars via `/v1/organization/costs`.
      - Support complet de la capsule triple unifiée (Claude + Google Antigravity + OpenAI côte à côte) et combinaisons modulaires au choix : `"all"`, `"both"`, `"claude_openai"`, `"antigravity_openai"`, `"claude"`, `"antigravity"`, `"openai"`.
      - Intégration du logo vectoriel officiel `OpenAiMark` (`openai-light.svg`) au centre des anneaux avec animations d'activité (`Spin3`, `Pulse3`).
-     - Carte de détail multi-sections jusqu'à 3 sections et configuration dédiée dans les préférences (clé d'API, curseur de budget mensuel).
+     - Carte de détail multi-sections jusqu'à 3 sections et configuration dédiée réactive dans les préférences.
   2. **Fournisseur Google Antigravity** : détection automatique du processus `agy.exe`, découverte du port d'écoute et du jeton SQLite/process, interrogation des quotas Gemini 5 h, hebdomadaire et modèles tiers.
-  3. **Capsule double unifiée** : affichage simultané des quotas Claude et Antigravity dans une seule pilule dynamique avec séparateur.
+  3. **Capsule double et triple unifiée** : affichage simultané des quotas Claude, Antigravity et OpenAI dans une seule pilule dynamique avec séparateurs.
   4. **Robustesse zone de notification** : gestion tolérante de l'initialisation de l'icône de barre des tâches (`TrayIconService`) évitant les crashs en environnement restreint.
 
 ---

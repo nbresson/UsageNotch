@@ -69,5 +69,13 @@ public static class Choices
         new("openai", "OpenAI uniquement"),
     ];
 
+    public static IReadOnlyList<Choice<string>> OpenAiModes { get; } =
+    [
+        new("subscription", "Abonnement (ChatGPT Plus / Team / Pro / Codex)"),
+        new("api", "Clé API / Organisation (Coûts & Budget)"),
+    ];
+
+    public static string OpenAiModeLabel(string mode) => OpenAiModes.FirstOrDefault(m => m.Value == mode)?.Label ?? mode;
+
     public static string ProviderLabel(string name) => Providers.FirstOrDefault(p => p.Value == name)?.Label ?? name;
 }

@@ -335,5 +335,21 @@ public class AppearancePageViewModelTests
         vm.OpenAiMonthlyBudget.Should().Be(75.0);
         vm.OpenAiMonthlyBudgetText.Should().Be("75 $");
         f.Draft.Value.OpenAiMonthlyBudget.Should().Be(75.0);
+
+        // OpenAI mode and session token
+        vm.OpenAiModes.Should().BeSameAs(Choices.OpenAiModes);
+        vm.OpenAiMode.Should().Be("subscription");
+        vm.IsOpenAiSubscriptionMode.Should().BeTrue();
+        vm.IsOpenAiApiMode.Should().BeFalse();
+
+        vm.OpenAiSessionToken = "sess-12345";
+        vm.OpenAiSessionToken.Should().Be("sess-12345");
+        f.Draft.Value.OpenAiSessionToken.Should().Be("sess-12345");
+
+        vm.OpenAiMode = "api";
+        vm.OpenAiMode.Should().Be("api");
+        vm.IsOpenAiSubscriptionMode.Should().BeFalse();
+        vm.IsOpenAiApiMode.Should().BeTrue();
+        f.Draft.Value.OpenAiMode.Should().Be("api");
     }
 }
