@@ -129,4 +129,26 @@ public class CardPresenterTests
         card.Windows.Should().HaveCount(1);
         card.Windows[0].Label.Should().Be("Modèles Gemini (5 h)");
     }
+
+    [Fact]
+    public void Dual_card_presents_two_sections_and_header()
+    {
+        var claudeSnap = Ok(new LimitWindow("session", "Session en cours", 0.73, Now.AddMinutes(51)));
+        var agySnap = Ok(new LimitWindow("gemini-5h", "Modèles Gemini (5 h)", 0.65, Now.AddHours(3)));
+
+        var s1 = CardPresenter.Section(claudeSnap, "Claude (Anthropic)", Theme, Now, TimeZoneInfo.Utc, "claude");
+        var s2 = CardPresenter.Section(agySnap, "Google Antigravity", Theme, Now, TimeZoneInfo.Utc, "antigravity");
+
+        var sessions = new[] { S("s1", SessionState.Running, title: "proj · test") };
+        var card = CardPresenter.Build([s1, s2], sessions, Theme, isDual: true);
+
+        card.HeaderTitle.Should().Be("Usage & Quotas");
+        card.Sections.Should().HaveCount(2);
+        card.Sections[0].Title.Should().Be("Claude (Anthropic)");
+        card.Sections[0].Windows.Should().ContainSingle(w => w.Label == "Session en cours");
+        card.Sections[1].Title.Should().Be("Google Antigravity");
+        card.Sections[1].Windows.Should().ContainSingle(w => w.Label == "Modèles Gemini (5 h)");
+        card.HasSessions.Should().BeTrue();
+        card.Sessions.Should().ContainSingle(s => s.Title == "proj · test");
+    }
 }

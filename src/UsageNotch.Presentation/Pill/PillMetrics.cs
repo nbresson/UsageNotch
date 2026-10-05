@@ -1,3 +1,5 @@
+using UsageNotch.Core.Settings;
+
 namespace UsageNotch.Presentation.Pill;
 
 /// <summary>Dimensions logiques (DIP) à l'échelle 100 %. L'App les multiplie par Settings.Scale.</summary>
@@ -19,4 +21,16 @@ public static class PillMetrics
 
     /// <summary>Longueur de la fenêtre le long du bord : le corps plus les deux congés qui le soudent au bord.</summary>
     public static double WindowLength => BodyLength + 2 * Fillet;
+
+    /// <summary>Longueur du corps selon le mode de fournisseur (simple ou double), le bord d'écran et le contenu.</summary>
+    public static double BodyLengthFor(string provider, ScreenEdge edge, CellContent content)
+    {
+        if (provider != "both") return BodyLength;
+        if (content == CellContent.RingOnly) return 124;
+        return edge is ScreenEdge.Right or ScreenEdge.Left ? 168 : 196;
+    }
+
+    /// <summary>Longueur totale de fenêtre le long du bord (corps + congés) selon les paramètres.</summary>
+    public static double WindowLengthFor(string provider, ScreenEdge edge, CellContent content) =>
+        BodyLengthFor(provider, edge, content) + 2 * Fillet;
 }
