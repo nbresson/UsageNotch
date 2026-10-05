@@ -22,11 +22,13 @@ l'historique.
 | `docs/superpowers/specs/2026-09-14-usagenotch-design.md` | Spec de conception d'origine (référence ; ses sections « hors périmètre » sont en partie dépassées, voir plus haut) |
 | `docs/superpowers/specs/2026-09-20-usagenotch-pill-rings-design.md` | Spec de la pilule à trois anneaux (livrée par le Plan 4) |
 | `docs/superpowers/specs/2026-09-20-usagenotch-activity-logo-design.md` | Spec du logo du fournisseur comme voyant d'activité (livrée par le Plan 5) |
+| `docs/superpowers/specs/2026-10-05-usagenotch-antigravity-provider-design.md` | Spec du suivi de l'usage Google Antigravity |
 | `docs/superpowers/plans/2026-09-14-usagenotch-core-and-hook.md` | Plan 1 : Core et hook |
 | `docs/superpowers/plans/2026-09-15-usagenotch-app.md` | Plan 2 : application WPF |
 | `docs/superpowers/plans/2026-09-15-usagenotch-settings-window.md` | Plan 3 : fenêtre de réglages |
 | `docs/superpowers/plans/2026-09-20-usagenotch-pill-rings.md` | Plan 4 : pilule à trois anneaux |
 | `docs/superpowers/plans/2026-09-20-usagenotch-activity-logo.md` | Plan 5 : logo du fournisseur comme voyant d'activité |
+| `docs/superpowers/plans/2026-10-05-usagenotch-antigravity-provider.md` | Plan 6 : suivi de l'usage Google Antigravity |
 | `docs/superpowers/plans/2026-09-14-usagenotch-core-and-hook-notes.md` | **Journal de bord** : contrats entre couches, arbitrages, écarts à la spec, points laissés en l'état, puis chaque chantier postérieur (performance, fluidité, alertes, plein écran, finitions, pilule à trois anneaux, logo du fournisseur) |
 
 Les plans décrivent l'intention au moment de leur écriture ; le code et le journal de bord font foi quand ils divergent.
