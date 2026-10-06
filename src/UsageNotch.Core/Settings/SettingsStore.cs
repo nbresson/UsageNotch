@@ -126,7 +126,19 @@ public sealed class SettingsStore(string filePath, ILogger<SettingsStore> logger
             if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
             var temp = FilePath + ".tmp";
             File.WriteAllText(temp, JsonSerializer.Serialize(settings, JsonOptions));
-            File.Move(temp, FilePath, overwrite: true);
+
+            for (var attempt = 1; attempt <= 3; attempt++)
+            {
+                try
+                {
+                    File.Move(temp, FilePath, overwrite: true);
+                    return;
+                }
+                catch (IOException) when (attempt < 3)
+                {
+                    Thread.Sleep(attempt * 25);
+                }
+            }
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {

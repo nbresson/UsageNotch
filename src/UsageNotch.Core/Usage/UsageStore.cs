@@ -182,7 +182,19 @@ public sealed class UsageStore(string filePath, TimeProvider time, ILogger<Usage
             if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
             var temp = filePath + ".tmp";
             File.WriteAllText(temp, JsonSerializer.Serialize(_snapshots, JsonOptions));
-            File.Move(temp, filePath, overwrite: true);
+
+            for (var attempt = 1; attempt <= 3; attempt++)
+            {
+                try
+                {
+                    File.Move(temp, filePath, overwrite: true);
+                    return;
+                }
+                catch (IOException) when (attempt < 3)
+                {
+                    Thread.Sleep(attempt * 25);
+                }
+            }
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {

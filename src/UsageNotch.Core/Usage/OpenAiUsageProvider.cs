@@ -98,6 +98,12 @@ public sealed class OpenAiUsageProvider : IUsageProvider
                 return new FetchResult.RateLimited(retryAfter ?? TimeSpan.FromSeconds(60));
             }
 
+            if (code >= 500 && response.Headers.RetryAfter?.Delta is { } serverDelta)
+            {
+                _logger.LogWarning("Serveur OpenAI temporairement indisponible (Retry-After) : {StatusCode}", code);
+                return new FetchResult.RateLimited(serverDelta);
+            }
+
             _logger.LogWarning("Réponse d'erreur inattendue de l'abonnement OpenAI : {StatusCode}", code);
             return new FetchResult.Failed($"Erreur API OpenAI ({code} {response.ReasonPhrase})");
         }
@@ -158,6 +164,12 @@ public sealed class OpenAiUsageProvider : IUsageProvider
                 TimeSpan? retryAfter = null;
                 if (response.Headers.RetryAfter?.Delta is { } delta) retryAfter = delta;
                 return new FetchResult.RateLimited(retryAfter ?? TimeSpan.FromSeconds(60));
+            }
+
+            if (code >= 500 && response.Headers.RetryAfter?.Delta is { } serverDelta)
+            {
+                _logger.LogWarning("Serveur OpenAI (coûts) temporairement indisponible (Retry-After) : {StatusCode}", code);
+                return new FetchResult.RateLimited(serverDelta);
             }
 
             _logger.LogWarning("Réponse d'erreur inattendue d'OpenAI : {StatusCode}", code);

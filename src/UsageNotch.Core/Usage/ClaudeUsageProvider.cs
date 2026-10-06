@@ -77,6 +77,15 @@ public sealed class ClaudeUsageProvider(HttpClient http, ClaudeCredentialReader 
                     logger.LogWarning("Usage Claude : 429, Retry-After {Seconds}s", retryAfter.TotalSeconds);
                     return new FetchResult.RateLimited(retryAfter < TimeSpan.Zero ? TimeSpan.Zero : retryAfter);
                 default:
+                    if (code >= 500 && response.Headers.RetryAfter is not null)
+                    {
+                        var serverRetry = RetryDelay(response.Headers.RetryAfter);
+                        if (serverRetry > TimeSpan.Zero)
+                        {
+                            logger.LogWarning("Usage Claude : serveur indisponible HTTP {Code}, Retry-After {Seconds}s", code, serverRetry.TotalSeconds);
+                            return new FetchResult.RateLimited(serverRetry);
+                        }
+                    }
                     logger.LogWarning("Usage Claude : HTTP {Code}", code);
                     return new FetchResult.Failed($"HTTP {code}");
             }

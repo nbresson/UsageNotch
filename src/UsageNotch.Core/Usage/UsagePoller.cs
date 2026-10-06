@@ -21,6 +21,7 @@ public sealed class UsagePoller : BackgroundService
     private readonly object _wakeGate = new();
     private volatile bool _forced;
     private CancellationTokenSource? _wake;
+    private CoreSettings? _lastSettings;
     private string _currentProvider;
 
     public UsagePoller(
@@ -37,6 +38,7 @@ public sealed class UsagePoller : BackgroundService
         _time = time;
         _logger = logger;
         _settings = settings;
+        _lastSettings = settings?.Current;
         _currentProvider = settings?.Current.Provider ?? (providers.Count > 0 ? providers[0].Id : "claude");
 
         foreach (var p in providers)
@@ -63,7 +65,15 @@ public sealed class UsagePoller : BackgroundService
 
     private void OnSettingsChanged(CoreSettings s)
     {
-        if (s.Provider != _currentProvider)
+        var prev = _lastSettings;
+        _lastSettings = s;
+        if (prev is null
+            || prev.Provider != s.Provider
+            || prev.OpenAiMode != s.OpenAiMode
+            || prev.OpenAiApiKey != s.OpenAiApiKey
+            || prev.OpenAiSessionToken != s.OpenAiSessionToken
+            || prev.OpenAiAccountId != s.OpenAiAccountId
+            || Math.Abs(prev.OpenAiMonthlyBudget - s.OpenAiMonthlyBudget) > 0.001)
         {
             _currentProvider = s.Provider;
             RequestRefresh();
@@ -107,41 +117,44 @@ public sealed class UsagePoller : BackgroundService
         _forced = false;
 
         var active = GetActiveProviders();
-        foreach (var provider in active)
+        var tasks = active.Select(p => PollProviderAsync(p, forced, ct));
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task PollProviderAsync(IUsageProvider provider, bool forced, CancellationToken ct)
+    {
+        if (_store.IsInBackoffFor(provider.Id) && !forced)
         {
-            if (_store.IsInBackoffFor(provider.Id) && !forced)
-            {
-                continue;
-            }
+            return;
+        }
 
-            try
-            {
-                var result = await provider.FetchAsync(ct);
-                var backoff = GetBackoff(provider.Id);
+        try
+        {
+            var result = await provider.FetchAsync(ct);
+            var backoff = GetBackoff(provider.Id);
 
-                switch (result)
-                {
-                    case FetchResult.Success:
-                        backoff.Reset();
-                        _store.Apply(provider.Id, result);
-                        break;
-                    case FetchResult.RateLimited limited:
-                        _store.Apply(provider.Id, result, backoff.Next(limited.RetryAfter));
-                        break;
-                    default:
-                        _store.Apply(provider.Id, result);
-                        break;
-                }
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            switch (result)
             {
-                throw;
+                case FetchResult.Success:
+                    backoff.Reset();
+                    _store.Apply(provider.Id, result);
+                    break;
+                case FetchResult.RateLimited limited:
+                    _store.Apply(provider.Id, result, backoff.Next(limited.RetryAfter));
+                    break;
+                default:
+                    _store.Apply(provider.Id, result);
+                    break;
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Erreur lors de la lecture du fournisseur {ProviderId}", provider.Id);
-                _store.Apply(provider.Id, new FetchResult.Failed("Erreur inattendue"));
-            }
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erreur lors de la lecture du fournisseur {ProviderId}", provider.Id);
+            _store.Apply(provider.Id, new FetchResult.Failed("Erreur inattendue"));
         }
     }
 

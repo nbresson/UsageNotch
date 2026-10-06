@@ -43,7 +43,16 @@ public static class AppHost
         s.AddSingleton<ISessionActivity>(sp => sp.GetRequiredService<SessionStore>());
         s.AddSingleton(sp => new UsageStore(paths.UsageFile, sp.GetRequiredService<TimeProvider>(), sp.GetRequiredService<ILogger<UsageStore>>()));
         s.AddSingleton(sp => new ClaudeCredentialReader(ClaudeCredentialReader.DefaultDirectory, sp.GetRequiredService<TimeProvider>()));
-        s.AddSingleton(_ => new HttpClient { Timeout = ClaudeUsageProvider.Timeout });
+        s.AddSingleton(_ =>
+        {
+            var handler = new SocketsHttpHandler
+            {
+                PooledConnectionLifetime = TimeSpan.FromMinutes(15),
+                PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+                EnableMultipleHttp2Connections = true,
+            };
+            return new HttpClient(handler) { Timeout = ClaudeUsageProvider.Timeout };
+        });
         s.AddSingleton<AntigravityProcessDiscovery>();
         s.AddSingleton<ClaudeUsageProvider>();
         s.AddSingleton<AntigravityUsageProvider>();

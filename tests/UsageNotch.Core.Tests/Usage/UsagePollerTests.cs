@@ -350,6 +350,33 @@ public class UsagePollerTests
         antigravity.Calls.Should().Be(2, "Antigravity n'est pas bloqué par le backoff de Claude");
     }
 
+    [Fact]
+    public async Task Settings_change_on_OpenAi_credentials_triggers_refresh()
+    {
+        using var dir = new TempDir();
+        var time = new FakeTimeProvider(Now);
+        var claude = new FakeProvider("claude", "Claude");
+        var store = new UsageStore(dir.File("usage.json"), time, NullLogger<UsageStore>.Instance);
+        var activity = new FakeActivity();
+        var settingsStore = new SettingsStore(dir.File("settings.json"), NullLogger<SettingsStore>.Instance);
+        settingsStore.Load();
+
+        var poller = new UsagePoller(claude, store, activity, time, NullLogger<UsagePoller>.Instance, settingsStore);
+        using var cts = new CancellationTokenSource();
+        _ = poller.StartAsync(cts.Token);
+
+        await WaitUntil(() => claude.Calls >= 1);
+        var initialCalls = claude.Calls;
+
+        // Modification de la clé OpenAI alors qu'on est en idle
+        settingsStore.Save(settingsStore.Current with { OpenAiApiKey = "sk-new-key-123" });
+
+        await WaitUntil(() => claude.Calls > initialCalls);
+        claude.Calls.Should().BeGreaterThan(initialCalls);
+
+        await poller.StopAsync(CancellationToken.None);
+    }
+
     private static Task WaitUntil(Func<bool> condition) => WaitUntil(condition, static () => { });
 
     private static async Task WaitUntil(Func<bool> condition, Action onEachPoll)
