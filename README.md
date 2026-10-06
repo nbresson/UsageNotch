@@ -20,7 +20,7 @@ Inspiré de [codenotch](https://github.com/vinzdg/codenotch) (MIT), réécrit en
 - **Alertes de seuil** : notification Windows quand une fenêtre de limite franchit un seuil réglable (80 % par défaut) puis 100 %.
 - **Plein écran** : la pilule se masque pendant un jeu, une vidéo ou un diaporama sur son écran.
 - **Ouverture automatique** de la carte et son quand une session se termine ou attend une réponse.
-- **Démarrer avec Windows**, diagnostic intégré, journaux quotidiens conservés 7 jours.
+- **Démarrer avec Windows**, diagnostic intégré, journaux quotidiens conservés 14 jours avec rotation automatique par taille.
 
 Interface en français.
 
