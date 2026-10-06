@@ -17,4 +17,5 @@ public sealed record CellModel(
     string ActivityColor,
     string ActivityMutedColor,
     string BandColor,
-    string ProviderId = "claude");
+    string ProviderId = "claude",
+    bool HasAuthError = false);

@@ -55,6 +55,8 @@ public sealed record Settings
     /// <summary>Premier seuil d'alerte, de <see cref="NotifyThresholdMin"/> à <see cref="NotifyThresholdMax"/>.</summary>
     public double NotifyThreshold { get; init; } = 0.8;
     public bool DebugLogging { get; init; }
+    /// <summary>true = désactive les animations continues (pulsations, transitions) pour l'accessibilité.</summary>
+    public bool ReduceAnimations { get; init; }
     /// <summary>false = le hook ne relance pas l'application (mis à false par Quitter, remis à true au démarrage manuel).</summary>
     public bool AutoLaunch { get; init; } = true;
     /// <summary>Mode de fonctionnement du fournisseur OpenAI : « subscription » (ChatGPT Plus/Team/Pro/Codex) ou « api » (clé API et coûts en $).</summary>

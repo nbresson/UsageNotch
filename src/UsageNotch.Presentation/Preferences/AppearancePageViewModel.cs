@@ -200,6 +200,16 @@ public sealed class AppearancePageViewModel : ObservableObject, IDisposable
         }
     }
 
+    public bool ReduceAnimations
+    {
+        get => _draft.Value.ReduceAnimations;
+        set
+        {
+            if (value == ReduceAnimations) return;
+            _draft.Edit(s => s with { ReduceAnimations = value });
+        }
+    }
+
     public void Dispose() => _draft.Changed -= OnDraftChanged;
 
     private static Theme EffectiveTheme(CoreSettings s, string? accent) => Theme.ForPreset(s.ThemePreset, s.CustomTheme, accent);

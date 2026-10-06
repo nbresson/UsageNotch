@@ -199,9 +199,9 @@ public partial class CardWindow : Window
 
     private void OnSafetyTick(object? sender, EventArgs e)
     {
-        if (!_vm.CardVisible)
+        if (!_vm.CardVisible || _vm.Locked)
         {
-            _safety.Stop();
+            if (!_vm.CardVisible) _safety.Stop();
             return;
         }
 

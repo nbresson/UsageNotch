@@ -34,9 +34,9 @@ public partial class PillCellView : UserControl
         }
     }
 
-    public void UpdateAnimations(bool isHostVisible, bool ringShown)
+    public void UpdateAnimations(bool isHostVisible, bool ringShown, bool animationsAllowed = true)
     {
-        if (DataContext is not CellModel cell || !isHostVisible || !ringShown)
+        if (DataContext is not CellModel cell || !isHostVisible || !ringShown || !animationsAllowed)
         {
             VisualStateManager.GoToElementState(RootLayout, "Idle", true);
             return;

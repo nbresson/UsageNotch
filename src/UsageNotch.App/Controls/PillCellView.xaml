@@ -48,6 +48,16 @@
           <Path x:Name="LogoTint" Stretch="Uniform"
                 Fill="{Binding ActivityColor, Converter={StaticResource Hex}}" />
         </Grid>
+
+        <!-- Indicateur d'erreur d'authentification ou de connectivité -->
+        <Border x:Name="AuthBadge" Width="14" Height="14" CornerRadius="7"
+                Background="{Binding ActivityColor, Converter={StaticResource Hex}}"
+                HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                Margin="0,0,4,4"
+                Visibility="{Binding HasAuthError, Converter={StaticResource BoolVis}}">
+          <TextBlock Text="!" FontSize="9" FontWeight="Bold" Foreground="#FFFFFF"
+                     HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-1,0,0" />
+        </Border>
       </Grid>
 
       <TextBlock x:Name="PercentText" FontFamily="Segoe UI" FontSize="14" FontWeight="SemiBold"

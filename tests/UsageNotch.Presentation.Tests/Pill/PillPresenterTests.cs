@@ -88,6 +88,18 @@ public class PillPresenterTests
         var c = Cell(Snap(SnapshotStatus.NeedsAuth, 0.4, note: "Identifiant refusé"));
         c.Rings[0].Fraction.Should().BeNull();
         c.PercentText.Should().Be("—");
+        c.HasAuthError.Should().BeTrue();
+        c.Activity.Should().Be(ActivityKind.Attention);
+        c.ActivityColor.Should().Be(Theme.Attention);
+    }
+
+    [Fact]
+    public void Error_status_sets_auth_error_flag_and_attention_activity()
+    {
+        var c = Cell(Snap(SnapshotStatus.Error, 0.4, note: "Échec de connexion"));
+        c.HasAuthError.Should().BeTrue();
+        c.Activity.Should().Be(ActivityKind.Attention);
+        c.ActivityColor.Should().Be(Theme.Attention);
     }
 
     [Fact]

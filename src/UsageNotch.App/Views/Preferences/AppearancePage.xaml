@@ -154,5 +154,14 @@
                 ItemsSource="{Binding CellContents}" DisplayMemberPath="Label" SelectedValuePath="Value"
                 SelectedValue="{Binding CellContent}" />
     </Grid>
+
+    <TextBlock Text="Animations" Style="{StaticResource SectionTitle}" />
+    <CheckBox Margin="0,4,0,2"
+              IsChecked="{Binding ReduceAnimations}"
+              Content="Réduire les animations"
+              AutomationProperties.AutomationId="ReduceAnimations"
+              AutomationProperties.Name="Réduire les animations" />
+    <TextBlock Text="Désactive les pulsations et transitions de repli (respecte aussi le réglage d'accessibilité de Windows)."
+               Style="{StaticResource NoteText}" />
   </StackPanel>
 </UserControl>

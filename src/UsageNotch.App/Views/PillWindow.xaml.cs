@@ -210,12 +210,13 @@ public partial class PillWindow : Window
     private void UpdateFold(bool animated)
     {
         var s = _vm.Settings;
+        var allowAnim = animated && !s.ReduceAnimations && SystemParameters.ClientAreaAnimation;
         var folded = s.Visibility == VisibilityMode.Folded && !_vm.Unfolded;
         var target = folded ? PillShapeBuilder.SlideOffset(s.Edge, _thicknessDip) : new Vector(0, 0);
 
         BandPath.Visibility = folded ? Visibility.Visible : Visibility.Collapsed;
 
-        if (!animated)
+        if (!allowAnim)
         {
             Slide.BeginAnimation(TranslateTransform.XProperty, null);
             Slide.BeginAnimation(TranslateTransform.YProperty, null);
@@ -248,14 +249,15 @@ public partial class PillWindow : Window
 
     private void UpdateAnimations()
     {
+        var animationsAllowed = !_vm.Settings.ReduceAnimations && SystemParameters.ClientAreaAnimation;
         var ringShown = IsVisible && PillLayer.Visibility == Visibility.Visible;
         var cellCount = _vm.Pill?.Cells.Count ?? 0;
-        Cell1.UpdateAnimations(IsVisible, ringShown);
-        Cell2.UpdateAnimations(IsVisible && cellCount >= 2, ringShown);
-        Cell3.UpdateAnimations(IsVisible && cellCount >= 3, ringShown);
+        Cell1.UpdateAnimations(IsVisible, ringShown, animationsAllowed);
+        Cell2.UpdateAnimations(IsVisible && cellCount >= 2, ringShown, animationsAllowed);
+        Cell3.UpdateAnimations(IsVisible && cellCount >= 3, ringShown, animationsAllowed);
 
         var hasAttention = _vm.Pill?.Cells.Any(c => c.Activity == ActivityKind.Attention) ?? false;
-        var pulse = IsVisible && BandPath.Visibility == Visibility.Visible && hasAttention;
+        var pulse = animationsAllowed && IsVisible && BandPath.Visibility == Visibility.Visible && hasAttention;
         VisualStateManager.GoToElementState(Root, pulse ? "BandPulse" : "BandNormal", true);
     }
 

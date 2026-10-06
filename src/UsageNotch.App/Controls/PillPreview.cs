@@ -114,6 +114,15 @@ public sealed class PillPreview : ContentControl
             Stroke = HexBrushConverter.ToBrush(theme.PillBorder),
             StrokeThickness = 1,
             Opacity = theme.PillOpacity,
+            Effect = new System.Windows.Media.Effects.DropShadowEffect
+            {
+                BlurRadius = 10,
+                ShadowDepth = 1,
+                Direction = 270,
+                Color = Colors.Black,
+                Opacity = 0.35,
+                RenderingBias = System.Windows.Media.Effects.RenderingBias.Performance,
+            },
         });
 
         var bodyRect = PillShapeBuilder.Body(model.Edge, thickness, length, fillet);
@@ -212,6 +221,30 @@ public sealed class PillPreview : ContentControl
             Data = BrandGeometry.ForProvider(cell.ProviderId),
             Fill = HexBrushConverter.ToBrush(cell.ActivityColor),
         });
+
+        if (cell.HasAuthError)
+        {
+            host.Children.Add(new Border
+            {
+                Width = 14,
+                Height = 14,
+                CornerRadius = new CornerRadius(7),
+                Background = HexBrushConverter.ToBrush(cell.ActivityColor),
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Bottom,
+                Margin = new Thickness(0, 0, 4, 4),
+                Child = new TextBlock
+                {
+                    Text = "!",
+                    FontSize = 9,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.White,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(0, -1, 0, 0),
+                },
+            });
+        }
 
         return host;
     }

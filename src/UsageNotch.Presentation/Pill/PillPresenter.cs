@@ -20,7 +20,13 @@ public static class PillPresenter
         DateTimeOffset now,
         string providerId = "claude")
     {
+        var hasAuthError = snapshot.Status is SnapshotStatus.NeedsAuth or SnapshotStatus.Error;
         var activity = ActivityOf(aggregate);
+        if (activity == ActivityKind.None && hasAuthError)
+        {
+            activity = ActivityKind.Attention;
+        }
+
         var blind = snapshot.Status == SnapshotStatus.NeedsAuth;
         string[] fixedColors = [theme.RingSession, theme.RingWeeklyAll, theme.RingWeeklyScoped];
 
@@ -54,7 +60,8 @@ public static class PillPresenter
             ActivityColor: activityColor,
             ActivityMutedColor: HexColor.Desaturate(activityColor),
             BandColor: activity == ActivityKind.Attention ? theme.Attention : rings[0].Color,
-            ProviderId: providerId);
+            ProviderId: providerId,
+            HasAuthError: hasAuthError);
     }
 
     /// <summary>Sans lecture, l'anneau prend la couleur de sa piste : il disparaît dedans.</summary>

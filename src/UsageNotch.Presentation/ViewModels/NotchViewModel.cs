@@ -37,6 +37,7 @@ public sealed class NotchViewModel : ObservableObject, IDisposable
     private readonly Action _onSessions;
     private readonly Action<CoreSettings> _onSettings;
     private readonly Action _onHover;
+    private readonly Action _requestRefresh;
     private bool _disposed;
 
     private PillModel _pill = null!;
@@ -47,6 +48,7 @@ public sealed class NotchViewModel : ObservableObject, IDisposable
     private bool _cardVisible;
     private bool _unfolded;
     private bool _locked;
+    private bool _isRefreshing;
     private bool _foregroundFullscreen;
     private bool _fullscreenActive;
     private string _trayText = "";
@@ -76,8 +78,9 @@ public sealed class NotchViewModel : ObservableObject, IDisposable
         _accent = accent;
         _time = time;
         _zone = zone;
+        _requestRefresh = requestRefresh;
 
-        RefreshCommand = new RelayCommand(requestRefresh);
+        RefreshCommand = new RelayCommand(TriggerRefresh);
         ToggleLockCommand = new RelayCommand(_hover.ToggleLock);
         PeekCommand = new RelayCommand(_hover.Peek);
         DismissSessionCommand = new RelayCommand<string>(id => { if (id is not null) _sessions.Dismiss(id); });
@@ -107,7 +110,30 @@ public sealed class NotchViewModel : ObservableObject, IDisposable
     public CoreSettings Settings { get => _settings; private set => SetProperty(ref _settings, value); }
     public bool CardVisible { get => _cardVisible; private set => SetProperty(ref _cardVisible, value); }
     public bool Unfolded { get => _unfolded; private set => SetProperty(ref _unfolded, value); }
-    public bool Locked { get => _locked; private set => SetProperty(ref _locked, value); }
+    public bool Locked
+    {
+        get => _locked;
+        private set
+        {
+            if (SetProperty(ref _locked, value))
+            {
+                OnPropertyChanged(nameof(PinToolTip));
+            }
+        }
+    }
+    public string PinToolTip => Locked ? "Détacher la carte (fermeture automatique)" : "Épingler la carte (garder ouverte)";
+    public bool IsRefreshing
+    {
+        get => _isRefreshing;
+        private set
+        {
+            if (SetProperty(ref _isRefreshing, value))
+            {
+                OnPropertyChanged(nameof(RefreshLabel));
+            }
+        }
+    }
+    public string RefreshLabel => IsRefreshing ? "Actualisation en cours…" : "Rafraîchir maintenant";
     public string TrayText { get => _trayText; private set => SetProperty(ref _trayText, value); }
 
     /// <summary>Une application est en plein écran sur l'écran de la pilule et le réglage le permet : pilule et carte masquées, annonces suspendues.</summary>
@@ -118,6 +144,13 @@ public sealed class NotchViewModel : ObservableObject, IDisposable
     public IRelayCommand PeekCommand { get; }
     public IRelayCommand<string> DismissSessionCommand { get; }
     public IRelayCommand<string> FocusSessionCommand { get; }
+
+    private void TriggerRefresh()
+    {
+        IsRefreshing = true;
+        _requestRefresh();
+        _time.CreateTimer(_ => Post(() => IsRefreshing = false), null, TimeSpan.FromMilliseconds(1200), Timeout.InfiniteTimeSpan);
+    }
 
     /// <summary>Appelé par l'App (thread UI) quand la fenêtre au premier plan entre en plein écran sur l'écran de la pilule ou en sort.</summary>
     public void SetForegroundFullscreen(bool fullscreen)

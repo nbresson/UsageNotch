@@ -21,6 +21,7 @@ public sealed class ClaudeCodePageViewModel : ObservableObject, IDisposable
     private bool _lastActionFailed;
     private string _portText;
     private string _portError = "";
+    private bool _isRefreshing;
 
     public ClaudeCodePageViewModel(SettingsDraft draft, IHookSetup hooks, IShellActions shell, SettingsEnvironment environment)
     {
@@ -37,6 +38,20 @@ public sealed class ClaudeCodePageViewModel : ObservableObject, IDisposable
 
         _draft.Changed += OnDraftChanged;
     }
+
+    public bool IsRefreshing
+    {
+        get => _isRefreshing;
+        private set
+        {
+            if (SetProperty(ref _isRefreshing, value))
+            {
+                OnPropertyChanged(nameof(RefreshLabel));
+            }
+        }
+    }
+
+    public string RefreshLabel => IsRefreshing ? "Actualisation en cours…" : "Actualiser";
 
     public bool HooksInstalled => _installed;
 
@@ -126,10 +141,13 @@ public sealed class ClaudeCodePageViewModel : ObservableObject, IDisposable
         SetInstalled(installed);
     }
 
-    private void Refresh()
+    private async void Refresh()
     {
+        IsRefreshing = true;
         _statusVersion++;
         SetInstalled(_hooks.IsInstalled());
+        await Task.Delay(400);
+        IsRefreshing = false;
     }
 
     private void SetInstalled(bool installed)

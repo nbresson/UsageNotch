@@ -27,8 +27,8 @@
 
 - **Version en développement** : `0.7.0-dev` (branche `main`).
 - **Dernière release officielle** : [v0.6.0](https://github.com/nbresson/UsageNotch/releases/tag/v0.6.0) publiée le 2026-10-06.
-- **Tests** : **706 tests xUnit verts** (373 Core, 333 Presentation), durée totale d'exécution < 2 s, 0 avertissement.
-- **Dernières améliorations techniques majeures (Chantier Qualité & Architecture - Axes 1 à 4)** :
+- **Tests** : **711 tests xUnit verts** (373 Core, 338 Presentation), durée totale d'exécution < 2 s, 0 avertissement.
+- **Dernières améliorations techniques majeures (Chantier Qualité & Architecture - Axes 1 à 5)** :
   1. **Axe I — Architecture, Modularité & Extensibilité** :
      - `ProviderSelection` : remplacement des cascades de `switch` combinatoires par un système de masques d'identifiants et de résolutions atomiques (`ActiveProviders`).
      - `IUsageProviderRegistry` : registre ouvert de fournisseurs de quotas supprimant le routage rigide en dur.
@@ -53,9 +53,12 @@
      - Plafond de requête et protection anti-DoS (`HookListener`) : contrôle précoce `ContentLength64` rejetant immédiatement les charges excessives (`413 Payload Too Large`), cap dur `MaxRequestBytes = 2 Mo` et mémoire tampon limitée à 256 Ko.
      - Assainissement des erreurs d'API (`ExceptionSanitizer`) : masquage des clés d'API (`sk-***`), jetons d'autorisation (`Bearer ***`), paramètres de requêtes d'URL et normalisation conviviale des exceptions réseau.
      - Création et intégrité des répertoires applicatifs (`AppPaths.EnsureDirectoriesCreated`).
-  5. **Mode Abonnement OpenAI & Mode Clé API Hybride (v0.6.0)** :
-     - Suivi des quotas glissants (fenêtre 5h, quota hebdo, modèles de raisonnement) ou budget en dollars.
-     - Capsule triple unifiée (Claude + Google Antigravity + OpenAI) avec détection automatique de session.
+  5. **Axe V — Ergonomie, UI & Accessibilité** :
+     - Réduction des animations : respect automatique des réglages Windows (`SystemParameters.ClientAreaAnimation`) et option dédiée `Settings.ReduceAnimations` dans les préférences d'apparence.
+     - Contraste renforcé sur fond clair : effet d'ombre portée subtil (`DropShadowEffect`) sur le contour de la pilule dans la fenêtre principale et dans l'aperçu.
+     - Indicateur visuel d'authentification (`AuthBadge`) : badge d'avertissement ambre immédiat sur la cellule en cas de statut `NeedsAuth` ou `Error`.
+     - Épinglage direct de la carte : bouton d'épinglage 📌 dans l'en-tête de `CardWindow` pour figer l'affichage de la carte sans devoir recourir au clic droit sur la pilule.
+     - Retour visuel immédiat d'actualisation : état `IsRefreshing` affichant « Actualisation en cours… » sur le bouton et dans le menu contextuel.
 
 ---
 

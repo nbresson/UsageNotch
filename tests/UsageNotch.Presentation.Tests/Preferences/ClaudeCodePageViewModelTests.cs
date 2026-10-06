@@ -257,4 +257,22 @@ public class ClaudeCodePageViewModelTests
 
         shell.Folders.Should().Equal(@"C:\Users\test\.claude");
     }
+
+    [Fact]
+    public async Task Refresh_command_updates_label_and_completes()
+    {
+        var (f, vm, _, _) = Create();
+        using var _f = f;
+
+        vm.IsRefreshing.Should().BeFalse();
+        vm.RefreshLabel.Should().Be("Actualiser");
+
+        vm.RefreshCommand.Execute(null);
+        vm.IsRefreshing.Should().BeTrue();
+        vm.RefreshLabel.Should().Be("Actualisation en cours…");
+
+        await Task.Delay(500);
+        vm.IsRefreshing.Should().BeFalse();
+        vm.RefreshLabel.Should().Be("Actualiser");
+    }
 }

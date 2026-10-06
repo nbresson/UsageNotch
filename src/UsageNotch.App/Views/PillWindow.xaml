@@ -14,7 +14,7 @@
 
   <Window.ContextMenu>
     <ContextMenu>
-      <MenuItem Header="Rafraîchir maintenant" Command="{Binding RefreshCommand}" />
+      <MenuItem Header="{Binding RefreshLabel}" Command="{Binding RefreshCommand}" />
       <MenuItem Header="Garder la carte ouverte" IsChecked="{Binding Locked, Mode=OneWay}" Command="{Binding ToggleLockCommand}" />
       <Separator />
       <MenuItem Header="Réglages…" Click="OnSettingsClick" />
@@ -45,7 +45,11 @@
       <Path x:Name="PillPath" StrokeThickness="1"
             Fill="{Binding Theme.PillBackground, Converter={StaticResource Hex}}"
             Stroke="{Binding Theme.PillBorder, Converter={StaticResource Hex}}"
-            Opacity="{Binding Theme.PillOpacity}" />
+            Opacity="{Binding Theme.PillOpacity}">
+        <Path.Effect>
+          <DropShadowEffect BlurRadius="10" ShadowDepth="1" Direction="270" Color="#000000" Opacity="0.35" RenderingBias="Performance" />
+        </Path.Effect>
+      </Path>
 
       <Grid x:Name="Body">
         <StackPanel x:Name="BodyStack" HorizontalAlignment="Center" VerticalAlignment="Center">

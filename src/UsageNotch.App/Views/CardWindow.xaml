@@ -34,6 +34,31 @@
         </Setter.Value>
       </Setter>
     </Style>
+    <Style x:Key="PinButton" TargetType="Button">
+      <Setter Property="Focusable" Value="False" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Foreground" Value="#8A8A8A" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Bg" Background="Transparent" CornerRadius="6" Padding="5,2">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <DataTrigger Binding="{Binding Locked}" Value="True">
+                <Setter TargetName="Bg" Property="Background" Value="#33FFFFFF" />
+                <Setter Property="Foreground" Value="#FFFFFF" />
+              </DataTrigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bg" Property="Background" Value="#4DFFFFFF" />
+                <Setter Property="Foreground" Value="#FFFFFF" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
   </Window.Resources>
 
   <Grid x:Name="Root">
@@ -54,10 +79,22 @@
               Background="{Binding Theme.PillBackground, Converter={StaticResource Hex}}"
               BorderBrush="{Binding Theme.PillBorder, Converter={StaticResource Hex}}">
         <StackPanel>
-          <!-- En-tête global en mode double -->
-          <TextBlock Text="{Binding Card.HeaderTitle}" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,10"
-                     Foreground="{Binding Theme.Text, Converter={StaticResource Hex}}"
-                     Visibility="{Binding Card.HeaderTitle, Converter={StaticResource NotNull}}" />
+          <!-- Barre d'en-tête (actions rapides et titre global) -->
+          <DockPanel LastChildFill="True" Margin="0,0,0,8">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+              <Button Content="🔄" Style="{StaticResource GhostButton}" Margin="0,0,4,0"
+                      Command="{Binding RefreshCommand}"
+                      ToolTip="{Binding RefreshLabel}"
+                      AutomationProperties.Name="Rafraîchir maintenant" />
+              <Button Content="📌" Style="{StaticResource PinButton}"
+                      Command="{Binding ToggleLockCommand}"
+                      ToolTip="{Binding PinToolTip}"
+                      AutomationProperties.Name="Épingler la carte" />
+            </StackPanel>
+            <TextBlock Text="{Binding Card.HeaderTitle}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"
+                       Foreground="{Binding Theme.Text, Converter={StaticResource Hex}}"
+                       Visibility="{Binding Card.HeaderTitle, Converter={StaticResource NotNull}}" />
+          </DockPanel>
 
           <!-- Sections des fournisseurs (1 en mode simple, 2 en mode double) -->
           <ItemsControl ItemsSource="{Binding Card.Sections}">

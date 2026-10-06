@@ -352,4 +352,20 @@ public class AppearancePageViewModelTests
         vm.IsOpenAiApiMode.Should().BeTrue();
         f.Draft.Value.OpenAiMode.Should().Be("api");
     }
+
+    [Fact]
+    public void Reduce_animations_toggles_and_updates_draft()
+    {
+        var (f, vm, _, _) = Create();
+        using var _f = f;
+
+        vm.ReduceAnimations.Should().BeFalse();
+        vm.ReduceAnimations = true;
+        vm.ReduceAnimations.Should().BeTrue();
+        f.Draft.Value.ReduceAnimations.Should().BeTrue();
+
+        vm.ReduceAnimations = false;
+        vm.ReduceAnimations.Should().BeFalse();
+        f.Draft.Value.ReduceAnimations.Should().BeFalse();
+    }
 }

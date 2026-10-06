@@ -390,4 +390,37 @@ public sealed class NotchViewModelTests : IDisposable
 
         _vm.TrayText.Should().Contain("Claude 73").And.Contain("OpenAI 50");
     }
+
+    [Fact]
+    public void Pin_tooltip_reflects_locked_state()
+    {
+        _vm.Locked.Should().BeFalse();
+        _vm.PinToolTip.Should().Be("Épingler la carte (garder ouverte)");
+
+        _vm.ToggleLockCommand.Execute(null);
+        _vm.Locked.Should().BeTrue();
+        _vm.PinToolTip.Should().Be("Détacher la carte (fermeture automatique)");
+
+        _vm.ToggleLockCommand.Execute(null);
+        _vm.Locked.Should().BeFalse();
+        _vm.PinToolTip.Should().Be("Épingler la carte (garder ouverte)");
+    }
+
+    [Fact]
+    public void Refresh_command_updates_state_and_invokes_handler()
+    {
+        _refreshes.Should().Be(0);
+        _vm.IsRefreshing.Should().BeFalse();
+        _vm.RefreshLabel.Should().Be("Rafraîchir maintenant");
+
+        _vm.RefreshCommand.Execute(null);
+
+        _refreshes.Should().Be(1);
+        _vm.IsRefreshing.Should().BeTrue();
+        _vm.RefreshLabel.Should().Be("Actualisation en cours…");
+
+        _time.Advance(TimeSpan.FromMilliseconds(1300));
+        _vm.IsRefreshing.Should().BeFalse();
+        _vm.RefreshLabel.Should().Be("Rafraîchir maintenant");
+    }
 }

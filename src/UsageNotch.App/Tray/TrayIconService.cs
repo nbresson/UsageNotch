@@ -24,6 +24,7 @@ public sealed class TrayIconService(
     ILogger<TrayIconService> logger) : IUserNotifier, IDisposable
 {
     private TaskbarIcon? _icon;
+    private MenuItem? _refreshItem;
     private MenuItem? _lockItem;
     private MenuItem? _hooksItem;
     private MenuItem? _autoStartItem;
@@ -76,6 +77,9 @@ public sealed class TrayIconService(
             case nameof(NotchViewModel.Locked):
                 if (_lockItem is not null) _lockItem.IsChecked = vm.Locked;
                 break;
+            case nameof(NotchViewModel.RefreshLabel):
+                if (_refreshItem is not null) _refreshItem.Header = vm.RefreshLabel;
+                break;
         }
     }
 
@@ -90,7 +94,8 @@ public sealed class TrayIconService(
     {
         var menu = new ContextMenu();
 
-        menu.Items.Add(Item("Rafraîchir maintenant", () => vm.RefreshCommand.Execute(null)));
+        _refreshItem = Item(vm.RefreshLabel, () => vm.RefreshCommand.Execute(null));
+        menu.Items.Add(_refreshItem);
         _lockItem = Item("Garder la carte ouverte", () => vm.ToggleLockCommand.Execute(null));
         menu.Items.Add(_lockItem);
         menu.Items.Add(new Separator());
@@ -112,6 +117,7 @@ public sealed class TrayIconService(
 
         menu.Opened += async (_, _) =>
         {
+            if (_refreshItem is not null) _refreshItem.Header = vm.RefreshLabel;
             _lockItem.IsChecked = vm.Locked;
             if (autoStart.IsAvailable) _autoStartItem.IsChecked = autoStart.IsEnabled();
             // Lecture de settings.json de Claude Code hors du thread UI : le menu s'ouvre sans attendre, la coche suit.
