@@ -7,17 +7,15 @@ namespace UsageNotch.App.Controls;
 
 /// <summary>
 /// Cellule unitaire de la pilule encapsulant ses anneaux de progression,
-/// son logo de fournisseur et ses animations d'activité (rotation et pulsation).
+/// son logo de fournisseur et ses animations d'activité pilotées par VisualStateManager.
 /// </summary>
 public partial class PillCellView : UserControl
 {
-    private bool _spinRunning;
-    private bool _pulseRunning;
-
     public PillCellView()
     {
         InitializeComponent();
         DataContextChanged += (_, _) => UpdateGeometry();
+        Unloaded += (_, _) => StopAnimations();
     }
 
     public void SetOrientation(bool vertical)
@@ -38,23 +36,23 @@ public partial class PillCellView : UserControl
 
     public void UpdateAnimations(bool isHostVisible, bool ringShown)
     {
-        if (DataContext is not CellModel cell || !isHostVisible)
+        if (DataContext is not CellModel cell || !isHostVisible || !ringShown)
         {
-            SetAnimation("Spin", ref _spinRunning, false);
-            SetAnimation("Pulse", ref _pulseRunning, false);
+            VisualStateManager.GoToElementState(RootLayout, "Idle", true);
             return;
         }
 
-        SetAnimation("Spin", ref _spinRunning, ringShown && cell.Activity == ActivityKind.Running);
-        SetAnimation("Pulse", ref _pulseRunning, ringShown && cell.Activity == ActivityKind.Attention);
+        var state = cell.Activity switch
+        {
+            ActivityKind.Running => "Running",
+            ActivityKind.Attention => "Attention",
+            _ => "Idle"
+        };
+        VisualStateManager.GoToElementState(RootLayout, state, true);
     }
 
-    private void SetAnimation(string key, ref bool running, bool desired)
+    public void StopAnimations()
     {
-        if (running == desired) return;
-        var sb = (Storyboard)Resources[key];
-        if (desired) sb.Begin(this, isControllable: true);
-        else sb.Stop(this);
-        running = desired;
+        VisualStateManager.GoToElementState(RootLayout, "Idle", false);
     }
 }

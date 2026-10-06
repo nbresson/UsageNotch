@@ -70,11 +70,11 @@ internal static class Program
     {
         if (!Console.IsInputRedirected) return "";
 
-        // Lu sur un thread d'arrière-plan avec un délai borné : si l'appelant garde stdin ouvert sans
-        // EOF, on ne doit pas bloquer indéfiniment. Un thread d'arrière-plan encore coincé dans Read
+        // Lu sur le pool de threads avec un délai borné : si l'appelant garde stdin ouvert sans
+        // EOF, on ne doit pas bloquer indéfiniment. Un worker du thread pool encore coincé dans Read
         // ne retient pas le processus vivant une fois Main revenu.
         var buffer = new MemoryStream();
-        var thread = new Thread(() =>
+        var task = Task.Run(() =>
         {
             try
             {
@@ -96,10 +96,9 @@ internal static class Program
             {
                 // Ignoré : on utilisera ce qui a déjà été lu.
             }
-        })
-        { IsBackground = true };
-        thread.Start();
-        thread.Join(StdinWait);
+        });
+
+        task.Wait(StdinWait);
 
         lock (buffer)
         {

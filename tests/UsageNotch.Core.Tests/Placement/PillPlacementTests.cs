@@ -84,6 +84,18 @@ public class PillPlacementTests
         card.Bottom.Should().BeLessThanOrEqualTo(Monitor.Bottom - 8);
     }
 
+    [Theory]
+    [InlineData(320)]
+    [InlineData(420)]
+    public void Card_adapts_to_various_widths_within_monitor_bounds(int width)
+    {
+        var pill = PillPlacement.PillRect(Monitor, ScreenEdge.Top, 0.5, Length, Thickness);
+        var card = PillPlacement.CardRect(Monitor, ScreenEdge.Top, pill, pill, width, 250, 12, 8);
+        card.Width.Should().Be(width);
+        card.X.Should().BeGreaterThanOrEqualTo(Monitor.X + 8);
+        card.Right.Should().BeLessThanOrEqualTo(Monitor.Right - 8);
+    }
+
     [Fact]
     public void Choose_prefers_the_remembered_monitor_then_the_primary_then_the_first()
     {

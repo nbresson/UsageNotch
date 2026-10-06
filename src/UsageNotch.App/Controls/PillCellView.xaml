@@ -6,43 +6,55 @@
   <UserControl.Resources>
     <conv:HexBrushConverter x:Key="Hex" />
     <BooleanToVisibilityConverter x:Key="BoolVis" />
-    <Storyboard x:Key="Spin" RepeatBehavior="Forever" Timeline.DesiredFrameRate="30">
-      <DoubleAnimation Storyboard.TargetName="SpinRotate" Storyboard.TargetProperty="Angle" From="0" To="360" Duration="0:0:1.2" />
-    </Storyboard>
-    <Storyboard x:Key="Pulse" RepeatBehavior="Forever" AutoReverse="True" Timeline.DesiredFrameRate="20">
-      <DoubleAnimation Storyboard.TargetName="LogoTint" Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:1" />
-    </Storyboard>
   </UserControl.Resources>
 
-  <StackPanel x:Name="RootStack" HorizontalAlignment="Center" VerticalAlignment="Center">
-    <Grid x:Name="RingHost" Width="56" Height="56" Margin="0,0,0,4">
-      <controls:ProgressRing Width="56" Height="56" RingThickness="4"
-                             TargetFraction="{Binding Rings[0].Fraction}"
-                             RingBrush="{Binding Rings[0].Color, Converter={StaticResource Hex}}"
-                             TrackBrush="{Binding Rings[0].TrackColor, Converter={StaticResource Hex}}" />
-      <controls:ProgressRing Width="44" Height="44" RingThickness="4"
-                             TargetFraction="{Binding Rings[1].Fraction}"
-                             RingBrush="{Binding Rings[1].Color, Converter={StaticResource Hex}}"
-                             TrackBrush="{Binding Rings[1].TrackColor, Converter={StaticResource Hex}}" />
-      <controls:ProgressRing Width="32" Height="32" RingThickness="4"
-                             TargetFraction="{Binding Rings[2].Fraction}"
-                             RingBrush="{Binding Rings[2].Color, Converter={StaticResource Hex}}"
-                             TrackBrush="{Binding Rings[2].TrackColor, Converter={StaticResource Hex}}" />
-      <Grid x:Name="LogoHost" Width="20" Height="20" RenderTransformOrigin="0.5,0.5">
-        <Grid.RenderTransform>
-          <RotateTransform x:Name="SpinRotate" />
-        </Grid.RenderTransform>
-        <Path x:Name="LogoMuted" Stretch="Uniform"
-              Fill="{Binding ActivityMutedColor, Converter={StaticResource Hex}}" />
-        <Path x:Name="LogoTint" Stretch="Uniform"
-              Fill="{Binding ActivityColor, Converter={StaticResource Hex}}" />
-      </Grid>
-    </Grid>
+  <Grid x:Name="RootLayout">
+    <VisualStateManager.VisualStateGroups>
+      <VisualStateGroup x:Name="ActivityStates">
+        <VisualState x:Name="Idle" />
+        <VisualState x:Name="Running">
+          <Storyboard RepeatBehavior="Forever" Timeline.DesiredFrameRate="30">
+            <DoubleAnimation Storyboard.TargetName="SpinRotate" Storyboard.TargetProperty="Angle" From="0" To="360" Duration="0:0:1.2" />
+          </Storyboard>
+        </VisualState>
+        <VisualState x:Name="Attention">
+          <Storyboard RepeatBehavior="Forever" AutoReverse="True" Timeline.DesiredFrameRate="20">
+            <DoubleAnimation Storyboard.TargetName="LogoTint" Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:1" />
+          </Storyboard>
+        </VisualState>
+      </VisualStateGroup>
+    </VisualStateManager.VisualStateGroups>
 
-    <TextBlock x:Name="PercentText" FontFamily="Segoe UI" FontSize="14" FontWeight="SemiBold"
-               HorizontalAlignment="Center" VerticalAlignment="Center"
-               Text="{Binding PercentText}"
-               Foreground="{Binding TextColor, Converter={StaticResource Hex}}"
-               Visibility="{Binding ShowPercent, Converter={StaticResource BoolVis}}" />
-  </StackPanel>
+    <StackPanel x:Name="RootStack" HorizontalAlignment="Center" VerticalAlignment="Center">
+      <Grid x:Name="RingHost" Width="56" Height="56" Margin="0,0,0,4">
+        <controls:ProgressRing Width="56" Height="56" RingThickness="4"
+                               TargetFraction="{Binding Rings[0].Fraction}"
+                               RingBrush="{Binding Rings[0].Color, Converter={StaticResource Hex}}"
+                               TrackBrush="{Binding Rings[0].TrackColor, Converter={StaticResource Hex}}" />
+        <controls:ProgressRing Width="44" Height="44" RingThickness="4"
+                               TargetFraction="{Binding Rings[1].Fraction}"
+                               RingBrush="{Binding Rings[1].Color, Converter={StaticResource Hex}}"
+                               TrackBrush="{Binding Rings[1].TrackColor, Converter={StaticResource Hex}}" />
+        <controls:ProgressRing Width="32" Height="32" RingThickness="4"
+                               TargetFraction="{Binding Rings[2].Fraction}"
+                               RingBrush="{Binding Rings[2].Color, Converter={StaticResource Hex}}"
+                               TrackBrush="{Binding Rings[2].TrackColor, Converter={StaticResource Hex}}" />
+        <Grid x:Name="LogoHost" Width="20" Height="20" RenderTransformOrigin="0.5,0.5">
+          <Grid.RenderTransform>
+            <RotateTransform x:Name="SpinRotate" />
+          </Grid.RenderTransform>
+          <Path x:Name="LogoMuted" Stretch="Uniform"
+                Fill="{Binding ActivityMutedColor, Converter={StaticResource Hex}}" />
+          <Path x:Name="LogoTint" Stretch="Uniform"
+                Fill="{Binding ActivityColor, Converter={StaticResource Hex}}" />
+        </Grid>
+      </Grid>
+
+      <TextBlock x:Name="PercentText" FontFamily="Segoe UI" FontSize="14" FontWeight="SemiBold"
+                 HorizontalAlignment="Center" VerticalAlignment="Center"
+                 Text="{Binding PercentText}"
+                 Foreground="{Binding TextColor, Converter={StaticResource Hex}}"
+                 Visibility="{Binding ShowPercent, Converter={StaticResource BoolVis}}" />
+    </StackPanel>
+  </Grid>
 </UserControl>

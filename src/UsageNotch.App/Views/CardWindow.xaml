@@ -10,6 +10,7 @@
   <Window.Resources>
     <conv:HexBrushConverter x:Key="Hex" />
     <conv:NotNullVisibilityConverter x:Key="NotNull" />
+    <conv:ArrowGeometryConverter x:Key="ArrowGeom" />
     <BooleanToVisibilityConverter x:Key="BoolVis" />
     <SolidColorBrush x:Key="Secondary" Color="#9A9A9A" />
     <Style x:Key="GhostButton" TargetType="Button">
@@ -44,11 +45,12 @@
     </Grid.RenderTransform>
 
     <Grid x:Name="CardHost" Margin="0,0,10,0">
-      <Path x:Name="Arrow" Data="M0,0 L10,10 L0,20 Z"
+      <Path x:Name="Arrow"
+            Data="{Binding Settings.Edge, Converter={StaticResource ArrowGeom}}"
             HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,-10,0"
             Fill="{Binding Theme.PillBackground, Converter={StaticResource Hex}}" />
 
-      <Border Width="320" CornerRadius="14" Padding="16" BorderThickness="1"
+      <Border MinWidth="320" MaxWidth="420" CornerRadius="14" Padding="16" BorderThickness="1"
               Background="{Binding Theme.PillBackground, Converter={StaticResource Hex}}"
               BorderBrush="{Binding Theme.PillBorder, Converter={StaticResource Hex}}">
         <StackPanel>

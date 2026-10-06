@@ -76,39 +76,16 @@ public partial class CardWindow : Window
         var s = _vm.Settings;
         RootScale.ScaleX = s.Scale;
         RootScale.ScaleY = s.Scale;
-
-        switch (s.Edge)
-        {
-            case ScreenEdge.Left:
-                CardHost.Margin = new Thickness(10, 0, 0, 0);
-                Arrow.Data = Geometry.Parse("M10,0 L0,10 L10,20 Z");
-                Arrow.HorizontalAlignment = HorizontalAlignment.Left;
-                Arrow.VerticalAlignment = VerticalAlignment.Center;
-                Arrow.Margin = new Thickness(-10, 0, 0, 0);
-                break;
-            case ScreenEdge.Top:
-                CardHost.Margin = new Thickness(0, 10, 0, 0);
-                Arrow.Data = Geometry.Parse("M0,10 L10,0 L20,10 Z");
-                Arrow.HorizontalAlignment = HorizontalAlignment.Center;
-                Arrow.VerticalAlignment = VerticalAlignment.Top;
-                Arrow.Margin = new Thickness(0, -10, 0, 0);
-                break;
-            case ScreenEdge.Bottom:
-                CardHost.Margin = new Thickness(0, 0, 0, 10);
-                Arrow.Data = Geometry.Parse("M0,0 L10,10 L20,0 Z");
-                Arrow.HorizontalAlignment = HorizontalAlignment.Center;
-                Arrow.VerticalAlignment = VerticalAlignment.Bottom;
-                Arrow.Margin = new Thickness(0, 0, 0, -10);
-                break;
-            default:
-                CardHost.Margin = new Thickness(0, 0, 10, 0);
-                Arrow.Data = Geometry.Parse("M0,0 L10,10 L0,20 Z");
-                Arrow.HorizontalAlignment = HorizontalAlignment.Right;
-                Arrow.VerticalAlignment = VerticalAlignment.Center;
-                Arrow.Margin = new Thickness(0, 0, -10, 0);
-                break;
-        }
+        CardHost.Margin = MarginForEdge(s.Edge);
     }
+
+    private static Thickness MarginForEdge(ScreenEdge edge) => edge switch
+    {
+        ScreenEdge.Left => new Thickness(10, 0, 0, 0),
+        ScreenEdge.Top => new Thickness(0, 10, 0, 0),
+        ScreenEdge.Bottom => new Thickness(0, 0, 0, 10),
+        _ => new Thickness(0, 0, 10, 0),
+    };
 
     private void OpenCard()
     {
@@ -167,7 +144,57 @@ public partial class CardWindow : Window
         var height = (int)Math.Ceiling(ActualHeight * scale);
         if (width <= 0 || height <= 0) return;
 
-        WindowStyles.MoveResize(_hwnd, _placer.CardRect(placement, s, width, height));
+        var cardRect = _placer.CardRect(placement, s, width, height);
+        WindowStyles.MoveResize(_hwnd, cardRect);
+        UpdateArrowPosition(placement, cardRect, scale, s);
+    }
+
+    private void UpdateArrowPosition(PlacementResult placement, Core.Placement.PixelRect cardRect, double monitorScale, Settings s)
+    {
+        var effScale = monitorScale * s.Scale;
+        if (effScale <= 0) return;
+
+        var edge = s.Edge;
+        if (edge is ScreenEdge.Top or ScreenEdge.Bottom)
+        {
+            var relPhysicalX = placement.PillRect.CenterX - cardRect.X;
+            var coordX = relPhysicalX / effScale;
+            var cardWidthDip = cardRect.Width / effScale;
+            var maxLeft = Math.Max(14, cardWidthDip - 34);
+            var arrowLeft = Math.Clamp(coordX - 10, 14, maxLeft);
+
+            Arrow.HorizontalAlignment = HorizontalAlignment.Left;
+            if (edge == ScreenEdge.Top)
+            {
+                Arrow.VerticalAlignment = VerticalAlignment.Top;
+                Arrow.Margin = new Thickness(arrowLeft, -10, 0, 0);
+            }
+            else
+            {
+                Arrow.VerticalAlignment = VerticalAlignment.Bottom;
+                Arrow.Margin = new Thickness(arrowLeft, 0, 0, -10);
+            }
+        }
+        else
+        {
+            var relPhysicalY = placement.PillRect.CenterY - cardRect.Y;
+            var coordY = relPhysicalY / effScale;
+            var cardHeightDip = cardRect.Height / effScale;
+            var maxTop = Math.Max(14, cardHeightDip - 34);
+            var arrowTop = Math.Clamp(coordY - 10, 14, maxTop);
+
+            Arrow.VerticalAlignment = VerticalAlignment.Top;
+            if (edge == ScreenEdge.Left)
+            {
+                Arrow.HorizontalAlignment = HorizontalAlignment.Left;
+                Arrow.Margin = new Thickness(-10, arrowTop, 0, 0);
+            }
+            else
+            {
+                Arrow.HorizontalAlignment = HorizontalAlignment.Right;
+                Arrow.Margin = new Thickness(0, arrowTop, -10, 0);
+            }
+        }
     }
 
     private void OnSafetyTick(object? sender, EventArgs e)
@@ -192,6 +219,10 @@ public partial class CardWindow : Window
         _safety.Stop();
         _pill.PlacementChanged -= Reposition;
         _vm.PropertyChanged -= OnViewModelChanged;
+        if (_hwnd != 0)
+        {
+            HwndSource.FromHwnd(_hwnd)?.RemoveHook(WndProc);
+        }
         base.OnClosed(e);
     }
 }

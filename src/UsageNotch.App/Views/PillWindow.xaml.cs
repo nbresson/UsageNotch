@@ -28,7 +28,6 @@ public partial class PillWindow : Window
     private bool _closed;
     private bool _dragging;
     private bool _reapplyPending;
-    private bool _bandPulseRunning;
     private double _dragFraction;
     private double _thicknessDip = PillMetrics.Thickness;
 
@@ -256,17 +255,8 @@ public partial class PillWindow : Window
         Cell3.UpdateAnimations(IsVisible && cellCount >= 3, ringShown);
 
         var hasAttention = _vm.Pill?.Cells.Any(c => c.Activity == ActivityKind.Attention) ?? false;
-        SetStoryboard("BandPulse", ref _bandPulseRunning,
-            IsVisible && BandPath.Visibility == Visibility.Visible && hasAttention);
-    }
-
-    private void SetStoryboard(string key, ref bool running, bool desired)
-    {
-        if (running == desired) return;
-        var storyboard = (Storyboard)Resources[key];
-        if (desired) storyboard.Begin(this, isControllable: true);
-        else storyboard.Stop(this);
-        running = desired;
+        var pulse = IsVisible && BandPath.Visibility == Visibility.Visible && hasAttention;
+        VisualStateManager.GoToElementState(Root, pulse ? "BandPulse" : "BandNormal", true);
     }
 
     private void OnLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -324,6 +314,14 @@ public partial class PillWindow : Window
     {
         _closed = true;
         _vm.PropertyChanged -= OnViewModelChanged;
+        Cell1.StopAnimations();
+        Cell2.StopAnimations();
+        Cell3.StopAnimations();
+        VisualStateManager.GoToElementState(Root, "BandNormal", false);
+        if (Handle != 0)
+        {
+            HwndSource.FromHwnd(Handle)?.RemoveHook(WndProc);
+        }
         base.OnClosed(e);
     }
 }

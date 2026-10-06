@@ -10,9 +10,6 @@
   <Window.Resources>
     <conv:HexBrushConverter x:Key="Hex" />
     <BooleanToVisibilityConverter x:Key="BoolVis" />
-    <Storyboard x:Key="BandPulse" RepeatBehavior="Forever" AutoReverse="True" Timeline.DesiredFrameRate="20">
-      <DoubleAnimation Storyboard.TargetName="BandPath" Storyboard.TargetProperty="Opacity" From="0.4" To="1" Duration="0:0:1" />
-    </Storyboard>
   </Window.Resources>
 
   <Window.ContextMenu>
@@ -26,6 +23,17 @@
   </Window.ContextMenu>
 
   <Canvas x:Name="Root">
+    <VisualStateManager.VisualStateGroups>
+      <VisualStateGroup x:Name="BandStates">
+        <VisualState x:Name="BandNormal" />
+        <VisualState x:Name="BandPulse">
+          <Storyboard RepeatBehavior="Forever" AutoReverse="True" Timeline.DesiredFrameRate="20">
+            <DoubleAnimation Storyboard.TargetName="BandPath" Storyboard.TargetProperty="Opacity" From="0.4" To="1" Duration="0:0:1" />
+          </Storyboard>
+        </VisualState>
+      </VisualStateGroup>
+    </VisualStateManager.VisualStateGroups>
+
     <Path x:Name="BandPath" Visibility="Collapsed"
           Fill="{Binding Pill.BandColor, Converter={StaticResource Hex}}" />
 
