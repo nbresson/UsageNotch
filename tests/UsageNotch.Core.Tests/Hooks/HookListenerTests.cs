@@ -177,4 +177,12 @@ public class HookListenerTests : IAsyncLifetime
 
         listener.IsListening.Should().BeFalse();
     }
+
+    [Fact]
+    public async Task Payload_exceeding_max_bytes_is_rejected_with_413()
+    {
+        var largeBody = new string('x', HookListener.MaxRequestBytes + 1024);
+        var response = await _client.PostAsync("event?e=running&ppid=4242", Json(largeBody));
+        response.StatusCode.Should().Be(HttpStatusCode.RequestEntityTooLarge);
+    }
 }

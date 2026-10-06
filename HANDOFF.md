@@ -27,8 +27,8 @@
 
 - **Version en développement** : `0.7.0-dev` (branche `main`).
 - **Dernière release officielle** : [v0.6.0](https://github.com/nbresson/UsageNotch/releases/tag/v0.6.0) publiée le 2026-10-06.
-- **Tests** : **688 tests xUnit verts** (355 Core, 333 Presentation), durée totale d'exécution < 2 s, 0 avertissement.
-- **Dernières améliorations techniques majeures (Chantier Qualité & Architecture - Axes 1, 2 et 3)** :
+- **Tests** : **706 tests xUnit verts** (373 Core, 333 Presentation), durée totale d'exécution < 2 s, 0 avertissement.
+- **Dernières améliorations techniques majeures (Chantier Qualité & Architecture - Axes 1 à 4)** :
   1. **Axe I — Architecture, Modularité & Extensibilité** :
      - `ProviderSelection` : remplacement des cascades de `switch` combinatoires par un système de masques d'identifiants et de résolutions atomiques (`ActiveProviders`).
      - `IUsageProviderRegistry` : registre ouvert de fournisseurs de quotas supprimant le routage rigide en dur.
@@ -47,7 +47,13 @@
      - Fenêtre de détail adaptative (`CardWindow`) : largeur fluide (`MinWidth="320"`, `MaxWidth="420"` avec `SizeToContent="WidthAndHeight"`).
      - Flèche de carte adaptative : `ArrowGeometryConverter` avec géométries pré-figées (`Freeze()`) et calcul dynamique de positionnement alignant la flèche sur le centre physique de la pilule, quel que soit le bord de l'écran.
      - Optimisation Native AOT du Hook : lecture de l'entrée standard via `Task.Run` sur le pool de threads sans création d'un thread OS dédié par invocation.
-  4. **Mode Abonnement OpenAI & Mode Clé API Hybride (v0.6.0)** :
+  4. **Axe IV — Sécurité & Protection des Données** :
+     - `SecretProtector` & `ProtectedStringConverter` : chiffrement Windows DPAPI (`DataProtectionScope.CurrentUser`) transparent avec préfixe `dpapi:` pour les clés API et tokens OpenAI dans `settings.json` (migration automatique des clés existantes en clair).
+     - Sécurisation du `HookListener` : contrôle strict de l'origine locale (`IsLocal` et boucle locale `IPAddress.IsLoopback`), en-tête `X-UsageNotch-Hook: 1`, rejet des `User-Agent` de navigateurs pour bloquer toute attaque CSRF/SSRF.
+     - Plafond de requête et protection anti-DoS (`HookListener`) : contrôle précoce `ContentLength64` rejetant immédiatement les charges excessives (`413 Payload Too Large`), cap dur `MaxRequestBytes = 2 Mo` et mémoire tampon limitée à 256 Ko.
+     - Assainissement des erreurs d'API (`ExceptionSanitizer`) : masquage des clés d'API (`sk-***`), jetons d'autorisation (`Bearer ***`), paramètres de requêtes d'URL et normalisation conviviale des exceptions réseau.
+     - Création et intégrité des répertoires applicatifs (`AppPaths.EnsureDirectoriesCreated`).
+  5. **Mode Abonnement OpenAI & Mode Clé API Hybride (v0.6.0)** :
      - Suivi des quotas glissants (fenêtre 5h, quota hebdo, modèles de raisonnement) ou budget en dollars.
      - Capsule triple unifiée (Claude + Google Antigravity + OpenAI) avec détection automatique de session.
 

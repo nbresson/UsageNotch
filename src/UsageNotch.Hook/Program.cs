@@ -140,6 +140,7 @@ internal static class Program
             var bodyBytes = Encoding.UTF8.GetBytes(body);
             var head = $"POST /event?e={Uri.EscapeDataString(kind)}&ppid={ppid} HTTP/1.1\r\n"
                      + "Host: 127.0.0.1\r\nContent-Type: application/json\r\n"
+                     + "X-UsageNotch-Hook: 1\r\n"
                      + $"Content-Length: {bodyBytes.Length}\r\nConnection: close\r\n\r\n";
             stream.Write(Encoding.ASCII.GetBytes(head));
             stream.Write(bodyBytes);

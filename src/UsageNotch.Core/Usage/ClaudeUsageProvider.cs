@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using UsageNotch.Core.Security;
 
 namespace UsageNotch.Core.Usage;
 
@@ -103,6 +104,11 @@ public sealed class ClaudeUsageProvider(HttpClient http, ClaudeCredentialReader 
         {
             logger.LogWarning(e, "Usage Claude : réponse illisible");
             return new FetchResult.Failed("Réponse illisible");
+        }
+        catch (Exception e)
+        {
+            logger.LogWarning(e, "Usage Claude : erreur inattendue");
+            return new FetchResult.Failed($"Échec : {ExceptionSanitizer.Sanitize(e)}");
         }
     }
 

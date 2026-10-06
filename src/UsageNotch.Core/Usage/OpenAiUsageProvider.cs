@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using Microsoft.Extensions.Logging;
+using UsageNotch.Core.Security;
 using UsageNotch.Core.Settings;
 
 namespace UsageNotch.Core.Usage;
@@ -114,7 +115,7 @@ public sealed class OpenAiUsageProvider : IUsageProvider
         catch (Exception ex)
         {
             _logger.LogError(ex, "Échec de l'appel à l'API d'abonnement OpenAI");
-            return new FetchResult.Failed($"Échec de connexion à OpenAI : {ex.Message}");
+            return new FetchResult.Failed($"Échec de connexion à OpenAI : {ExceptionSanitizer.Sanitize(ex)}");
         }
     }
 
@@ -182,7 +183,7 @@ public sealed class OpenAiUsageProvider : IUsageProvider
         catch (Exception ex)
         {
             _logger.LogError(ex, "Échec de l'appel à l'API OpenAI");
-            return new FetchResult.Failed($"Échec de connexion à OpenAI : {ex.Message}");
+            return new FetchResult.Failed($"Échec de connexion à OpenAI : {ExceptionSanitizer.Sanitize(ex)}");
         }
     }
 }

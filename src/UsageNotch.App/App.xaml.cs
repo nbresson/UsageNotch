@@ -32,6 +32,7 @@ public partial class App : Application
         base.OnStartup(e);
         var args = AppArguments.Parse(e.Args);
         var paths = AppPaths.For(args.Demo);
+        paths.EnsureDirectoriesCreated();
         var settings = new SettingsStore(paths.SettingsFile, NullLogger<SettingsStore>.Instance);
         settings.Load();
 

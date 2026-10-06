@@ -32,4 +32,20 @@ public sealed record AppPaths(
             ClaudeSettingsFile: demo ? Path.Combine(data, "claude-settings.json") : HookInstaller.DefaultSettingsPath,
             NotificationsFile: Path.Combine(data, "notifications.json"));
     }
+
+    /// <summary>Garantit l'existence et la création sécurisée des répertoires de données et journaux.</summary>
+    public void EnsureDirectoriesCreated()
+    {
+        EnsureDirectory(DataDirectory);
+        EnsureDirectory(LogsDirectory);
+    }
+
+    private static void EnsureDirectory(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return;
+        if (!Directory.Exists(path))
+        {
+            Directory.CreateDirectory(path);
+        }
+    }
 }

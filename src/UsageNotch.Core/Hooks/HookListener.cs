@@ -14,6 +14,7 @@ public sealed class HookListener(int port, SessionStore sessions, ILogger<HookLi
 {
     public const int DefaultPort = 48666;
     public const int MaxBodyBytes = 256 * 1024;
+    public const int MaxRequestBytes = 2 * 1024 * 1024;
 
     private readonly HttpListener _listener = new();
 
@@ -136,6 +137,20 @@ public sealed class HookListener(int port, SessionStore sessions, ILogger<HookLi
             return;
         }
 
+        if (!request.IsLocal || (request.RemoteEndPoint is not null && !IPAddress.IsLoopback(request.RemoteEndPoint.Address)))
+        {
+            logger.LogWarning("Requête refusée sur {Path} (non locale : {Remote})", path, request.RemoteEndPoint?.Address);
+            await RespondAsync(context.Response, 403, "forbidden");
+            return;
+        }
+
+        if (request.ContentLength64 > MaxRequestBytes)
+        {
+            logger.LogWarning("Requête rejetée sur {Path} : taille excessive ({Length} octets)", path, request.ContentLength64);
+            await RespondAsync(context.Response, 413, "payload too large");
+            return;
+        }
+
         var headers = request.Headers.AllKeys
             .Where(k => k is not null)
             .SelectMany(k => (request.Headers.GetValues(k!) ?? []).Select(v => new KeyValuePair<string, string>(k!, v)));
@@ -176,14 +191,20 @@ public sealed class HookListener(int port, SessionStore sessions, ILogger<HookLi
         int read;
         while ((read = await request.InputStream.ReadAsync(chunk)) > 0)
         {
-            // On draine le flux jusqu'à sa fin même après avoir atteint MaxBodyBytes, pour ne répondre
-            // qu'une fois la requête entièrement consommée ; seuls les octets jusqu'à la limite sont conservés.
-            if (total < MaxBodyBytes)
+            total += read;
+            if (total > MaxRequestBytes)
             {
-                var toKeep = (int)Math.Min(read, MaxBodyBytes - total);
+                throw new InvalidOperationException($"Taille du corps supérieure à {MaxRequestBytes} octets");
+            }
+            if (total <= MaxBodyBytes)
+            {
+                buffer.Write(chunk, 0, read);
+            }
+            else if (total - read < MaxBodyBytes)
+            {
+                var toKeep = (int)(MaxBodyBytes - (total - read));
                 buffer.Write(chunk, 0, toKeep);
             }
-            total += read;
         }
         return Encoding.UTF8.GetString(buffer.ToArray());
     }

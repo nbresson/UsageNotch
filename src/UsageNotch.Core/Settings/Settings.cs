@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using UsageNotch.Core.Security;
 using UsageNotch.Core.Usage;
 
 namespace UsageNotch.Core.Settings;
@@ -59,10 +60,12 @@ public sealed record Settings
     /// <summary>Mode de fonctionnement du fournisseur OpenAI : « subscription » (ChatGPT Plus/Team/Pro/Codex) ou « api » (clé API et coûts en $).</summary>
     public string OpenAiMode { get; init; } = "subscription";
     /// <summary>Token d'accès OAuth/session ChatGPT manuel optionnel (si vide, ~/.codex/auth.json est utilisé en mode abonnement).</summary>
+    [JsonConverter(typeof(ProtectedStringConverter))]
     public string OpenAiSessionToken { get; init; } = "";
     /// <summary>Identifiant de compte ChatGPT optionnel (en-tête ChatGPT-Account-Id).</summary>
     public string OpenAiAccountId { get; init; } = "";
     /// <summary>Clé d'API OpenAI optionnelle (si vide, la variable d'environnement OPENAI_API_KEY est consultée).</summary>
+    [JsonConverter(typeof(ProtectedStringConverter))]
     public string OpenAiApiKey { get; init; } = "";
     /// <summary>Budget mensuel OpenAI de référence en dollars pour le calcul des ratios (défaut : 20.0 $).</summary>
     public double OpenAiMonthlyBudget { get; init; } = 20.0;

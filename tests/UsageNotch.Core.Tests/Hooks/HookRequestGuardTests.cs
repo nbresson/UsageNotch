@@ -68,4 +68,11 @@ public class HookRequestGuardTests
     [Fact]
     public void Same_origin_fetch_metadata_is_allowed() =>
         HookRequestGuard.IsForbidden([H("Sec-Fetch-Site", "same-origin")]).Should().BeFalse();
+
+    [Theory]
+    [InlineData("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")]
+    [InlineData("Mozilla/5.0 AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36")]
+    [InlineData("Mozilla/5.0 Edg/120.0.0.0")]
+    public void Browser_user_agents_are_forbidden(string ua) =>
+        HookRequestGuard.IsForbidden([H("User-Agent", ua)]).Should().BeTrue();
 }

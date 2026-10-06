@@ -22,6 +22,17 @@ public static class HookRequestGuard
             {
                 return true;
             }
+            if (name.Equals("User-Agent", StringComparison.OrdinalIgnoreCase))
+            {
+                var ua = value.Trim();
+                if (ua.Contains("Mozilla", StringComparison.OrdinalIgnoreCase) ||
+                    ua.Contains("Chrome", StringComparison.OrdinalIgnoreCase) ||
+                    ua.Contains("Safari", StringComparison.OrdinalIgnoreCase) ||
+                    ua.Contains("Edge", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
         }
         return false;
     }
