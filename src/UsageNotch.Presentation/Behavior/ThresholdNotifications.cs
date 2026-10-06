@@ -64,19 +64,9 @@ public sealed class ThresholdNotifications : IDisposable
         var settings = _settings.Current;
         if (!settings.ThresholdNotifications) return;
 
-        var snapshots = settings.Provider switch
+        foreach (var pid in settings.ActiveProviders)
         {
-            "antigravity" => new[] { ("antigravity", _usage.SnapshotFor("antigravity")) },
-            "both" => new[]
-            {
-                ("claude", _usage.SnapshotFor("claude")),
-                ("antigravity", _usage.SnapshotFor("antigravity"))
-            },
-            _ => new[] { ("claude", _usage.SnapshotFor("claude")) },
-        };
-
-        foreach (var (_, snapshot) in snapshots)
-        {
+            var snapshot = _usage.SnapshotFor(pid);
             foreach (var alert in _watcher.Observe(snapshot, settings.NotifyThreshold, _time.GetUtcNow(), _zone))
             {
                 _notifier.Show(alert.Title, alert.Message, alert.Level == ThresholdLevel.Exhausted);

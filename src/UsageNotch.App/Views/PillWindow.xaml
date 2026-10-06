@@ -10,26 +10,6 @@
   <Window.Resources>
     <conv:HexBrushConverter x:Key="Hex" />
     <BooleanToVisibilityConverter x:Key="BoolVis" />
-    <!-- Cadence plafonnée : chaque image d'une fenêtre transparente est rendue en logiciel. Un fondu d'opacité reste fluide
-         à 20 images/s ; la rotation garde 30 images/s pour ne pas saccader. Le repli (200 ms) reste à 60 images/s. -->
-    <Storyboard x:Key="Spin1" RepeatBehavior="Forever" Timeline.DesiredFrameRate="30">
-      <DoubleAnimation Storyboard.TargetName="SpinRotate1" Storyboard.TargetProperty="Angle" From="0" To="360" Duration="0:0:1.2" />
-    </Storyboard>
-    <Storyboard x:Key="Pulse1" RepeatBehavior="Forever" AutoReverse="True" Timeline.DesiredFrameRate="20">
-      <DoubleAnimation Storyboard.TargetName="LogoTint1" Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:1" />
-    </Storyboard>
-    <Storyboard x:Key="Spin2" RepeatBehavior="Forever" Timeline.DesiredFrameRate="30">
-      <DoubleAnimation Storyboard.TargetName="SpinRotate2" Storyboard.TargetProperty="Angle" From="0" To="360" Duration="0:0:1.2" />
-    </Storyboard>
-    <Storyboard x:Key="Pulse2" RepeatBehavior="Forever" AutoReverse="True" Timeline.DesiredFrameRate="20">
-      <DoubleAnimation Storyboard.TargetName="LogoTint2" Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:1" />
-    </Storyboard>
-    <Storyboard x:Key="Spin3" RepeatBehavior="Forever" Timeline.DesiredFrameRate="30">
-      <DoubleAnimation Storyboard.TargetName="SpinRotate3" Storyboard.TargetProperty="Angle" From="0" To="360" Duration="0:0:1.2" />
-    </Storyboard>
-    <Storyboard x:Key="Pulse3" RepeatBehavior="Forever" AutoReverse="True" Timeline.DesiredFrameRate="20">
-      <DoubleAnimation Storyboard.TargetName="LogoTint3" Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:1" />
-    </Storyboard>
     <Storyboard x:Key="BandPulse" RepeatBehavior="Forever" AutoReverse="True" Timeline.DesiredFrameRate="20">
       <DoubleAnimation Storyboard.TargetName="BandPath" Storyboard.TargetProperty="Opacity" From="0.4" To="1" Duration="0:0:1" />
     </Storyboard>
@@ -66,111 +46,21 @@
           </StackPanel.LayoutTransform>
 
           <!-- Cellule 1 (Claude en mode double, ou fournisseur actif en mode simple) -->
-          <StackPanel x:Name="Cell1Stack" DataContext="{Binding Pill.Cell1}" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Grid x:Name="RingHost1" Width="56" Height="56" Margin="0,0,0,4">
-              <controls:ProgressRing Width="56" Height="56" RingThickness="4"
-                                     TargetFraction="{Binding Rings[0].Fraction}"
-                                     RingBrush="{Binding Rings[0].Color, Converter={StaticResource Hex}}"
-                                     TrackBrush="{Binding Rings[0].TrackColor, Converter={StaticResource Hex}}" />
-              <controls:ProgressRing Width="44" Height="44" RingThickness="4"
-                                     TargetFraction="{Binding Rings[1].Fraction}"
-                                     RingBrush="{Binding Rings[1].Color, Converter={StaticResource Hex}}"
-                                     TrackBrush="{Binding Rings[1].TrackColor, Converter={StaticResource Hex}}" />
-              <controls:ProgressRing Width="32" Height="32" RingThickness="4"
-                                     TargetFraction="{Binding Rings[2].Fraction}"
-                                     RingBrush="{Binding Rings[2].Color, Converter={StaticResource Hex}}"
-                                     TrackBrush="{Binding Rings[2].TrackColor, Converter={StaticResource Hex}}" />
-              <Grid x:Name="LogoHost1" Width="20" Height="20" RenderTransformOrigin="0.5,0.5">
-                <Grid.RenderTransform>
-                  <RotateTransform x:Name="SpinRotate1" />
-                </Grid.RenderTransform>
-                <Path x:Name="LogoMuted1" Stretch="Uniform"
-                      Fill="{Binding ActivityMutedColor, Converter={StaticResource Hex}}" />
-                <Path x:Name="LogoTint1" Stretch="Uniform"
-                      Fill="{Binding ActivityColor, Converter={StaticResource Hex}}" />
-              </Grid>
-            </Grid>
+          <controls:PillCellView x:Name="Cell1" DataContext="{Binding Pill.Cell1}" />
 
-            <TextBlock x:Name="PercentText1" FontFamily="Segoe UI" FontSize="14" FontWeight="SemiBold"
-                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                       Text="{Binding PercentText}"
-                       Foreground="{Binding TextColor, Converter={StaticResource Hex}}"
-                       Visibility="{Binding ShowPercent, Converter={StaticResource BoolVis}}" />
-          </StackPanel>
-
-          <!-- Séparateur central entre les deux cellules (visible uniquement en mode double) -->
+          <!-- Séparateur central entre cellules 1 et 2 -->
           <Rectangle x:Name="CellDivider" Visibility="Collapsed"
                      Fill="{Binding Theme.RingTrack, Converter={StaticResource Hex}}" />
 
           <!-- Cellule 2 (Antigravity en mode double) -->
-          <StackPanel x:Name="Cell2Stack" DataContext="{Binding Pill.Cell2}" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Grid x:Name="RingHost2" Width="56" Height="56" Margin="0,0,0,4">
-              <controls:ProgressRing Width="56" Height="56" RingThickness="4"
-                                     TargetFraction="{Binding Rings[0].Fraction}"
-                                     RingBrush="{Binding Rings[0].Color, Converter={StaticResource Hex}}"
-                                     TrackBrush="{Binding Rings[0].TrackColor, Converter={StaticResource Hex}}" />
-              <controls:ProgressRing Width="44" Height="44" RingThickness="4"
-                                     TargetFraction="{Binding Rings[1].Fraction}"
-                                     RingBrush="{Binding Rings[1].Color, Converter={StaticResource Hex}}"
-                                     TrackBrush="{Binding Rings[1].TrackColor, Converter={StaticResource Hex}}" />
-              <controls:ProgressRing Width="32" Height="32" RingThickness="4"
-                                     TargetFraction="{Binding Rings[2].Fraction}"
-                                     RingBrush="{Binding Rings[2].Color, Converter={StaticResource Hex}}"
-                                     TrackBrush="{Binding Rings[2].TrackColor, Converter={StaticResource Hex}}" />
-              <Grid x:Name="LogoHost2" Width="20" Height="20" RenderTransformOrigin="0.5,0.5">
-                <Grid.RenderTransform>
-                  <RotateTransform x:Name="SpinRotate2" />
-                </Grid.RenderTransform>
-                <Path x:Name="LogoMuted2" Stretch="Uniform"
-                      Fill="{Binding ActivityMutedColor, Converter={StaticResource Hex}}" />
-                <Path x:Name="LogoTint2" Stretch="Uniform"
-                      Fill="{Binding ActivityColor, Converter={StaticResource Hex}}" />
-              </Grid>
-            </Grid>
-
-            <TextBlock x:Name="PercentText2" FontFamily="Segoe UI" FontSize="14" FontWeight="SemiBold"
-                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                       Text="{Binding PercentText}"
-                       Foreground="{Binding TextColor, Converter={StaticResource Hex}}"
-                       Visibility="{Binding ShowPercent, Converter={StaticResource BoolVis}}" />
-          </StackPanel>
+          <controls:PillCellView x:Name="Cell2" DataContext="{Binding Pill.Cell2}" Visibility="Collapsed" />
 
           <!-- Séparateur entre cellules 2 et 3 (visible uniquement en mode triple) -->
           <Rectangle x:Name="CellDivider2" Visibility="Collapsed"
                      Fill="{Binding Theme.RingTrack, Converter={StaticResource Hex}}" />
 
           <!-- Cellule 3 (OpenAI en mode triple) -->
-          <StackPanel x:Name="Cell3Stack" DataContext="{Binding Pill.Cell3}" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Grid x:Name="RingHost3" Width="56" Height="56" Margin="0,0,0,4">
-              <controls:ProgressRing Width="56" Height="56" RingThickness="4"
-                                     TargetFraction="{Binding Rings[0].Fraction}"
-                                     RingBrush="{Binding Rings[0].Color, Converter={StaticResource Hex}}"
-                                     TrackBrush="{Binding Rings[0].TrackColor, Converter={StaticResource Hex}}" />
-              <controls:ProgressRing Width="44" Height="44" RingThickness="4"
-                                     TargetFraction="{Binding Rings[1].Fraction}"
-                                     RingBrush="{Binding Rings[1].Color, Converter={StaticResource Hex}}"
-                                     TrackBrush="{Binding Rings[1].TrackColor, Converter={StaticResource Hex}}" />
-              <controls:ProgressRing Width="32" Height="32" RingThickness="4"
-                                     TargetFraction="{Binding Rings[2].Fraction}"
-                                     RingBrush="{Binding Rings[2].Color, Converter={StaticResource Hex}}"
-                                     TrackBrush="{Binding Rings[2].TrackColor, Converter={StaticResource Hex}}" />
-              <Grid x:Name="LogoHost3" Width="20" Height="20" RenderTransformOrigin="0.5,0.5">
-                <Grid.RenderTransform>
-                  <RotateTransform x:Name="SpinRotate3" />
-                </Grid.RenderTransform>
-                <Path x:Name="LogoMuted3" Stretch="Uniform"
-                      Fill="{Binding ActivityMutedColor, Converter={StaticResource Hex}}" />
-                <Path x:Name="LogoTint3" Stretch="Uniform"
-                      Fill="{Binding ActivityColor, Converter={StaticResource Hex}}" />
-              </Grid>
-            </Grid>
-
-            <TextBlock x:Name="PercentText3" FontFamily="Segoe UI" FontSize="14" FontWeight="SemiBold"
-                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                       Text="{Binding PercentText}"
-                       Foreground="{Binding TextColor, Converter={StaticResource Hex}}"
-                       Visibility="{Binding ShowPercent, Converter={StaticResource BoolVis}}" />
-          </StackPanel>
+          <controls:PillCellView x:Name="Cell3" DataContext="{Binding Pill.Cell3}" Visibility="Collapsed" />
         </StackPanel>
       </Grid>
     </Canvas>

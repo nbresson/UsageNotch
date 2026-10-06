@@ -19,7 +19,11 @@ public sealed class OpenAiCredentialReader(SettingsStore? settings = null)
             return env;
         }
 
-        var defaultFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".openai", "api_key");
+        var configDir = Environment.GetEnvironmentVariable("OPENAI_CONFIG_DIR")?.Trim();
+        var defaultDir = !string.IsNullOrEmpty(configDir)
+            ? configDir
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".openai");
+        var defaultFile = Path.Combine(defaultDir, "api_key");
         if (File.Exists(defaultFile))
         {
             try

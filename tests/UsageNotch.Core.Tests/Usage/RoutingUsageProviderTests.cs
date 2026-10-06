@@ -56,4 +56,35 @@ public class RoutingUsageProviderTests
         claude.FetchCalls.Should().Be(1);
         antigravity.FetchCalls.Should().Be(1);
     }
+
+    [Fact]
+    public void Registry_resolves_and_lists_providers()
+    {
+        var claude = new FakeProvider("claude", "Claude", RingWindows.Claude);
+        var openAi = new FakeProvider("openai", "OpenAI", RingWindows.OpenAi);
+        var registry = new UsageProviderRegistry([claude, openAi]);
+
+        registry.All.Should().HaveCount(2);
+        registry.GetProvider("claude").Should().BeSameAs(claude);
+        registry.GetProvider("CLAUDE").Should().BeSameAs(claude);
+        registry.GetProvider("openai").Should().BeSameAs(openAi);
+        registry.GetProvider("unknown").Should().BeNull();
+    }
+
+    [Fact]
+    public void Router_works_with_registry()
+    {
+        using var dir = new TempDir();
+        var store = new SettingsStore(dir.File("settings.json"), NullLogger<SettingsStore>.Instance);
+        store.Load();
+        store.Save(store.Current with { Provider = "openai" });
+
+        var claude = new FakeProvider("claude", "Claude", RingWindows.Claude);
+        var openAi = new FakeProvider("openai", "OpenAI", RingWindows.OpenAi);
+        var registry = new UsageProviderRegistry([claude, openAi]);
+
+        var router = new RoutingUsageProvider(store, registry);
+        router.Id.Should().Be("openai");
+        router.DisplayName.Should().Be("OpenAI");
+    }
 }

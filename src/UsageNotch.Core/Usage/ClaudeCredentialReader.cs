@@ -18,8 +18,18 @@ public sealed class ClaudeCredentialReader(string claudeDirectory, TimeProvider 
 {
     private static readonly string[] FileNames = [".credentials.json", "credentials.json"];
 
-    public static string DefaultDirectory =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".claude");
+    public static string DefaultDirectory
+    {
+        get
+        {
+            var env = Environment.GetEnvironmentVariable("CLAUDE_CONFIG_DIR")?.Trim();
+            if (!string.IsNullOrEmpty(env))
+            {
+                return env;
+            }
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".claude");
+        }
+    }
 
     public string Directory { get; } = claudeDirectory;
 

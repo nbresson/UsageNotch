@@ -93,9 +93,9 @@ public static class OpenAiCostParser
 
         return
         [
-            new LimitWindow("monthly_cost", $"Budget mensuel ({totalMonthlyCost.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)} $ / {monthlyBudget.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)} $)", monthlyFraction, monthlyReset),
-            new LimitWindow("daily_cost", $"Consommation du jour ({todayCost.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)} $)", dailyFraction, dailyReset),
-            new LimitWindow("reasoning_models", $"Modèles raisonnement o1/o3 ({reasoningCost.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)} $)", reasoningFraction, monthlyReset),
+            new LimitWindow("monthly_cost", $"Budget mensuel ({Formatting.CurrencyFormatter.Format(totalMonthlyCost)} / {Formatting.CurrencyFormatter.Format(monthlyBudget, decimals: 0)})", monthlyFraction, monthlyReset),
+            new LimitWindow("daily_cost", $"Consommation du jour ({Formatting.CurrencyFormatter.Format(todayCost)})", dailyFraction, dailyReset),
+            new LimitWindow("reasoning_models", $"Modèles raisonnement o1/o3 ({Formatting.CurrencyFormatter.Format(reasoningCost)})", reasoningFraction, monthlyReset),
         ];
     }
 

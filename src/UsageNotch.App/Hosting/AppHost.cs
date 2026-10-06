@@ -52,49 +52,31 @@ public static class AppHost
         s.AddSingleton<OpenAiUsageProvider>();
         if (args.Demo)
         {
-            s.AddSingleton<IReadOnlyList<IUsageProvider>>(sp =>
+            s.AddSingleton<IUsageProviderRegistry>(sp =>
             {
                 var time = sp.GetRequiredService<TimeProvider>();
-                return
+                return new UsageProviderRegistry(
                 [
                     new DemoUsageProvider("claude", time),
                     new DemoUsageProvider("antigravity", time),
                     new DemoUsageProvider("openai", time, sp.GetRequiredService<SettingsStore>()),
-                ];
-            });
-            s.AddSingleton<IUsageProvider>(sp =>
-            {
-                var providers = sp.GetRequiredService<IReadOnlyList<IUsageProvider>>();
-                var claudeDemo = providers[0];
-                var agyDemo = providers[1];
-                var openAiDemo = providers[2];
-                return new RoutingUsageProvider(
-                    sp.GetRequiredService<SettingsStore>(),
-                    id => id switch
-                    {
-                        "antigravity" => agyDemo,
-                        "openai" => openAiDemo,
-                        _ => claudeDemo,
-                    });
+                ]);
             });
         }
         else
         {
-            s.AddSingleton<IReadOnlyList<IUsageProvider>>(sp =>
+            s.AddSingleton<IUsageProviderRegistry>(sp => new UsageProviderRegistry(
             [
                 sp.GetRequiredService<ClaudeUsageProvider>(),
                 sp.GetRequiredService<AntigravityUsageProvider>(),
                 sp.GetRequiredService<OpenAiUsageProvider>(),
-            ]);
-            s.AddSingleton<IUsageProvider>(sp => new RoutingUsageProvider(
-                sp.GetRequiredService<SettingsStore>(),
-                id => id switch
-                {
-                    "antigravity" => sp.GetRequiredService<AntigravityUsageProvider>(),
-                    "openai" => sp.GetRequiredService<OpenAiUsageProvider>(),
-                    _ => sp.GetRequiredService<ClaudeUsageProvider>(),
-                }));
+            ]));
         }
+
+        s.AddSingleton<IReadOnlyList<IUsageProvider>>(sp => sp.GetRequiredService<IUsageProviderRegistry>().All);
+        s.AddSingleton<IUsageProvider>(sp => new RoutingUsageProvider(
+            sp.GetRequiredService<SettingsStore>(),
+            sp.GetRequiredService<IUsageProviderRegistry>()));
 
         s.AddSingleton(sp => new UsagePoller(
             sp.GetRequiredService<IReadOnlyList<IUsageProvider>>(),

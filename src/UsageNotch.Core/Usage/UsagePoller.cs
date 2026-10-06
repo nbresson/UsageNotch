@@ -148,17 +148,8 @@ public sealed class UsagePoller : BackgroundService
     private IReadOnlyList<IUsageProvider> GetActiveProviders()
     {
         if (_settings is null || _providers.Count <= 1) return _providers;
-        var mode = _settings.Current.Provider;
-
-        var selected = mode switch
-        {
-            "all" => _providers,
-            "both" => _providers.Where(p => string.Equals(p.Id, "claude", StringComparison.OrdinalIgnoreCase) || string.Equals(p.Id, "antigravity", StringComparison.OrdinalIgnoreCase)).ToList(),
-            "claude_openai" => _providers.Where(p => string.Equals(p.Id, "claude", StringComparison.OrdinalIgnoreCase) || string.Equals(p.Id, "openai", StringComparison.OrdinalIgnoreCase)).ToList(),
-            "antigravity_openai" => _providers.Where(p => string.Equals(p.Id, "antigravity", StringComparison.OrdinalIgnoreCase) || string.Equals(p.Id, "openai", StringComparison.OrdinalIgnoreCase)).ToList(),
-            _ => _providers.Where(p => string.Equals(p.Id, mode, StringComparison.OrdinalIgnoreCase)).ToList()
-        };
-
+        var activeIds = _settings.Current.ActiveProviders;
+        var selected = _providers.Where(p => activeIds.Contains(p.Id, StringComparer.OrdinalIgnoreCase)).ToList();
         return selected.Count > 0 ? selected : _providers;
     }
 

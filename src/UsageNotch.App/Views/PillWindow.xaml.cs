@@ -28,12 +28,6 @@ public partial class PillWindow : Window
     private bool _closed;
     private bool _dragging;
     private bool _reapplyPending;
-    private bool _spin1Running;
-    private bool _pulse1Running;
-    private bool _spin2Running;
-    private bool _pulse2Running;
-    private bool _spin3Running;
-    private bool _pulse3Running;
     private bool _bandPulseRunning;
     private double _dragFraction;
     private double _thicknessDip = PillMetrics.Thickness;
@@ -132,9 +126,9 @@ public partial class PillWindow : Window
     private void UpdateCellOpacities()
     {
         if (_vm.Pill is null) return;
-        Cell1Stack.Opacity = (_vm.Pill.Cells.Count > 0 && _vm.Pill.Cells[0].Dimmed) ? 0.5 : 1.0;
-        Cell2Stack.Opacity = (_vm.Pill.Cells.Count > 1 && _vm.Pill.Cells[1].Dimmed) ? 0.5 : 1.0;
-        Cell3Stack.Opacity = (_vm.Pill.Cells.Count > 2 && _vm.Pill.Cells[2].Dimmed) ? 0.5 : 1.0;
+        Cell1.Opacity = (_vm.Pill.Cells.Count > 0 && _vm.Pill.Cells[0].Dimmed) ? 0.5 : 1.0;
+        Cell2.Opacity = (_vm.Pill.Cells.Count > 1 && _vm.Pill.Cells[1].Dimmed) ? 0.5 : 1.0;
+        Cell3.Opacity = (_vm.Pill.Cells.Count > 2 && _vm.Pill.Cells[2].Dimmed) ? 0.5 : 1.0;
     }
 
     /// <summary>Recalcule forme, contenu et position à partir des réglages courants.</summary>
@@ -175,20 +169,17 @@ public partial class PillWindow : Window
         var hasCell3 = cellCount >= 3;
 
         CellDivider.Visibility = hasCell2 ? Visibility.Visible : Visibility.Collapsed;
-        Cell2Stack.Visibility = hasCell2 ? Visibility.Visible : Visibility.Collapsed;
+        Cell2.Visibility = hasCell2 ? Visibility.Visible : Visibility.Collapsed;
         CellDivider2.Visibility = hasCell3 ? Visibility.Visible : Visibility.Collapsed;
-        Cell3Stack.Visibility = hasCell3 ? Visibility.Visible : Visibility.Collapsed;
+        Cell3.Visibility = hasCell3 ? Visibility.Visible : Visibility.Collapsed;
 
         BodyStack.Orientation = vertical ? Orientation.Vertical : Orientation.Horizontal;
-        Cell1Stack.Orientation = vertical ? Orientation.Vertical : Orientation.Horizontal;
-        Cell2Stack.Orientation = vertical ? Orientation.Vertical : Orientation.Horizontal;
-        Cell3Stack.Orientation = vertical ? Orientation.Vertical : Orientation.Horizontal;
+        Cell1.SetOrientation(vertical);
+        Cell2.SetOrientation(vertical);
+        Cell3.SetOrientation(vertical);
 
         if (vertical)
         {
-            RingHost1.Margin = new Thickness(0, 0, 0, 4);
-            RingHost2.Margin = new Thickness(0, 0, 0, 4);
-            RingHost3.Margin = new Thickness(0, 0, 0, 4);
             CellDivider.Width = 24;
             CellDivider.Height = 1;
             CellDivider.Margin = new Thickness(0, 5.5, 0, 5.5);
@@ -198,9 +189,6 @@ public partial class PillWindow : Window
         }
         else
         {
-            RingHost1.Margin = new Thickness(0, 0, 6, 0);
-            RingHost2.Margin = new Thickness(0, 0, 6, 0);
-            RingHost3.Margin = new Thickness(0, 0, 6, 0);
             CellDivider.Width = 1;
             CellDivider.Height = 24;
             CellDivider.Margin = new Thickness(5.5, 0, 5.5, 0);
@@ -262,33 +250,10 @@ public partial class PillWindow : Window
     private void UpdateAnimations()
     {
         var ringShown = IsVisible && PillLayer.Visibility == Visibility.Visible;
-        var act1 = _vm.Pill?.Cell1?.Activity ?? ActivityKind.None;
-        SetStoryboard("Spin1", ref _spin1Running, ringShown && act1 == ActivityKind.Running);
-        SetStoryboard("Pulse1", ref _pulse1Running, ringShown && act1 == ActivityKind.Attention);
-
-        if (_vm.Pill?.Cells.Count > 1 && _vm.Pill.Cell2 is not null)
-        {
-            var act2 = _vm.Pill.Cell2.Activity;
-            SetStoryboard("Spin2", ref _spin2Running, ringShown && act2 == ActivityKind.Running);
-            SetStoryboard("Pulse2", ref _pulse2Running, ringShown && act2 == ActivityKind.Attention);
-        }
-        else
-        {
-            SetStoryboard("Spin2", ref _spin2Running, false);
-            SetStoryboard("Pulse2", ref _pulse2Running, false);
-        }
-
-        if (_vm.Pill?.Cells.Count > 2 && _vm.Pill.Cell3 is not null)
-        {
-            var act3 = _vm.Pill.Cell3.Activity;
-            SetStoryboard("Spin3", ref _spin3Running, ringShown && act3 == ActivityKind.Running);
-            SetStoryboard("Pulse3", ref _pulse3Running, ringShown && act3 == ActivityKind.Attention);
-        }
-        else
-        {
-            SetStoryboard("Spin3", ref _spin3Running, false);
-            SetStoryboard("Pulse3", ref _pulse3Running, false);
-        }
+        var cellCount = _vm.Pill?.Cells.Count ?? 0;
+        Cell1.UpdateAnimations(IsVisible, ringShown);
+        Cell2.UpdateAnimations(IsVisible && cellCount >= 2, ringShown);
+        Cell3.UpdateAnimations(IsVisible && cellCount >= 3, ringShown);
 
         var hasAttention = _vm.Pill?.Cells.Any(c => c.Activity == ActivityKind.Attention) ?? false;
         SetStoryboard("BandPulse", ref _bandPulseRunning,
@@ -350,23 +315,9 @@ public partial class PillWindow : Window
 
     private void UpdateBrandGeometry()
     {
-        var geom1 = BrandGeometry.ForProvider(_vm.Pill?.Cell1?.ProviderId ?? "claude");
-        LogoMuted1.Data = geom1;
-        LogoTint1.Data = geom1;
-
-        if (_vm.Pill?.Cells.Count > 1 && _vm.Pill.Cell2 is not null)
-        {
-            var geom2 = BrandGeometry.ForProvider(_vm.Pill.Cell2.ProviderId);
-            LogoMuted2.Data = geom2;
-            LogoTint2.Data = geom2;
-        }
-
-        if (_vm.Pill?.Cells.Count > 2 && _vm.Pill.Cell3 is not null)
-        {
-            var geom3 = BrandGeometry.ForProvider(_vm.Pill.Cell3.ProviderId);
-            LogoMuted3.Data = geom3;
-            LogoTint3.Data = geom3;
-        }
+        Cell1.UpdateGeometry();
+        Cell2.UpdateGeometry();
+        Cell3.UpdateGeometry();
     }
 
     protected override void OnClosed(EventArgs e)

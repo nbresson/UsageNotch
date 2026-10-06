@@ -41,16 +41,7 @@ public static class SettingsPreview
     private static PreviewSample Sample(
         string caption, double fraction, SessionState state, Theme theme, CellContent content, RingColoring coloring, string provider, ScreenEdge edge)
     {
-        IReadOnlyList<string> activeProviderIds = provider switch
-        {
-            "all" => ["claude", "antigravity", "openai"],
-            "both" => ["claude", "antigravity"],
-            "claude_openai" => ["claude", "openai"],
-            "antigravity_openai" => ["antigravity", "openai"],
-            "antigravity" => ["antigravity"],
-            "openai" => ["openai"],
-            _ => ["claude"]
-        };
+        IReadOnlyList<string> activeProviderIds = ProviderSelection.Resolve(provider);
 
         var cells = new List<CellModel>();
         for (int i = 0; i < activeProviderIds.Count; i++)

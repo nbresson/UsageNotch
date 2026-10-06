@@ -9,6 +9,14 @@ public sealed class RoutingUsageProvider(
     SettingsStore settings,
     Func<string, IUsageProvider> resolver) : IUsageProvider
 {
+    public RoutingUsageProvider(SettingsStore settings, IUsageProviderRegistry registry)
+        : this(settings, id => registry.GetProvider(settings.Current.ActiveProviders.FirstOrDefault() ?? id)
+                               ?? registry.GetProvider(id)
+                               ?? registry.All.FirstOrDefault()
+                               ?? throw new InvalidOperationException($"Fournisseur introuvable : {id}"))
+    {
+    }
+
     private IUsageProvider Active => resolver(settings.Current.Provider);
 
     public string Id => Active.Id;

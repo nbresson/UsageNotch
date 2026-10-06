@@ -79,7 +79,19 @@ public class ClaudeCredentialReaderTests
     [Fact]
     public void Default_directory_is_dot_claude_under_the_user_profile()
     {
-        ClaudeCredentialReader.DefaultDirectory.Should().EndWith(".claude");
+        var prev = Environment.GetEnvironmentVariable("CLAUDE_CONFIG_DIR");
+        try
+        {
+            Environment.SetEnvironmentVariable("CLAUDE_CONFIG_DIR", null);
+            ClaudeCredentialReader.DefaultDirectory.Should().EndWith(".claude");
+
+            Environment.SetEnvironmentVariable("CLAUDE_CONFIG_DIR", @"C:\custom\claude");
+            ClaudeCredentialReader.DefaultDirectory.Should().Be(@"C:\custom\claude");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CLAUDE_CONFIG_DIR", prev);
+        }
     }
 
     [Fact]

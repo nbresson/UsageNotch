@@ -1,4 +1,5 @@
 using UsageNotch.Core.Settings;
+using UsageNotch.Core.Usage;
 
 namespace UsageNotch.Presentation.Pill;
 
@@ -23,12 +24,7 @@ public static class PillMetrics
     public static double WindowLength => BodyLength + 2 * Fillet;
 
     /// <summary>Nombre de cellules affichées sur la pilule selon le mode de fournisseur.</summary>
-    public static int CellCountFor(string provider) => provider switch
-    {
-        "all" => 3,
-        "both" or "claude_openai" or "antigravity_openai" => 2,
-        _ => 1
-    };
+    public static int CellCountFor(string provider) => ProviderSelection.Resolve(provider).Count;
 
     /// <summary>Longueur du corps selon le mode de fournisseur (simple, double ou triple), le bord d'écran et le contenu.</summary>
     public static double BodyLengthFor(string provider, ScreenEdge edge, CellContent content)

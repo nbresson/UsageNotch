@@ -113,7 +113,7 @@ public sealed class AppearancePageViewModel : ObservableObject, IDisposable
         }
     }
 
-    public string OpenAiMonthlyBudgetText => $"{OpenAiMonthlyBudget:0} $";
+    public string OpenAiMonthlyBudgetText => FrenchText.Currency(OpenAiMonthlyBudget, "$", 0);
 
     /// <summary>Le thème affiché : celui du préréglage choisi, avec l'accent système lu maintenant.</summary>
     public Theme Theme => EffectiveTheme(_draft.Value, _accent.AccentHex);

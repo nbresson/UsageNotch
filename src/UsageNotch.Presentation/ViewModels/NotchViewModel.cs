@@ -179,16 +179,7 @@ public sealed class NotchViewModel : ObservableObject, IDisposable
         Theme = theme;
 
         var mode = settings.Provider;
-        IReadOnlyList<string> activeProviderIds = mode switch
-        {
-            "all" => ["claude", "antigravity", "openai"],
-            "both" => ["claude", "antigravity"],
-            "claude_openai" => ["claude", "openai"],
-            "antigravity_openai" => ["antigravity", "openai"],
-            "antigravity" => ["antigravity"],
-            "openai" => ["openai"],
-            _ => ["claude"]
-        };
+        var activeProviderIds = settings.ActiveProviders;
 
         var cells = new List<CellModel>();
         var sections = new List<CardSection>();

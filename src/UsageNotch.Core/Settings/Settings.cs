@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using UsageNotch.Core.Usage;
+
 namespace UsageNotch.Core.Settings;
 
 /// <summary>Réglages immuables. Une clé absente du JSON garde sa valeur par défaut ; <see cref="Clamp"/> ramène les valeurs dans les bornes.</summary>
@@ -14,8 +17,12 @@ public sealed record Settings
     public const string DefaultProvider = "both";
 
     public int Version { get; init; } = CurrentVersion;
-    /// <summary>Identifiant du fournisseur actif : « both », « claude » ou « antigravity ».</summary>
+    /// <summary>Identifiant du fournisseur actif (« both », « all », etc.) ou liste délimitée.</summary>
     public string Provider { get; init; } = DefaultProvider;
+
+    /// <summary>Liste ordonnée des fournisseurs actifs déduits du réglage.</summary>
+    [JsonIgnore]
+    public IReadOnlyList<string> ActiveProviders => ProviderSelection.Resolve(Provider);
     public int Port { get; init; } = DefaultPort;
     public ScreenEdge Edge { get; init; } = ScreenEdge.Right;
     public double PositionRight { get; init; } = 0.5;
@@ -83,7 +90,7 @@ public sealed record Settings
     public Settings Clamp() => this with
     {
         Version = CurrentVersion,
-        Provider = Provider is "all" or "both" or "claude_openai" or "antigravity_openai" or "claude" or "antigravity" or "openai" ? Provider : DefaultProvider,
+        Provider = ProviderSelection.IsValid(Provider) ? Provider : DefaultProvider,
         OpenAiMode = OpenAiMode is "api" ? "api" : "subscription",
         OpenAiSessionToken = OpenAiSessionToken?.Trim() ?? "",
         OpenAiAccountId = OpenAiAccountId?.Trim() ?? "",

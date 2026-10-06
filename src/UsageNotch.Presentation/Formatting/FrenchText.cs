@@ -48,4 +48,8 @@ public static class FrenchText
         if (span < TimeSpan.FromHours(1)) return $"{(int)span.TotalMinutes} min";
         return $"{(int)span.TotalHours} h {span.Minutes:00}";
     }
+
+    /// <summary>Formate un montant en devise (ex. « 12.50 $ » ou « 20 $ »).</summary>
+    public static string Currency(double amount, string symbol = "$", int decimals = 2) =>
+        UsageNotch.Core.Formatting.CurrencyFormatter.Format(amount, symbol, decimals);
 }

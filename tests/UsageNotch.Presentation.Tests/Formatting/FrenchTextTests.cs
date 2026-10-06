@@ -62,4 +62,12 @@ public class FrenchTextTests
     [InlineData(0, "0 s")]
     public void Duration_is_compact(int seconds, string expected) =>
         FrenchText.Duration(TimeSpan.FromSeconds(seconds)).Should().Be(expected);
+
+    [Theory]
+    [InlineData(12.5, "$", 2, "12.50 $")]
+    [InlineData(20.0, "$", 0, "20 $")]
+    [InlineData(0.0, "$", 2, "0.00 $")]
+    [InlineData(15.99, "€", 2, "15.99 €")]
+    public void Currency_formats_amount_with_symbol(double amount, string symbol, int decimals, string expected) =>
+        FrenchText.Currency(amount, symbol, decimals).Should().Be(expected);
 }
