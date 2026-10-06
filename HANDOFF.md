@@ -27,18 +27,29 @@
 
 - **Version en développement** : `0.7.0-dev` (branche `main`).
 - **Dernière release officielle** : [v0.6.0](https://github.com/nbresson/UsageNotch/releases/tag/v0.6.0) publiée le 2026-10-06.
-- **Tests** : **657 tests xUnit verts** (328 Core, 329 Presentation), durée totale d'exécution < 2 s.
-- **Dernières fonctionnalités majeures livrées** :
-  1. **Mode Abonnement OpenAI (ChatGPT Plus / Team / Pro / Codex) & Mode Clé API Hybride** :
-     - Deux modes au choix dans les réglages OpenAI :
-       - **Mode Abonnement** (défaut) : suivi des quotas glissants de requêtes via `https://chatgpt.com/backend-api/wham/usage` avec détection automatique du jeton OAuth dans `~/.codex/auth.json` (ou `$CODEX_HOME/auth.json`) et champ manuel optionnel dans les réglages. Les 3 anneaux affichent : Session 5h (`primary_window`, affiché dans la capsule), Quota hebdomadaire (`secondary_window`), et Modèles de raisonnement (`additional_rate_limits`, ex. o1/o3/Spark).
-       - **Mode Clé API** : suivi des dépenses et budget mensuel en dollars via `/v1/organization/costs`.
-     - Support complet de la capsule triple unifiée (Claude + Google Antigravity + OpenAI côte à côte) et combinaisons modulaires au choix : `"all"`, `"both"`, `"claude_openai"`, `"antigravity_openai"`, `"claude"`, `"antigravity"`, `"openai"`.
-     - Intégration du logo vectoriel officiel `OpenAiMark` (`openai-light.svg`) au centre des anneaux avec animations d'activité (`Spin3`, `Pulse3`).
-     - Carte de détail multi-sections jusqu'à 3 sections et configuration dédiée réactive dans les préférences.
-  2. **Fournisseur Google Antigravity** : détection automatique du processus `agy.exe`, découverte du port d'écoute et du jeton SQLite/process, interrogation des quotas Gemini 5 h, hebdomadaire et modèles tiers.
-  3. **Capsule double et triple unifiée** : affichage simultané des quotas Claude, Antigravity et OpenAI dans une seule pilule dynamique avec séparateurs.
-  4. **Robustesse zone de notification** : gestion tolérante de l'initialisation de l'icône de barre des tâches (`TrayIconService`) évitant les crashs en environnement restreint.
+- **Tests** : **688 tests xUnit verts** (355 Core, 333 Presentation), durée totale d'exécution < 2 s, 0 avertissement.
+- **Dernières améliorations techniques majeures (Chantier Qualité & Architecture - Axes 1, 2 et 3)** :
+  1. **Axe I — Architecture, Modularité & Extensibilité** :
+     - `ProviderSelection` : remplacement des cascades de `switch` combinatoires par un système de masques d'identifiants et de résolutions atomiques (`ActiveProviders`).
+     - `IUsageProviderRegistry` : registre ouvert de fournisseurs de quotas supprimant le routage rigide en dur.
+     - Contrôle unitaire `PillCellView` : composant WPF mutualisé encapsulant les 3 anneaux, le logo et les animations pour 1, 2 ou 3 cellules sans duplication XAML.
+     - `CurrencyFormatter` / `FrenchText.Currency` : centralisation du formatage monétaire bilingue ($ / €) avec arrondi intelligent.
+     - Configurabilité système : prise en charge des variables d'environnement `CLAUDE_CONFIG_DIR` et `OPENAI_CONFIG_DIR`.
+  2. **Axe II — Concurrence, Réseau & Sondeur d'Usage** :
+     - Parallélisation du sondage multi-fournisseurs : interrogation simultanée (`Task.WhenAll`) empêchant les requêtes distantes lentes de ralentir les fournisseurs locaux.
+     - `SocketsHttpHandler` configuré avec rotation DNS (`PooledConnectionLifetime = 15 min`, idle timeout 2 min).
+     - Réactivité des réglages : rafraîchissement immédiat (`RequestRefresh()`) sur modification des clés API, jetons ou modes OpenAI.
+     - Résilience E/S fichiers Windows : boucle de réessais exponentiels sur verrous transitoires (indexeurs/AV) dans `UsageStore` et `SettingsStore`.
+     - Prise en charge des en-têtes serveur `Retry-After` sur les réponses HTTP 5xx (`ClaudeUsageProvider`, `OpenAiUsageProvider`).
+  3. **Axe III — Rendu WPF, Performance & Ressources Win32** :
+     - Désenregistrement systématique des hooks Win32 `WndProc` dans `PillWindow.OnClosed` et `CardWindow.OnClosed` (`RemoveHook`).
+     - Migration vers `VisualStateManager` : animation déclarative des états (`Idle`, `Running`, `Attention`, `BandPulse`) éliminant le code impératif et les drapeaux booléens de contrôle.
+     - Fenêtre de détail adaptative (`CardWindow`) : largeur fluide (`MinWidth="320"`, `MaxWidth="420"` avec `SizeToContent="WidthAndHeight"`).
+     - Flèche de carte adaptative : `ArrowGeometryConverter` avec géométries pré-figées (`Freeze()`) et calcul dynamique de positionnement alignant la flèche sur le centre physique de la pilule, quel que soit le bord de l'écran.
+     - Optimisation Native AOT du Hook : lecture de l'entrée standard via `Task.Run` sur le pool de threads sans création d'un thread OS dédié par invocation.
+  4. **Mode Abonnement OpenAI & Mode Clé API Hybride (v0.6.0)** :
+     - Suivi des quotas glissants (fenêtre 5h, quota hebdo, modèles de raisonnement) ou budget en dollars.
+     - Capsule triple unifiée (Claude + Google Antigravity + OpenAI) avec détection automatique de session.
 
 ---
 
@@ -125,9 +136,9 @@ dotnet build -c Release UsageNotch.sln
 
 ## 5. Pièges connus & Bonnes pratiques d'implémentation
 
-1. **Scoping des storyboards WPF dans `PillWindow`** :
-   - Dans WPF, les storyboards déclarés dans `Window.Resources` ne peuvent pas cibler des éléments générés dynamiquement dans un `ItemsControl`.
-   - La pilule utilise donc trois stacks explicites (`Cell1Stack`, `Cell2Stack`, `Cell3Stack`), deux séparateurs (`CellDivider`, `CellDivider2`) et des storyboards triplés (`Spin1/2/3`, `Pulse1/2/3`).
+1. **Scoping et gestion des animations WPF dans `PillCellView`** :
+   - Les animations d'activité de chaque cellule (`Spin`, `Pulse`) sont encapsulées dans le composant `PillCellView` et pilotées de manière déclarative par `VisualStateManager` (`Idle`, `Running`, `Attention`), évitant tout code impératif de storyboard dans la fenêtre parente.
+   - Les storyboards s'arrêtent automatiquement lors du déchargement (`Unloaded`) ou lorsque la fenêtre est masquée/repliée.
 2. **Dimensionnement de la pilule** :
    - Ne jamais coder en dur la longueur de la fenêtre ou du corps de la pilule. Toujours passer par `PillMetrics.WindowLengthFor(provider, edge, content)` et `PillMetrics.BodyLengthFor(provider, edge, content)` qui supportent dynamiquement 1, 2 ou 3 cellules.
    - Épaisseurs standard : 32 DIP (corps), 48 DIP (fenêtre avec marge d'ombrage et congés).
