@@ -2,13 +2,14 @@ using UsageNotch.App.Interop;
 using UsageNotch.Core.Placement;
 using UsageNotch.Core.Settings;
 using UsageNotch.Presentation.Pill;
+using UsageNotch.Presentation.Services;
 
 namespace UsageNotch.App.Views;
 
 public sealed record PlacementResult(MonitorInfo Monitor, PixelRect PillRect);
 
 /// <summary>Traduit les réglages en rectangles physiques sur l'écran choisi (repli sur l'écran principal s'il est absent).</summary>
-public sealed class NotchPlacer(MonitorService monitors)
+public sealed class NotchPlacer(IMonitorSource monitors)
 {
     public PlacementResult Compute(Settings s)
     {

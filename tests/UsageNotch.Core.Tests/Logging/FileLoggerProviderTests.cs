@@ -54,7 +54,7 @@ public class FileLoggerProviderTests
         using var dir = new TempDir();
         File.WriteAllText(Path.Combine(dir.Path, "usagenotch-20260908.log"), "6 jours au démarrage");
         var time = new FakeTimeProvider(Now);
-        using var provider = new FileLoggerProvider(dir.Path, time, () => LogLevel.Information);
+        using var provider = new FileLoggerProvider(dir.Path, time, () => LogLevel.Information, retentionDays: 7);
         var logger = provider.CreateLogger("UsageNotch.Test");
 
         logger.LogInformation("jour 1");
@@ -76,10 +76,38 @@ public class FileLoggerProviderTests
         File.WriteAllText(Path.Combine(dir.Path, "usagenotch-garbage.log"), "nom illisible");
         File.WriteAllText(Path.Combine(dir.Path, "settings.json"), "{}");
 
-        using var provider = new FileLoggerProvider(dir.Path, new FakeTimeProvider(Now), () => LogLevel.Information);
+        using var provider = new FileLoggerProvider(dir.Path, new FakeTimeProvider(Now), () => LogLevel.Information, retentionDays: 7);
 
         Directory.GetFiles(dir.Path).Select(Path.GetFileName).Should().BeEquivalentTo(
             "usagenotch-20260908.log", "usagenotch-garbage.log", "settings.json");
+    }
+
+    [Fact]
+    public void Files_older_than_default_14_days_are_purged()
+    {
+        using var dir = new TempDir();
+        File.WriteAllText(Path.Combine(dir.Path, "usagenotch-20260829.log"), "16 jours");
+        File.WriteAllText(Path.Combine(dir.Path, "usagenotch-20260905.log"), "9 jours");
+
+        using var provider = new FileLoggerProvider(dir.Path, new FakeTimeProvider(Now), () => LogLevel.Information);
+
+        Directory.GetFiles(dir.Path).Select(Path.GetFileName).Should().BeEquivalentTo("usagenotch-20260905.log");
+    }
+
+    [Fact]
+    public void Oversized_log_file_rotates_to_numbered_segment()
+    {
+        using var dir = new TempDir();
+        var mainFile = Path.Combine(dir.Path, "usagenotch-20260914.log");
+        File.WriteAllText(mainFile, new string('X', 200));
+
+        using var provider = new FileLoggerProvider(dir.Path, new FakeTimeProvider(Now), () => LogLevel.Information, maxFileSizeBytes: 100);
+        var logger = provider.CreateLogger("Test");
+        logger.LogInformation("nouvelle ligne après dépassement");
+
+        var rotatedFile = Path.Combine(dir.Path, "usagenotch-20260914.1.log");
+        File.Exists(rotatedFile).Should().BeTrue();
+        File.ReadAllText(rotatedFile).Should().Contain("nouvelle ligne après dépassement");
     }
 
     [Fact]

@@ -111,7 +111,10 @@ internal static class Program
     {
         try
         {
-            var path = PortReader.DefaultSettingsPath;
+            var envDir = Environment.GetEnvironmentVariable("USAGENOTCH_DATA_DIR");
+            var path = !string.IsNullOrWhiteSpace(envDir)
+                ? Path.Combine(envDir, "settings.json")
+                : PortReader.DefaultSettingsPath;
             return File.Exists(path) ? File.ReadAllText(path) : null;
         }
         catch

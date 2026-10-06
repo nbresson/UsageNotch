@@ -10,21 +10,32 @@ namespace UsageNotch.Core.Logging;
 /// </summary>
 public sealed class FileLoggerProvider : ILoggerProvider
 {
-    public const int RetentionDays = 7;
+    public const int RetentionDays = 14;
+    public const long MaxFileSizeBytes = 5 * 1024 * 1024;
+    public const int MaxRotatedFilesPerDay = 5;
 
     private static readonly UTF8Encoding Utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
 
     private readonly string _directory;
     private readonly TimeProvider _time;
     private readonly Func<LogLevel> _minimumLevel;
+    private readonly int _retentionDays;
+    private readonly long _maxFileSizeBytes;
     private readonly object _gate = new();
     private DateTime _purgedDay;
 
-    public FileLoggerProvider(string directory, TimeProvider time, Func<LogLevel> minimumLevel)
+    public FileLoggerProvider(
+        string directory,
+        TimeProvider time,
+        Func<LogLevel> minimumLevel,
+        int retentionDays = RetentionDays,
+        long maxFileSizeBytes = MaxFileSizeBytes)
     {
         _directory = directory;
         _time = time;
         _minimumLevel = minimumLevel;
+        _retentionDays = retentionDays;
+        _maxFileSizeBytes = maxFileSizeBytes;
         try
         {
             Directory.CreateDirectory(directory);
@@ -68,7 +79,9 @@ public sealed class FileLoggerProvider : ILoggerProvider
                     _purgedDay = now.UtcDateTime.Date;
                     Purge();
                 }
-                File.AppendAllText(Path.Combine(_directory, FileNameFor(now)), line.ToString(), Utf8NoBom);
+                var mainFilePath = Path.Combine(_directory, FileNameFor(now));
+                var targetFile = GetTargetLogFile(mainFilePath);
+                File.AppendAllText(targetFile, line.ToString(), Utf8NoBom);
             }
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
@@ -77,12 +90,33 @@ public sealed class FileLoggerProvider : ILoggerProvider
         }
     }
 
+    private string GetTargetLogFile(string mainFilePath)
+    {
+        if (!File.Exists(mainFilePath)) return mainFilePath;
+        var info = new FileInfo(mainFilePath);
+        if (info.Length < _maxFileSizeBytes) return mainFilePath;
+
+        var baseWithoutExt = Path.Combine(Path.GetDirectoryName(mainFilePath)!, Path.GetFileNameWithoutExtension(mainFilePath));
+        for (var i = 1; i <= MaxRotatedFilesPerDay; i++)
+        {
+            var rotated = $"{baseWithoutExt}.{i}.log";
+            if (!File.Exists(rotated) || new FileInfo(rotated).Length < _maxFileSizeBytes)
+            {
+                return rotated;
+            }
+        }
+        return $"{baseWithoutExt}.{MaxRotatedFilesPerDay}.log";
+    }
+
     private void Purge()
     {
-        var cutoff = _time.GetUtcNow().UtcDateTime.Date.AddDays(-RetentionDays);
+        var cutoff = _time.GetUtcNow().UtcDateTime.Date.AddDays(-_retentionDays);
         foreach (var path in Directory.EnumerateFiles(_directory, "usagenotch-*.log"))
         {
-            var stamp = Path.GetFileNameWithoutExtension(path)["usagenotch-".Length..];
+            var name = Path.GetFileNameWithoutExtension(path);
+            if (!name.StartsWith("usagenotch-", StringComparison.Ordinal)) continue;
+            var parts = name["usagenotch-".Length..].Split('.');
+            var stamp = parts[0];
             if (!DateTime.TryParseExact(stamp, "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day)) continue;
             if (day >= cutoff) continue;
             try { File.Delete(path); }

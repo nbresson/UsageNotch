@@ -91,7 +91,11 @@ public sealed class ClaudeUsageProvider(HttpClient http, ClaudeCredentialReader 
                     return new FetchResult.Failed($"HTTP {code}");
             }
         }
-        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException)
         {
             return new FetchResult.Failed($"Délai dépassé ({(int)http.Timeout.TotalSeconds} s)");
         }
@@ -105,10 +109,10 @@ public sealed class ClaudeUsageProvider(HttpClient http, ClaudeCredentialReader 
             logger.LogWarning(e, "Usage Claude : réponse illisible");
             return new FetchResult.Failed("Réponse illisible");
         }
-        catch (Exception e)
+        catch (Exception e) when (e is IOException or System.Net.Sockets.SocketException)
         {
-            logger.LogWarning(e, "Usage Claude : erreur inattendue");
-            return new FetchResult.Failed($"Échec : {ExceptionSanitizer.Sanitize(e)}");
+            logger.LogWarning(e, "Usage Claude : erreur E/S réseau");
+            return new FetchResult.Failed($"Erreur E/S : {ExceptionSanitizer.Sanitize(e)}");
         }
     }
 

@@ -27,8 +27,8 @@
 
 - **Version en développement** : `0.7.0-dev` (branche `main`).
 - **Dernière release officielle** : [v0.6.0](https://github.com/nbresson/UsageNotch/releases/tag/v0.6.0) publiée le 2026-10-06.
-- **Tests** : **711 tests xUnit verts** (373 Core, 338 Presentation), durée totale d'exécution < 2 s, 0 avertissement.
-- **Dernières améliorations techniques majeures (Chantier Qualité & Architecture - Axes 1 à 5)** :
+- **Tests** : **749 tests xUnit verts** (377 Core, 338 Presentation, 34 App), durée totale d'exécution < 3 s, 0 avertissement.
+- **Dernières améliorations techniques majeures (Chantier Qualité & Architecture - Axes 1 à 6)** :
   1. **Axe I — Architecture, Modularité & Extensibilité** :
      - `ProviderSelection` : remplacement des cascades de `switch` combinatoires par un système de masques d'identifiants et de résolutions atomiques (`ActiveProviders`).
      - `IUsageProviderRegistry` : registre ouvert de fournisseurs de quotas supprimant le routage rigide en dur.
@@ -59,6 +59,12 @@
      - Indicateur visuel d'authentification (`AuthBadge`) : badge d'avertissement ambre immédiat sur la cellule en cas de statut `NeedsAuth` ou `Error`.
      - Épinglage direct de la carte : bouton d'épinglage 📌 dans l'en-tête de `CardWindow` pour figer l'affichage de la carte sans devoir recourir au clic droit sur la pilule.
      - Retour visuel immédiat d'actualisation : état `IsRefreshing` affichant « Actualisation en cours… » sur le bouton et dans le menu contextuel.
+  6. **Axe VI — Qualité de Code, Tests & DevOps / CI-CD** :
+     - Pipeline d'intégration continue GitHub Actions (`.github/workflows/ci.yml`) automatisant la restauration, compilation stricte (`TreatWarningsAsErrors`) et exécution des tests sur chaque push/PR Windows .NET 10.
+     - Suite de tests unitaire pour la couche UI/Hôte (`tests/UsageNotch.App.Tests`, 34 tests) couvrant les convertisseurs XAML, le constructeur de géométries de pilule (`PillShapeBuilder`), les logos vectoriels, le placement multi-écrans (`NotchPlacer`) et les chemins applicatifs (`AppPaths`).
+     - Filtrage précis des exceptions réseau (`ClaudeUsageProvider`, `OpenAiUsageProvider`) ciblant explicitement `HttpRequestException`, `JsonException`, `IOException`/`SocketException`, et réémission prioritaire de l'annulation (`OperationCanceledException`).
+     - Tests d'intégration du binaire Hook (`UsageNotch.Hook`) et de son protocole IPC local via isolation d'environnement `USAGENOTCH_DATA_DIR`.
+     - Rotation de fichiers journaux (5 segments de 5 Mo/jour) et purge automatique à rétention glissante de 14 jours (`FileLoggerProvider`).
 
 ---
 

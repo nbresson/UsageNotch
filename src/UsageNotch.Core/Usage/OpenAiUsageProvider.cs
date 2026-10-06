@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using UsageNotch.Core.Security;
 using UsageNotch.Core.Settings;
@@ -112,10 +113,24 @@ public sealed class OpenAiUsageProvider : IUsageProvider
         {
             throw;
         }
-        catch (Exception ex)
+        catch (OperationCanceledException)
         {
-            _logger.LogError(ex, "Échec de l'appel à l'API d'abonnement OpenAI");
-            return new FetchResult.Failed($"Échec de connexion à OpenAI : {ExceptionSanitizer.Sanitize(ex)}");
+            return new FetchResult.Failed($"Délai dépassé ({(int)_http.Timeout.TotalSeconds} s)");
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "Erreur réseau OpenAI");
+            return new FetchResult.Failed($"Erreur réseau : {ExceptionSanitizer.Sanitize(ex)}");
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "Réponse OpenAI illisible");
+            return new FetchResult.Failed("Réponse illisible");
+        }
+        catch (Exception ex) when (ex is IOException or System.Net.Sockets.SocketException)
+        {
+            _logger.LogError(ex, "Erreur E/S réseau OpenAI");
+            return new FetchResult.Failed($"Erreur E/S : {ExceptionSanitizer.Sanitize(ex)}");
         }
     }
 
@@ -180,10 +195,24 @@ public sealed class OpenAiUsageProvider : IUsageProvider
         {
             throw;
         }
-        catch (Exception ex)
+        catch (OperationCanceledException)
         {
-            _logger.LogError(ex, "Échec de l'appel à l'API OpenAI");
-            return new FetchResult.Failed($"Échec de connexion à OpenAI : {ExceptionSanitizer.Sanitize(ex)}");
+            return new FetchResult.Failed($"Délai dépassé ({(int)_http.Timeout.TotalSeconds} s)");
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "Erreur réseau OpenAI");
+            return new FetchResult.Failed($"Erreur réseau : {ExceptionSanitizer.Sanitize(ex)}");
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "Réponse OpenAI illisible");
+            return new FetchResult.Failed("Réponse illisible");
+        }
+        catch (Exception ex) when (ex is IOException or System.Net.Sockets.SocketException)
+        {
+            _logger.LogError(ex, "Erreur E/S réseau OpenAI");
+            return new FetchResult.Failed($"Erreur E/S : {ExceptionSanitizer.Sanitize(ex)}");
         }
     }
 }
