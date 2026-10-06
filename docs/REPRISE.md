@@ -5,7 +5,7 @@ l'historique.
 
 ## État au moment de la pause
 
-- Version `0.7.0` (`<Version>` dans `src/UsageNotch.App/UsageNotch.App.csproj`), branche `main`, poussée sur
+- Version `0.8.0-dev` (`<Version>` dans `src/UsageNotch.App/UsageNotch.App.csproj`), branche `main`, poussée sur
   https://github.com/nbresson/UsageNotch (release `v0.7.0` publiée le 2026-10-06).
 - Compilation sans avertissement (`TreatWarningsAsErrors`), 749 tests xUnit verts : 377 Core, 338 Presentation, 34 App.
 - Fonctionnel au quotidien : pilule et carte, modes Déplié / Replié / Masqué, placement multi-écran, thèmes, fenêtre de

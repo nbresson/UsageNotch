@@ -25,7 +25,7 @@
 
 ## 2. État courant du projet (au 2026-10-06)
 
-- **Version** : `0.7.0` (branche `main`).
+- **Version en développement** : `0.8.0-dev` (branche `main`).
 - **Dernière release officielle** : [v0.7.0](https://github.com/nbresson/UsageNotch/releases/tag/v0.7.0) publiée le 2026-10-06.
 - **Tests** : **749 tests xUnit verts** (377 Core, 338 Presentation, 34 App), durée totale d'exécution < 3 s, 0 avertissement.
 - **Dernières améliorations techniques majeures (Chantier Qualité & Architecture - Axes 1 à 6)** :
